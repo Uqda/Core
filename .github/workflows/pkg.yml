@@ -131,13 +131,19 @@ jobs:
         working-directory: /home/runner/work/Core/Core/uqda
         run: ./build
 
-      - name: Create yggdrasil symlink for compatibility
+      - name: Create yggdrasil and yggdrasilctl symlinks for compatibility
         working-directory: /home/runner/work/Core/Core/uqda
         run: |
           if [ -f uqda ]; then
             ln -sf uqda yggdrasil
           else
             echo "Error: uqda binary not found"
+            exit 1
+          fi
+          if [ -f uqdactl ]; then
+            ln -sf uqdactl yggdrasilctl
+          else
+            echo "Error: uqdactl binary not found"
             exit 1
           fi
 
