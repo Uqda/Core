@@ -36,6 +36,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Make build script executable
+        run: chmod +x ./build
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
