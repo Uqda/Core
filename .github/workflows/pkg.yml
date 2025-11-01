@@ -1,114 +1,110 @@
 name: Packages
 
 on:
-  workflow_dispatch:
+  push:
+    tags: ['v*']         # يبني تلقائيًا عند دفع وسم يبدأ بـ v
+  workflow_dispatch:     # تشغيل يدوي عند الحاجة
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+permissions:
+  contents: write        # ضروري لرفع الأصول على صفحة Releases
+
+env:
+  APP_NAME: uqda
 
 jobs:
-  build-packages-debian:
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        pkgarch: ["amd64", "i386", "mips", "mipsel", "armhf", "armel", "arm64"]
-
-    name: Package (Debian, ${{ matrix.pkgarch }})
-
-    runs-on: ubuntu-22.04
+        goos:   [linux]
+        goarch: [amd64, arm64]
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.22' }
+      - name: Build
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+          go build -v -ldflags "-s -w \
+            -X github.com/Uqda/Core/src/version.BuildName=$APP_NAME \
+            -X github.com/Uqda/Core/src/version.BuildVersion=$VERSION" \
+            -o $APP_NAME ./cmd/uqda
+          tar -czf ${APP_NAME}-${VERSION}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz $APP_NAME
+      - uses: actions/upload-artifact@v4
         with:
-          fetch-depth: 0
+          name: linux-${{ matrix.goarch }}
+          path: "${{ env.APP_NAME }}-${{ github.ref_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz"
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "stable"
-
-      - name: Build package
-        env:
-          PKGARCH: ${{ matrix.pkgarch }}
-        run: sh contrib/deb/generate.sh
-
-      - name: List files before upload
-        run: ls -la *.deb 2>/dev/null || echo "No .deb files found"
-        
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Debian package (${{ matrix.pkgarch }})
-          path: "*.deb"
-          if-no-files-found: warn
-
-  build-packages-macos:
-    strategy:
-      fail-fast: false
-      matrix:
-        pkgarch: ["amd64", "arm64"]
-
-    name: Package (macOS, ${{ matrix.pkgarch }})
-
+  build-macos:
+    name: Build macOS
     runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "stable"
-
-      - name: Build package
-        env:
-          PKGARCH: ${{ matrix.pkgarch }}
-        run: sh contrib/macos/create-pkg.sh
-
-      - name: List files before upload
-        run: ls -la *.pkg 2>/dev/null || echo "No .pkg files found"
-        
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macOS package (${{ matrix.pkgarch }})
-          path: "*.pkg"
-          if-no-files-found: warn
-
-  build-packages-windows:
     strategy:
-      fail-fast: false
       matrix:
-        pkgarch: ["x64", "x86", "arm", "arm64"]
-
-    name: Package (Windows, ${{ matrix.pkgarch }})
-
-    runs-on: windows-latest
+        goos:   [darwin]
+        goarch: [amd64, arm64]
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.22' }
+      - name: Build
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+          go build -v -ldflags "-s -w \
+            -X github.com/Uqda/Core/src/version.BuildName=$APP_NAME \
+            -X github.com/Uqda/Core/src/version.BuildVersion=$VERSION" \
+            -o $APP_NAME ./cmd/uqda
+          tar -czf ${APP_NAME}-${VERSION}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz $APP_NAME
+      - uses: actions/upload-artifact@v4
         with:
-          fetch-depth: 0
+          name: macos-${{ matrix.goarch }}
+          path: "${{ env.APP_NAME }}-${{ github.ref_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz"
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        goarch: [amd64, 386, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.22' }
+      - name: Build
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          GOOS=windows GOARCH=${{ matrix.goarch }} \
+          go build -v -ldflags "-s -w \
+            -X github.com/Uqda/Core/src/version.BuildName=$APP_NAME \
+            -X github.com/Uqda/Core/src/version.BuildVersion=$VERSION" \
+            -o ${APP_NAME}.exe ./cmd/uqda
+          7z a ${APP_NAME}-${VERSION}-windows-${{ matrix.goarch }}.zip ${APP_NAME}.exe
+      - uses: actions/upload-artifact@v4
         with:
-          go-version: "stable"
+          name: windows-${{ matrix.goarch }}
+          path: "${{ env.APP_NAME }}-${{ github.ref_name }}-windows-${{ matrix.goarch }}.zip"
 
-      - name: Setup .NET Core SDK
-        uses: actions/setup-dotnet@v4
-
-      - name: Build package
-        run: sh contrib/msi/build-msi.sh ${{ matrix.pkgarch }}
-
-      - name: List files before upload
-        shell: pwsh
-        run: Get-ChildItem -Filter *.msi | Format-List || Write-Host "No .msi files found"
-        
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+  release:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    needs: [build-linux, build-macos, build-windows]
+    steps:
+      - uses: actions/download-artifact@v4
         with:
-          name: Windows package (${{ matrix.pkgarch }})
-          path: "*.msi"
-          if-no-files-found: warn
-
+          path: dist
+      - name: Flatten
+        run: |
+          shopt -s globstar
+          mkdir out
+          mv dist/**/** out/ || true
+      - name: Create/Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: out/**
