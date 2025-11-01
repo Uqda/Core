@@ -127,6 +127,20 @@ jobs:
         with:
           go-version: "stable"
 
+      - name: Build uqda binary
+        working-directory: /home/runner/work/Core/Core/uqda
+        run: ./build
+
+      - name: Create yggdrasil symlink for compatibility
+        working-directory: /home/runner/work/Core/Core/uqda
+        run: |
+          if [ -f uqda ]; then
+            ln -sf uqda yggdrasil
+          else
+            echo "Error: uqda binary not found"
+            exit 1
+          fi
+
       - name: Build package
         env:
           BUILDDIR_YGG: /home/runner/work/Core/Core/uqda
