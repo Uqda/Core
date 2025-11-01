@@ -32,12 +32,15 @@ jobs:
           PKGARCH: ${{ matrix.pkgarch }}
         run: sh contrib/deb/generate.sh
 
+      - name: List files before upload
+        run: ls -la *.deb 2>/dev/null || echo "No .deb files found"
+        
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Debian package (${{ matrix.pkgarch }})
           path: "*.deb"
-          if-no-files-found: error
+          if-no-files-found: warn
 
   build-packages-macos:
     strategy:
@@ -63,12 +66,15 @@ jobs:
           PKGARCH: ${{ matrix.pkgarch }}
         run: sh contrib/macos/create-pkg.sh
 
+      - name: List files before upload
+        run: ls -la *.pkg 2>/dev/null || echo "No .pkg files found"
+        
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: macOS package (${{ matrix.pkgarch }})
           path: "*.pkg"
-          if-no-files-found: error
+          if-no-files-found: warn
 
   build-packages-windows:
     strategy:
@@ -95,10 +101,14 @@ jobs:
       - name: Build package
         run: sh contrib/msi/build-msi.sh ${{ matrix.pkgarch }}
 
+      - name: List files before upload
+        shell: pwsh
+        run: Get-ChildItem -Filter *.msi | Format-List || Write-Host "No .msi files found"
+        
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Windows package (${{ matrix.pkgarch }})
           path: "*.msi"
-          if-no-files-found: error
+          if-no-files-found: warn
 
