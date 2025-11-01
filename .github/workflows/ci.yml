@@ -27,9 +27,6 @@ jobs:
   codeql:
     name: Analyse
     runs-on: ubuntu-latest
-    # Skip CodeQL if Advanced Security is not enabled
-    # To enable: Go to Settings > Security > Code security and analysis > Enable Advanced Security
-    if: false  # Set to true after enabling Advanced Security
     permissions:
       actions: read
       contents: read
@@ -39,25 +36,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Make build script executable
-        run: chmod +x ./build
-
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v2
         with:
           languages: go
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v2
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v2
 
   build-linux:
     strategy:
       fail-fast: false
       matrix:
-        goversion: ["1.22", "1.23"]
+        goversion: ["1.23", "1.24", "1.25"]
 
     name: Build & Test (Linux, Go ${{ matrix.goversion }})
     needs: [lint]
@@ -81,7 +75,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        goversion: ["1.22", "1.23"]
+        goversion: ["1.23", "1.24", "1.25"]
 
     name: Build & Test (Windows, Go ${{ matrix.goversion }})
     needs: [lint]
@@ -105,7 +99,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        goversion: ["1.22", "1.23"]
+        goversion: ["1.23", "1.24", "1.25"]
 
     name: Build & Test (macOS, Go ${{ matrix.goversion }})
     needs: [lint]
@@ -129,7 +123,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        goversion: ["1.22", "1.23"]
+        goversion: ["1.23", "1.24", "1.25"]
         goos:
           - freebsd
           - openbsd
@@ -155,7 +149,7 @@ jobs:
     name: All tests passed
     needs: [lint, codeql, build-linux, build-windows, build-macos]
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() && (needs.codeql.result == 'success' || needs.codeql.result == 'skipped') }}
+    if: ${{ !cancelled() }}
     steps:
       - name: Check all tests passed
         uses: re-actors/alls-green@release/v1
