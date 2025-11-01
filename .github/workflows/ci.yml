@@ -27,6 +27,9 @@ jobs:
   codeql:
     name: Analyse
     runs-on: ubuntu-latest
+    # Skip CodeQL if Advanced Security is not enabled
+    # To enable: Go to Settings > Security > Code security and analysis > Enable Advanced Security
+    if: false  # Set to true after enabling Advanced Security
     permissions:
       actions: read
       contents: read
@@ -152,7 +155,7 @@ jobs:
     name: All tests passed
     needs: [lint, codeql, build-linux, build-windows, build-macos]
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && (needs.codeql.result == 'success' || needs.codeql.result == 'skipped') }}
     steps:
       - name: Check all tests passed
         uses: re-actors/alls-green@release/v1
