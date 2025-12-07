@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   lint:
@@ -55,6 +55,7 @@ jobs:
 
     name: Build & Test (Linux, Go ${{ matrix.goversion }})
     needs: [lint]
+    timeout-minutes: 15
 
     runs-on: ubuntu-latest
     steps:
@@ -79,6 +80,7 @@ jobs:
 
     name: Build & Test (Windows, Go ${{ matrix.goversion }})
     needs: [lint]
+    timeout-minutes: 20
 
     runs-on: windows-latest
     steps:
@@ -103,6 +105,7 @@ jobs:
 
     name: Build & Test (macOS, Go ${{ matrix.goversion }})
     needs: [lint]
+    timeout-minutes: 20
 
     runs-on: macos-latest
     steps:
@@ -130,6 +133,7 @@ jobs:
 
     name: Build (Cross ${{ matrix.goos }}, Go ${{ matrix.goversion }})
     needs: [lint]
+    timeout-minutes: 10
 
     runs-on: ubuntu-latest
     steps:
