@@ -1,0 +1,297 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v0.5.0)'
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-binaries:
+    name: Build Binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            binary_name: uqda-linux-amd64
+          - os: ubuntu-latest
+            goos: linux
+            goarch: arm64
+            binary_name: uqda-linux-arm64
+          - os: ubuntu-latest
+            goos: linux
+            goarch: 386
+            binary_name: uqda-linux-386
+          - os: ubuntu-latest
+            goos: linux
+            goarch: arm
+            goarm: 6
+            binary_name: uqda-linux-armv6
+          - os: ubuntu-latest
+            goos: linux
+            goarch: arm
+            goarm: 7
+            binary_name: uqda-linux-armv7
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+            binary_name: uqda-windows-amd64.exe
+          - os: windows-latest
+            goos: windows
+            goarch: 386
+            binary_name: uqda-windows-386.exe
+          - os: windows-latest
+            goos: windows
+            goarch: arm64
+            binary_name: uqda-windows-arm64.exe
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+            binary_name: uqda-darwin-amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+            binary_name: uqda-darwin-arm64
+          - os: ubuntu-latest
+            goos: freebsd
+            goarch: amd64
+            binary_name: uqda-freebsd-amd64
+          - os: ubuntu-latest
+            goos: openbsd
+            goarch: amd64
+            binary_name: uqda-openbsd-amd64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Version: ${VERSION}"
+
+      - name: Get build name and version
+        id: build_info
+        run: |
+          PKGNAME=$(sh contrib/semver/name.sh)
+          PKGVER=$(sh contrib/semver/version.sh --bare)
+          echo "build_name=${PKGNAME}" >> $GITHUB_OUTPUT
+          echo "build_version=${PKGVER}" >> $GITHUB_OUTPUT
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+          CGO_ENABLED: 0
+        run: |
+          PKGSRC="github.com/Uqda/Core/src/version"
+          LDFLAGS="-X ${PKGSRC}.buildName=${{ steps.build_info.outputs.build_name }} -X ${PKGSRC}.buildVersion=${{ steps.build_info.outputs.build_version }}"
+          go build -ldflags="${LDFLAGS} -s -w" -o ${{ matrix.binary_name }} ./cmd/uqda
+          go build -ldflags="${LDFLAGS} -s -w" -o uqdactl-${{ matrix.binary_name }} ./cmd/uqdactl
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.binary_name }}
+          path: |
+            ${{ matrix.binary_name }}
+            uqdactl-${{ matrix.binary_name }}
+          retention-days: 90
+
+  build-packages:
+    name: Build Packages
+    needs: []
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: debian
+            arch: amd64
+            runner: ubuntu-latest
+          - platform: debian
+            arch: i386
+            runner: ubuntu-latest
+          - platform: debian
+            arch: arm64
+            runner: ubuntu-latest
+          - platform: debian
+            arch: armhf
+            runner: ubuntu-latest
+          - platform: macos
+            arch: amd64
+            runner: macos-latest
+          - platform: macos
+            arch: arm64
+            runner: macos-latest
+          - platform: windows
+            arch: x64
+            runner: windows-latest
+          - platform: windows
+            arch: x86
+            runner: windows-latest
+          - platform: windows
+            arch: arm64
+            runner: windows-latest
+
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Setup .NET Core SDK (Windows only)
+        if: matrix.platform == 'windows'
+        uses: actions/setup-dotnet@v4
+
+      - name: Build Debian package
+        if: matrix.platform == 'debian'
+        env:
+          PKGARCH: ${{ matrix.arch }}
+        run: sh contrib/deb/generate.sh
+
+      - name: Build macOS package
+        if: matrix.platform == 'macos'
+        env:
+          PKGARCH: ${{ matrix.arch }}
+        run: sh contrib/macos/create-pkg.sh
+
+      - name: Build Windows package
+        if: matrix.platform == 'windows'
+        run: sh contrib/msi/build-msi.sh ${{ matrix.arch }}
+
+      - name: Upload Debian package
+        if: matrix.platform == 'debian'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Debian package (${{ matrix.arch }})
+          path: "*.deb"
+          retention-days: 90
+
+      - name: Upload macOS package
+        if: matrix.platform == 'macos'
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS package (${{ matrix.arch }})
+          path: "*.pkg"
+          retention-days: 90
+
+      - name: Upload Windows package
+        if: matrix.platform == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows package (${{ matrix.arch }})
+          path: "*.msi"
+          retention-days: 90
+
+  create-release:
+    name: Create Release
+    needs: [build-binaries, build-packages]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Version: ${VERSION}"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create checksums
+        run: |
+          cd artifacts
+          find . -type f \( -name "uqda-*" -o -name "*.deb" -o -name "*.pkg" -o -name "*.msi" \) -exec sha256sum {} \; > checksums.txt
+
+      - name: Create release notes
+        id: release_notes
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cat > release_notes.md << EOF
+          # Uqda Network $VERSION
+
+          ## Downloads
+
+          ### Binaries
+          - Linux (amd64, arm64, 386, armv6, armv7)
+          - Windows (amd64, 386, arm64)
+          - macOS (amd64, arm64)
+          - FreeBSD (amd64)
+          - OpenBSD (amd64)
+
+          ### Packages
+          - Debian/Ubuntu (.deb) - amd64, i386, arm64, armhf
+          - macOS (.pkg) - amd64, arm64
+          - Windows (.msi) - x64, x86, arm64
+
+          ## Installation
+
+          See [Installation Guide](https://github.com/Uqda/Core/wiki) for platform-specific instructions.
+
+          ## Changes
+
+          See [CHANGELOG.md](https://github.com/Uqda/Core/blob/main/CHANGELOG.md) for full changelog.
+
+          ## Verification
+
+          All files are signed with SHA256 checksums. Verify downloads using the \`checksums.txt\` file.
+          EOF
+          cat release_notes.md
+
+      - name: Create or update release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Uqda Network ${{ steps.version.outputs.version }}
+          body_path: release_notes.md
+          files: |
+            artifacts/**/*
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, '-') || contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
