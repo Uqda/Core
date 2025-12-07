@@ -1,4 +1,4 @@
-﻿package config
+package config
 
 var defaultConfig = ""      // LDFLAGS='-X github.com/Uqda/Core/src/config.defaultConfig=/path/to/config
 var defaultAdminListen = "" // LDFLAGS='-X github.com/Uqda/Core/src/config.defaultAdminListen=unix://path/to/sock'

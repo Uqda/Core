@@ -1,4 +1,4 @@
-﻿package multicast
+package multicast
 
 import (
 	"crypto/ed25519"

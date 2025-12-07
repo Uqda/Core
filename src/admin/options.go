@@ -1,4 +1,4 @@
-﻿package admin
+package admin
 
 import (
 	"crypto/ed25519"

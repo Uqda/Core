@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file generates crypto keys.
 It prints out a new set of keys each time if finds a "better" one.
 By default, "better" means a higher NodeID (-> higher IP address).

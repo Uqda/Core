@@ -1,4 +1,4 @@
-﻿//go:build !cgo && (darwin || ios)
+//go:build !cgo && (darwin || ios)
 // +build !cgo
 // +build darwin ios
 

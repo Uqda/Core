@@ -1,4 +1,4 @@
-﻿package ipv6rwc
+package ipv6rwc
 
 import (
 	"crypto/ed25519"

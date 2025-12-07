@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file generates crypto keys for [ansible-Uqda](https://github.com/jcgruenhage/ansible-Uqda/)
 */
 package main

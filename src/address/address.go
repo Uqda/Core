@@ -1,4 +1,4 @@
-﻿// Package address contains the types used by Uqda to represent IPv6 addresses or prefixes, as well as functions for working with these types.
+// Package address contains the types used by Uqda to represent IPv6 addresses or prefixes, as well as functions for working with these types.
 // Of particular importance are the functions used to derive addresses or subnets from a NodeID, or to get the NodeID and bitmask of the bits visible from an address, which is needed for DHT searches.
 package address
 

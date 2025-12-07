@@ -1,4 +1,4 @@
-﻿package tun
+package tun
 
 import (
 	"errors"

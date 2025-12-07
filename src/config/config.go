@@ -1,4 +1,4 @@
-﻿/*
+/*
 The config package contains structures related to the configuration of an
 Uqda node.
 

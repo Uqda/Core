@@ -1,4 +1,4 @@
-﻿package mobile
+package mobile
 
 import (
 	"encoding/hex"

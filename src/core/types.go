@@ -1,4 +1,4 @@
-﻿package core
+package core
 
 // In-band packet types
 const (

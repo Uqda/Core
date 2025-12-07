@@ -1,4 +1,4 @@
-﻿package version
+package version
 
 var buildName string
 var buildVersion string

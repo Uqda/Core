@@ -1,4 +1,4 @@
-﻿package ipv6rwc
+package ipv6rwc
 
 // The ICMPv6 module implements functions to easily create ICMPv6
 // packets. These functions, when mixed with the built-in Go IPv6
