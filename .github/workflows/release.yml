@@ -1,6 +1,9 @@
 name: Release
 
 on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on tags like v0.1.0, v1.2.3, etc.
   release:
     types: [published]
   workflow_dispatch:
