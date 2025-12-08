@@ -36,14 +36,14 @@ sudo uqda -useconffile uqda.conf
 ## License
 
 ```
-Original work Copyright (C) 2017-2024 Yggdrasil Network
-Modified work Copyright (C) 2024 Uqda Network
+Original work Copyright (C) 2017-2025 Yggdrasil Network
+Modified work Copyright (C) 2025 Uqda Network
 ```
 
 License: LGPL-3.0
 
 ---
 
-**Last Updated:** December 2024  
+**Last Updated:** January 2025  
 **Version:** 0.1.2
 

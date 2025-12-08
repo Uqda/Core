@@ -143,8 +143,8 @@ If you discover a security vulnerability, please **do not** open a public issue.
 This project is licensed under the **GNU Lesser General Public License v3.0** with an additional exception for binary distribution.
 
 ```
-Original work Copyright (C) 2017-2024 Yggdrasil Network
-Modified work Copyright (C) 2024 Uqda Network
+Original work Copyright (C) 2017-2025 Yggdrasil Network
+Modified work Copyright (C) 2025 Uqda Network
 ```
 
 This fork maintains the LGPL-3.0 license of the original Yggdrasil project. Under certain circumstances, this exception permits distribution of binaries that are linked with this code, without requiring the distribution of Minimal Corresponding Source. For details, see [LICENSE](LICENSE).

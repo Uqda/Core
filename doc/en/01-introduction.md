@@ -32,8 +32,8 @@ The project is in **Alpha** stage - the protocol works and is stable, but change
 ## License
 
 ```
-Original work Copyright (C) 2017-2024 Yggdrasil Network
-Modified work Copyright (C) 2024 Uqda Network
+Original work Copyright (C) 2017-2025 Yggdrasil Network
+Modified work Copyright (C) 2025 Uqda Network
 ```
 
 License: LGPL-3.0
