@@ -254,35 +254,52 @@ jobs:
         id: release_notes
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          cat > release_notes.md << EOF
-          # Uqda Network $VERSION
+          cat > release_notes.md << 'EOF'
+          # 🌐 Uqda Network $VERSION
 
-          ## Downloads
+          ## 📦 Downloads
 
           ### Binaries
-          - Linux (amd64, arm64, 386, armv6, armv7)
-          - Windows (amd64, 386, arm64)
-          - macOS (amd64, arm64)
-          - FreeBSD (amd64)
-          - OpenBSD (amd64)
+          - **Linux**: amd64, arm64, 386, armv6, armv7
+          - **Windows**: amd64, 386, arm64
+          - **macOS**: amd64, arm64
+          - **FreeBSD**: amd64
+          - **OpenBSD**: amd64
 
           ### Packages
-          - Debian/Ubuntu (.deb) - amd64, i386, arm64, armhf
-          - macOS (.pkg) - amd64, arm64
-          - Windows (.msi) - x64, x86, arm64
+          - **Debian/Ubuntu** (.deb): amd64, i386, arm64, armhf
+          - **macOS** (.pkg): amd64, arm64
+          - **Windows** (.msi): x64, x86, arm64
 
-          ## Installation
+          ## 🚀 Quick Start
 
-          See [Installation Guide](https://github.com/Uqda/Core/wiki) for platform-specific instructions.
+          ```bash
+          # Install via Go
+          go install github.com/Uqda/Core/cmd/uqda@latest
 
-          ## Changes
+          # Or download binary for your platform from the assets below
+          ```
 
-          See [CHANGELOG.md](https://github.com/Uqda/Core/blob/main/CHANGELOG.md) for full changelog.
+          ## 📖 Documentation
 
-          ## Verification
+          - [Installation Guide](https://github.com/Uqda/Core/wiki)
+          - [Configuration Guide](https://github.com/Uqda/Core/wiki)
+          - [Full Changelog](https://github.com/Uqda/Core/blob/main/CHANGELOG.md)
 
-          All files are signed with SHA256 checksums. Verify downloads using the \`checksums.txt\` file.
+          ## 🔒 Verification
+
+          All files include SHA256 checksums in \`checksums.txt\`. Verify downloads using:
+
+          ```bash
+          sha256sum -c checksums.txt
+          ```
+
+          ---
+
+          **Built with ❤️ by the Uqda Team**
           EOF
+          # Replace version placeholder
+          sed -i "s/\$VERSION/$VERSION/g" release_notes.md
           cat release_notes.md
 
       - name: Create or update release
@@ -295,6 +312,8 @@ jobs:
             artifacts/**/*
           draft: false
           prerelease: ${{ contains(steps.version.outputs.version, '-') || contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
+          generate_release_notes: false
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
