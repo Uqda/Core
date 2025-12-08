@@ -89,9 +89,12 @@ jobs:
 
       - name: Get version
         id: version
+        shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
           else
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
@@ -100,6 +103,7 @@ jobs:
 
       - name: Get build name and version
         id: build_info
+        shell: bash
         run: |
           PKGNAME=$(sh contrib/semver/name.sh)
           PKGVER=$(sh contrib/semver/version.sh --bare)
@@ -107,6 +111,7 @@ jobs:
           echo "build_version=${PKGVER}" >> $GITHUB_OUTPUT
 
       - name: Build binary
+        shell: bash
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
@@ -231,9 +236,12 @@ jobs:
 
       - name: Get version
         id: version
+        shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
           else
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
@@ -246,12 +254,14 @@ jobs:
           path: artifacts
 
       - name: Create checksums
+        shell: bash
         run: |
           cd artifacts
           find . -type f \( -name "uqda-*" -o -name "*.deb" -o -name "*.pkg" -o -name "*.msi" \) -exec sha256sum {} \; > checksums.txt
 
       - name: Create release notes
         id: release_notes
+        shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           cat > release_notes.md << 'EOF'
