@@ -19,6 +19,8 @@ func (c *AdminSocket) _applyOption(opt SetupOption) {
 		c.config.listenaddr = v
 	case LogLookups:
 		c.logLookups()
+	case ConfigFilePath:
+		c.configFilePath = string(v)
 	}
 }
 
@@ -33,6 +35,10 @@ func (a ListenAddress) isSetupOption() {}
 type LogLookups struct{}
 
 func (l LogLookups) isSetupOption() {}
+
+type ConfigFilePath string
+
+func (c ConfigFilePath) isSetupOption() {}
 
 func (a *AdminSocket) logLookups() {
 	type resi struct {

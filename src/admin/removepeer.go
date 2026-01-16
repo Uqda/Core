@@ -17,5 +17,14 @@ func (a *AdminSocket) removePeerHandler(req *RemovePeerRequest, _ *RemovePeerRes
 	if err != nil {
 		return fmt.Errorf("unable to parse peering URI: %w", err)
 	}
-	return a.core.RemovePeer(u, req.Sintf)
+	if err := a.core.RemovePeer(u, req.Sintf); err != nil {
+		return err
+	}
+	// Save peers to config file if config file path is set
+	if a.configFilePath != "" {
+		if err := a.savePeersToConfig(); err != nil {
+			a.log.Warnf("Failed to save peers to config file: %v", err)
+		}
+	}
+	return nil
 }

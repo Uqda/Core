@@ -108,6 +108,19 @@ func (c *Core) GetPeers() []PeerInfo {
 	return peers
 }
 
+// GetConfiguredPeers calls the callback function for each configured persistent peer.
+// This is used to save peers to the configuration file.
+func (c *Core) GetConfiguredPeers(callback func(uri string, sintf string)) {
+	phony.Block(&c.links, func() {
+		for info, state := range c.links._links {
+			// Only return persistent peers (not ephemeral or incoming)
+			if state.linkType == linkTypePersistent {
+				callback(info.uri, info.sintf)
+			}
+		}
+	})
+}
+
 func (c *Core) GetTree() []TreeEntryInfo {
 	var trees []TreeEntryInfo
 	ts := c.PacketConn.PacketConn.Debug.GetTree()

@@ -18,12 +18,13 @@ import (
 // TODO: Add authentication
 
 type AdminSocket struct {
-	core     *core.Core
-	log      core.Logger
-	listener net.Listener
-	handlers map[string]handler
-	done     chan struct{}
-	config   struct {
+	core           *core.Core
+	log            core.Logger
+	listener       net.Listener
+	handlers       map[string]handler
+	done           chan struct{}
+	configFilePath string // Path to configuration file for saving peers
+	config         struct {
 		listenaddr ListenAddress
 	}
 }

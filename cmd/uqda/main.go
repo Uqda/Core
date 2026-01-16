@@ -253,6 +253,15 @@ func main() {
 		if cfg.LogLookups {
 			options = append(options, admin.LogLookups{})
 		}
+		// Pass config file path to admin socket for saving peers
+		if *useconffile != "" {
+			options = append(options, admin.ConfigFilePath(*useconffile))
+		} else if config.GetDefaults().DefaultConfigFile != "" {
+			// Try to use default config file path if available
+			if _, err := os.Stat(config.GetDefaults().DefaultConfigFile); err == nil {
+				options = append(options, admin.ConfigFilePath(config.GetDefaults().DefaultConfigFile))
+			}
+		}
 		if n.admin, err = admin.New(n.core, logger, options...); err != nil {
 			panic(err)
 		}
