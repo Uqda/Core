@@ -72,41 +72,57 @@ EOF
 cat > /tmp/$PKGNAME/debian/install << EOF
 usr/bin/uqda usr/bin
 usr/bin/uqdactl usr/bin
-lib/systemd/system/*.service lib/systemd/system
+lib/systemd/system/uqda.service lib/systemd/system
+lib/systemd/system/uqda-default-config.service lib/systemd/system
 EOF
 cat > /tmp/$PKGNAME/debian/postinst << EOF
 #!/bin/sh
 
+set -e
+
+# Reload systemd to recognize new service files
 systemctl daemon-reload
 
-if ! getent group uqda 2>&1 > /dev/null; then
-  groupadd --system --force uqda
+# Create uqda group if it doesn't exist
+if ! getent group uqda >/dev/null 2>&1; then
+  groupadd --system uqda || true
 fi
 
-if [ ! -d /etc/uqda ];
-then
-    mkdir -p /etc/uqda
-    chown root:uqda /etc/uqda
-    chmod 750 /etc/uqda
+# Create configuration directory
+if [ ! -d /etc/uqda ]; then
+  mkdir -p /etc/uqda
+  chown root:uqda /etc/uqda
+  chmod 750 /etc/uqda
 fi
 
-if [ ! -f /etc/uqda/uqda.conf ];
-then
-    test -f /etc/uqda.conf && mv /etc/uqda.conf /etc/uqda/uqda.conf
+# Check if binaries are installed
+if [ ! -f /usr/bin/uqda ]; then
+  echo "Error: /usr/bin/uqda not found after installation"
+  exit 1
 fi
 
-if [ -f /etc/uqda/uqda.conf ];
-then
+# Handle configuration file
+if [ -f /etc/uqda.conf ]; then
+  # Move old config file if it exists in root
+  mv /etc/uqda.conf /etc/uqda/uqda.conf
+fi
+
+if [ -f /etc/uqda/uqda.conf ]; then
+  # Backup existing configuration
   mkdir -p /var/backups
-  echo "Backing up configuration file to /var/backups/uqda.conf.`date +%Y%m%d`"
-  cp /etc/uqda/uqda.conf /var/backups/uqda.conf.`date +%Y%m%d`
+  BACKUP_FILE="/var/backups/uqda.conf.\$(date +%Y%m%d)"
+  echo "Backing up configuration file to \$BACKUP_FILE"
+  cp /etc/uqda/uqda.conf "\$BACKUP_FILE"
 
+  # Normalize and update configuration
   echo "Normalising and updating /etc/uqda/uqda.conf"
-  /usr/bin/uqda -useconffile /var/backups/uqda.conf.`date +%Y%m%d` -normaliseconf > /etc/uqda/uqda.conf
+  /usr/bin/uqda -useconffile "\$BACKUP_FILE" -normaliseconf > /etc/uqda/uqda.conf.new
+  mv /etc/uqda/uqda.conf.new /etc/uqda/uqda.conf
 
   chown root:uqda /etc/uqda/uqda.conf
   chmod 640 /etc/uqda/uqda.conf
 else
+  # Generate initial configuration
   echo "Generating initial configuration file /etc/uqda/uqda.conf"
   /usr/bin/uqda -genconf > /etc/uqda/uqda.conf
 
@@ -114,8 +130,21 @@ else
   chmod 640 /etc/uqda/uqda.conf
 fi
 
-systemctl enable uqda
-systemctl restart uqda
+# Enable and start the service
+echo "Enabling uqda service..."
+systemctl enable uqda.service || true
+systemctl enable uqda-default-config.service || true
+
+echo "Starting uqda service..."
+systemctl start uqda.service || true
+
+echo ""
+echo "Uqda Network has been installed and started successfully!"
+echo "Your node information:"
+/usr/bin/uqdactl getSelf 2>/dev/null || echo "  (Service is starting, run 'sudo uqdactl getSelf' in a moment)"
+echo ""
+echo "To add peers, use: sudo uqdactl addPeer tcp://peer.example.com:12345"
+echo "To view peers, use: sudo uqdactl getPeers"
 
 exit 0
 EOF
