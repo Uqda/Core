@@ -15,12 +15,12 @@ import (
 
 	"suah.dev/protect"
 
-	"github.com/olekukonko/tablewriter"
 	"github.com/Uqda/Core/src/admin"
 	"github.com/Uqda/Core/src/core"
 	"github.com/Uqda/Core/src/multicast"
 	"github.com/Uqda/Core/src/tun"
 	"github.com/Uqda/Core/src/version"
+	"github.com/olekukonko/tablewriter"
 )
 
 func main() {
@@ -108,6 +108,11 @@ func run() int {
 			send.Name = a
 			continue
 		}
+		// Special handling for addPeer/removePeer - if argument looks like a URI, use it as uri=
+		if (send.Name == "addPeer" || send.Name == "removePeer" || send.Name == "add" || send.Name == "remove") && strings.Contains(a, "://") {
+			args["uri"] = a
+			continue
+		}
 		tokens := strings.SplitN(a, "=", 2)
 		switch {
 		case len(tokens) == 1:
@@ -115,6 +120,13 @@ func run() int {
 		default:
 			args[tokens[0]] = tokens[1]
 		}
+	}
+
+	// Support shortcuts: "add" -> "addPeer", "remove" -> "removePeer"
+	if send.Name == "add" {
+		send.Name = "addPeer"
+	} else if send.Name == "remove" {
+		send.Name = "removePeer"
 	}
 	if send.Arguments, err = json.Marshal(args); err != nil {
 		panic(err)
@@ -323,7 +335,23 @@ func run() int {
 		}
 		table.Render()
 
-	case "addpeer", "removepeer":
+	case "addpeer":
+		peerURI := args["uri"]
+		if peerURI != "" {
+			fmt.Printf("✓ Successfully added peer: %s\n", peerURI)
+			fmt.Printf("  The peer will be connected automatically.\n")
+			fmt.Printf("  Use 'getPeers' to see connection status.\n")
+		} else {
+			fmt.Println("✓ Peer added successfully")
+		}
+
+	case "removepeer":
+		peerURI := args["uri"]
+		if peerURI != "" {
+			fmt.Printf("✓ Successfully removed peer: %s\n", peerURI)
+		} else {
+			fmt.Println("✓ Peer removed successfully")
+		}
 
 	default:
 		fmt.Println(string(recv.Response))

@@ -37,7 +37,11 @@ func (cmdLineEnv *CmdLineEnv) parseFlagsAndArgs() {
 		fmt.Println()
 		fmt.Println("Examples:")
 		fmt.Println("  - ", os.Args[0], "list")
+		fmt.Println("  - ", os.Args[0], "getSelf")
 		fmt.Println("  - ", os.Args[0], "getPeers")
+		fmt.Println("  - ", os.Args[0], "addPeer tcp://example.com:12345")
+		fmt.Println("  - ", os.Args[0], "addPeer uri=tcp://example.com:12345")
+		fmt.Println("  - ", os.Args[0], "removePeer tcp://example.com:12345")
 		fmt.Println("  - ", os.Args[0], "-endpoint=tcp://localhost:9001 getPeers")
 		fmt.Println("  - ", os.Args[0], "-endpoint=unix:///var/run/uqda.sock getPeers")
 	}
