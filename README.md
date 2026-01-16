@@ -20,7 +20,7 @@
 **Uqda Network** (from Arabic **عُقدة** meaning "node") is an end-to-end encrypted IPv6 mesh network that:
 
 - 🔒 **Encrypts Everything** - All traffic is encrypted by default
-- 🌐 **Works Everywhere** - Runs over IPv4 or IPv6 internet
+- 🌐 **Works Everywhere** - Runs over IPv6 internet
 - 🔄 **Self-Organizing** - No central servers or configuration needed
 - 🪶 **Lightweight** - Minimal CPU and memory usage
 - 🎯 **Location Independent** - Your address stays the same wherever you go

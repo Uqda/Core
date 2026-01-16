@@ -237,11 +237,11 @@ TcpTestSucceeded : True
 
 ```json
 {
-  "IfMTU": 1380,
-  "Listen": [
+  IfMTU: 1380,
+  Listen: [
     "tls://[::]:33347"
   ],
-  "Peers": [
+  Peers: [
     "tls://<windows-peer-ip>:<port>"
   ]
 }
@@ -553,36 +553,10 @@ This deployment successfully demonstrates:
 
 - **Uqda Core Repository:** https://github.com/Uqda/Core
 - **Documentation:** https://github.com/Uqda/Core/blob/main/README.md
-- **Installation Guide:** See `INSTALL_UBUNTU.md`
 - **Original Project:** Yggdrasil Network (https://yggdrasil-network.github.io/)
 
 ---
 
-## Appendix A: Troubleshooting Checklist
-
-### If ping works but SSH doesn't:
-
-- [ ] Check MTU configuration (`IfMTU: 1380`)
-- [ ] Verify firewall rules (ip6tables/Windows Firewall)
-- [ ] Check SSH is listening on overlay IP
-- [ ] Verify routing table entries
-- [ ] Check for packet loss (`tcpdump`)
-
-### If connection is slow:
-
-- [ ] Check peer latency (`uqdactl getPeers`)
-- [ ] Verify MTU is optimal
-- [ ] Check for network congestion
-- [ ] Review firewall rules (may be blocking)
-
-### If service won't start:
-
-- [ ] Check configuration file syntax
-- [ ] Verify file permissions
-- [ ] Check systemd logs (`journalctl -u uqda`)
-- [ ] Verify TUN module loaded (`lsmod | grep tun`)
-
----
 
 **Report Version:** 1.0  
 **Last Updated:** January 16, 2026  

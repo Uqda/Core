@@ -22,9 +22,9 @@ GO111MODULE=on GOOS=darwin GOARCH=${PKGARCH-amd64} ./build
 # Check if we can find the files we need - they should
 # exist if you are running this script from the root of
 # the Uqda-go repo and you have ran ./build
-test -f Uqda || (echo "Uqda binary not found"; exit 1)
-test -f Uqdactl || (echo "Uqdactl binary not found"; exit 1)
-test -f contrib/macos/Uqda.plist || (echo "contrib/macos/Uqda.plist not found"; exit 1)
+test -f uqda || (echo "uqda binary not found"; exit 1)
+test -f uqdactl || (echo "uqdactl binary not found"; exit 1)
+test -f contrib/macos/uqda.plist || (echo "contrib/macos/uqda.plist not found"; exit 1)
 test -f contrib/semver/version.sh || (echo "contrib/semver/version.sh not found"; exit 1)
 
 # Delete the pkgbuild folder if it already exists
@@ -38,37 +38,40 @@ mkdir -p pkgbuild/root/usr/local/bin
 mkdir -p pkgbuild/root/Library/LaunchDaemons
 
 # Copy package contents into the pkgbuild root
-cp Uqda pkgbuild/root/usr/local/bin
-cp Uqdactl pkgbuild/root/usr/local/bin
-cp contrib/macos/Uqda.plist pkgbuild/root/Library/LaunchDaemons
+cp uqda pkgbuild/root/usr/local/bin
+cp uqdactl pkgbuild/root/usr/local/bin
+cp contrib/macos/uqda.plist pkgbuild/root/Library/LaunchDaemons/uqda.plist
 
 # Create the postinstall script
 cat > pkgbuild/scripts/postinstall << EOF
 #!/bin/sh
 
+# Create config directory if it doesn't exist
+mkdir -p /etc/uqda
+
 # Normalise the config if it exists, generate it if it doesn't
-if [ -f /etc/Uqda.conf ];
+if [ -f /etc/uqda/uqda.conf ];
 then
   mkdir -p /Library/Preferences/Uqda
-  echo "Backing up configuration file to /Library/Preferences/Uqda/Uqda.conf.`date +%Y%m%d`"
-  cp /etc/Uqda.conf /Library/Preferences/Uqda/Uqda.conf.`date +%Y%m%d`
-  echo "Normalising /etc/Uqda.conf"
-  /usr/local/bin/Uqda -useconffile /Library/Preferences/Uqda/Uqda.conf.`date +%Y%m%d` -normaliseconf > /etc/Uqda.conf
+  echo "Backing up configuration file to /Library/Preferences/Uqda/uqda.conf.`date +%Y%m%d`"
+  cp /etc/uqda/uqda.conf /Library/Preferences/Uqda/uqda.conf.`date +%Y%m%d`
+  echo "Normalising /etc/uqda/uqda.conf"
+  /usr/local/bin/uqda -useconffile /Library/Preferences/Uqda/uqda.conf.`date +%Y%m%d` -normaliseconf > /etc/uqda/uqda.conf
 else
-  /usr/local/bin/Uqda -genconf > /etc/Uqda.conf
+  /usr/local/bin/uqda -genconf > /etc/uqda/uqda.conf
 fi
 
-# Unload existing Uqda launchd service, if possible
-test -f /Library/LaunchDaemons/Uqda.plist && (launchctl unload /Library/LaunchDaemons/Uqda.plist || true)
+# Unload existing uqda launchd service, if possible
+test -f /Library/LaunchDaemons/uqda.plist && (launchctl unload /Library/LaunchDaemons/uqda.plist || true)
 
-# Load Uqda launchd service and start Uqda
-launchctl load /Library/LaunchDaemons/Uqda.plist
+# Load uqda launchd service and start uqda
+launchctl load /Library/LaunchDaemons/uqda.plist
 EOF
 
 # Set execution permissions
 chmod +x pkgbuild/scripts/postinstall
-chmod +x pkgbuild/root/usr/local/bin/Uqda
-chmod +x pkgbuild/root/usr/local/bin/Uqdactl
+chmod +x pkgbuild/root/usr/local/bin/uqda
+chmod +x pkgbuild/root/usr/local/bin/uqdactl
 
 # Pack payload and scripts
 ( cd pkgbuild/scripts && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > pkgbuild/flat/base.pkg/Scripts
