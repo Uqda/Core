@@ -102,7 +102,7 @@ then
   cp /etc/uqda/uqda.conf /var/backups/uqda.conf.`date +%Y%m%d`
 
   echo "Normalising and updating /etc/uqda/uqda.conf"
-  /usr/bin/uqda -useconf -normaliseconf < /var/backups/uqda.conf.`date +%Y%m%d` > /etc/uqda/uqda.conf
+  /usr/bin/uqda -useconffile /var/backups/uqda.conf.`date +%Y%m%d` -normaliseconf > /etc/uqda/uqda.conf
 
   chown root:uqda /etc/uqda/uqda.conf
   chmod 640 /etc/uqda/uqda.conf
@@ -129,10 +129,44 @@ if command -v systemctl >/dev/null; then
 fi
 EOF
 
+# Check if binaries exist before copying
+if [ ! -f uqda ]; then
+  echo "Error: uqda binary not found. Make sure build completed successfully."
+  exit 1
+fi
+if [ ! -f uqdactl ]; then
+  echo "Error: uqdactl binary not found. Make sure build completed successfully."
+  exit 1
+fi
+
+# Check if systemd service files exist
+if [ ! -f contrib/systemd/uqda.service.debian ]; then
+  echo "Error: contrib/systemd/uqda.service.debian not found."
+  exit 1
+fi
+if [ ! -f contrib/systemd/uqda-default-config.service.debian ]; then
+  echo "Error: contrib/systemd/uqda-default-config.service.debian not found."
+  exit 1
+fi
+
 cp uqda /tmp/$PKGNAME/usr/bin/
 cp uqdactl /tmp/$PKGNAME/usr/bin/
 cp contrib/systemd/uqda-default-config.service.debian /tmp/$PKGNAME/lib/systemd/system/uqda-default-config.service
 cp contrib/systemd/uqda.service.debian /tmp/$PKGNAME/lib/systemd/system/uqda.service
+
+# Verify files were copied
+if [ ! -f /tmp/$PKGNAME/usr/bin/uqda ]; then
+  echo "Error: Failed to copy uqda binary"
+  exit 1
+fi
+if [ ! -f /tmp/$PKGNAME/usr/bin/uqdactl ]; then
+  echo "Error: Failed to copy uqdactl binary"
+  exit 1
+fi
+if [ ! -f /tmp/$PKGNAME/lib/systemd/system/uqda.service ]; then
+  echo "Error: Failed to copy uqda.service"
+  exit 1
+fi
 
 tar --no-xattrs -czvf /tmp/$PKGNAME/data.tar.gz -C /tmp/$PKGNAME/ \
   usr/bin/uqda usr/bin/uqdactl \
