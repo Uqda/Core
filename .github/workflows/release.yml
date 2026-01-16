@@ -199,10 +199,7 @@ jobs:
           
           ## 📖 Documentation
           
-          - [Installation Guide](https://github.com/Uqda/Core/wiki/Installation)
-          - [Configuration Guide](https://github.com/Uqda/Core/wiki/Configuration)
-          - [Troubleshooting](https://github.com/Uqda/Core/wiki/Troubleshooting)
-          - [FAQ](https://github.com/Uqda/Core/wiki/FAQ)
+          See the [README.md](https://github.com/Uqda/Core/blob/main/README.md) for installation and configuration instructions.
           
           ## 🔐 Verify Downloads
           
@@ -213,9 +210,9 @@ jobs:
           
           ## 💬 Support
           
-          - [GitHub Discussions](https://github.com/Uqda/Core/discussions)
-          - [Report Issues](https://github.com/Uqda/Core/issues)
-          - [Community Chat](https://github.com/Uqda/Core#community)
+          - [GitHub Issues](https://github.com/Uqda/Core/issues) - Report bugs and request features
+          - [GitHub Discussions](https://github.com/Uqda/Core/discussions) - Ask questions and share ideas
+          - Email: uqda@proton.me
           
           ## ⚠️ System Requirements
           
