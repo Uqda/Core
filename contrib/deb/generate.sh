@@ -122,22 +122,22 @@ EOF
 cat > /tmp/$PKGNAME/debian/prerm << EOF
 #!/bin/sh
 if command -v systemctl >/dev/null; then
-  if systemctl is-active --quiet Uqda; then
-    systemctl stop Uqda || true
+  if systemctl is-active --quiet uqda; then
+    systemctl stop uqda || true
   fi
-  systemctl disable Uqda || true
+  systemctl disable uqda || true
 fi
 EOF
 
-cp Uqda /tmp/$PKGNAME/usr/bin/
-cp Uqdactl /tmp/$PKGNAME/usr/bin/
-cp contrib/systemd/Uqda-default-config.service.debian /tmp/$PKGNAME/lib/systemd/system/Uqda-default-config.service
-cp contrib/systemd/Uqda.service.debian /tmp/$PKGNAME/lib/systemd/system/Uqda.service
+cp uqda /tmp/$PKGNAME/usr/bin/
+cp uqdactl /tmp/$PKGNAME/usr/bin/
+cp contrib/systemd/uqda-default-config.service.debian /tmp/$PKGNAME/lib/systemd/system/uqda-default-config.service
+cp contrib/systemd/uqda.service.debian /tmp/$PKGNAME/lib/systemd/system/uqda.service
 
 tar --no-xattrs -czvf /tmp/$PKGNAME/data.tar.gz -C /tmp/$PKGNAME/ \
-  usr/bin/Uqda usr/bin/Uqdactl \
-  lib/systemd/system/Uqda.service \
-  lib/systemd/system/Uqda-default-config.service
+  usr/bin/uqda usr/bin/uqdactl \
+  lib/systemd/system/uqda.service \
+  lib/systemd/system/uqda-default-config.service
 tar --no-xattrs -czvf /tmp/$PKGNAME/control.tar.gz -C /tmp/$PKGNAME/debian .
 echo 2.0 > /tmp/$PKGNAME/debian-binary
 
