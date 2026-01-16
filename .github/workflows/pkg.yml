@@ -63,7 +63,9 @@ jobs:
       - name: Build package
         env:
           PKGARCH: ${{ matrix.pkgarch }}
-        run: sh contrib/macos/create-pkg.sh
+        run: |
+          chmod +x build contrib/macos/create-pkg.sh contrib/semver/*.sh
+          sh contrib/macos/create-pkg.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
