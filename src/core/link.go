@@ -624,8 +624,9 @@ func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, s
 	if err != nil {
 		return fmt.Errorf("failed to generate handshake: %w", err)
 	}
-	// Reduced from 6s to 3s for faster failure detection and retry
-	if err := conn.SetDeadline(time.Now().Add(time.Second * 3)); err != nil {
+	// Set to 5s for compatibility with older versions while still being faster than original 6s
+	// Older versions may need more time for handshake, but 5s is sufficient for most cases
+	if err := conn.SetDeadline(time.Now().Add(time.Second * 5)); err != nil {
 		return fmt.Errorf("failed to set handshake deadline: %w", err)
 	}
 	n, err := conn.Write(metaBytes)

@@ -20,14 +20,15 @@ This document outlines code-level optimizations to reduce network latency in Uqd
 **Problem:**
 - High timeouts cause unnecessary delays when connections fail
 - Slow failure detection delays retry attempts
+- But too short timeout breaks compatibility with older versions
 
 **Optimization:**
-- Reduce handshake timeout from 6s to 3s
+- Reduce handshake timeout from 6s to 5s (balance between performance and compatibility)
 - Reduce TCP dial timeout from 5s to 3s
 - Reduce WebSocket timeouts from 10s to 5s
 - Reduce UNIX socket timeout from 5s to 2s
 
-**Expected Improvement:** 2-5ms reduction in connection establishment time
+**Expected Improvement:** 1-2ms reduction in connection establishment time (while maintaining backward compatibility)
 
 ---
 

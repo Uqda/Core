@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Performance optimization documentation (`docs/PERFORMANCE_OPTIMIZATIONS.md`)
 
 ### Changed
-- Reduced handshake timeout from 6s to 3s for faster failure detection
+- Reduced handshake timeout from 6s to 5s for better compatibility with older versions while maintaining performance
 - Reduced TCP dial timeout from 5s to 3s for quicker connection attempts
 - Reduced WebSocket read/write timeout from 10s to 5s
 - Reduced UNIX socket timeout from 5s to 2s
