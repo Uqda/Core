@@ -1,0 +1,73 @@
+#!/bin/sh
+#
+# Put the uqda and uqdactl binaries into /usr/local/bin
+# Then copy this script into /etc/rc.d/uqda
+# Finally, run:
+#   1. chmod +x /etc/rc.d/uqda /usr/local/bin/{uqda,uqdactl}
+#   2. echo "uqda_enable=yes" >> /etc/rc.conf
+#   3. service uqda start
+#
+# PROVIDE: uqda
+# REQUIRE: networking
+# KEYWORD:
+
+. /etc/rc.subr
+
+name="uqda"
+rcvar="uqda_enable"
+
+start_cmd="${name}_start"
+stop_cmd="${name}_stop"
+
+pidfile="/var/run/uqda/${name}.pid"
+command="/usr/sbin/daemon"
+command_args="-P ${pidfile} -r -f ${uqda_command}"
+
+uqda_start()
+{
+	test ! -x /usr/local/bin/uqda && (
+		logger -s -t uqda "Warning: /usr/local/bin/uqda is missing or not executable"
+		logger -s -t uqda "Copy the uqda binary into /usr/local/bin and then chmod +x /usr/local/bin/uqda"
+		return 1
+	)
+
+	test ! -f /etc/uqda/uqda.conf && (
+		logger -s -t uqda "Generating new configuration file into /etc/uqda/uqda.conf"
+		mkdir -p /etc/uqda
+		/usr/local/bin/uqda -genconf > /etc/uqda/uqda.conf
+	)
+
+	tap_path="$(cat /etc/uqda/uqda.conf | egrep -o '/dev/tap[0-9]{1,2}$')"
+	tap_name="$(echo -n ${tap_path} | tr -d '/dev/')"
+
+	/sbin/ifconfig ${tap_name} >/dev/null 2>&1 || (
+		logger -s -t uqda "Creating ${tap_name} adapter"
+		/sbin/ifconfig ${tap_name} create || logger -s -t uqda "Failed to create ${tap_name} adapter"
+	)
+
+	test ! -d /var/run/uqda && mkdir -p /var/run/uqda
+
+	logger -s -t uqda "Starting uqda"
+	${command} ${command_args} /usr/local/bin/uqda -useconffile /etc/uqda/uqda.conf \
+		1>/var/log/uqda.stdout.log \
+		2>/var/log/uqda.stderr.log &
+}
+
+uqda_stop()
+{
+	logger -s -t uqda "Stopping uqda"
+	test -f /var/run/uqda/${name}.pid && kill -TERM $(cat /var/run/uqda/${name}.pid)
+
+	tap_path="$(cat /etc/uqda/uqda.conf | grep /dev/tap | egrep -o '/dev/.*$')"
+        tap_name="$(echo -n ${tap_path} | tr -d '/dev/')"
+
+	/sbin/ifconfig ${tap_name} >/dev/null 2>&1 && (
+		logger -s -t uqda "Destroying ${tap_name} adapter"
+		/sbin/ifconfig ${tap_name} destroy || logger -s -t uqda "Failed to destroy ${tap_name} adapter"
+	)
+}
+
+load_rc_config $name
+: ${uqda_enable:=no}
+
+run_rc_command "$1"

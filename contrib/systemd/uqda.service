@@ -1,0 +1,14 @@
+﻿[Unit]
+Description=Uqda Network Router
+Documentation=https://github.com/Uqda/Core
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/uqda -useconffile /etc/uqda/uqda.conf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
