@@ -81,17 +81,23 @@ jobs:
         if: matrix.platform == 'debian'
         env:
           PKGARCH: ${{ matrix.arch }}
-        run: sh contrib/deb/generate.sh
+        run: |
+          chmod +x build contrib/deb/generate.sh contrib/semver/*.sh
+          sh contrib/deb/generate.sh
       
       - name: Build Windows MSI
         if: matrix.platform == 'windows'
-        run: sh contrib/msi/build-msi.sh ${{ matrix.arch }}
+        run: |
+          chmod +x build contrib/msi/build-msi.sh contrib/semver/*.sh
+          sh contrib/msi/build-msi.sh ${{ matrix.arch }}
       
       - name: Build macOS PKG
         if: matrix.platform == 'macos'
         env:
           PKGARCH: ${{ matrix.arch }}
-        run: sh contrib/macos/create-pkg.sh
+        run: |
+          chmod +x build contrib/macos/create-pkg.sh contrib/semver/*.sh
+          sh contrib/macos/create-pkg.sh
       
       - name: Upload package
         uses: actions/upload-artifact@v4

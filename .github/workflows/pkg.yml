@@ -30,7 +30,9 @@ jobs:
       - name: Build package
         env:
           PKGARCH: ${{ matrix.pkgarch }}
-        run: sh contrib/deb/generate.sh
+        run: |
+          chmod +x build contrib/deb/generate.sh contrib/semver/*.sh
+          sh contrib/deb/generate.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -93,7 +95,9 @@ jobs:
         uses: actions/setup-dotnet@v4
 
       - name: Build package
-        run: sh contrib/msi/build-msi.sh ${{ matrix.pkgarch }}
+        run: |
+          chmod +x build contrib/msi/build-msi.sh contrib/semver/*.sh
+          sh contrib/msi/build-msi.sh ${{ matrix.pkgarch }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
