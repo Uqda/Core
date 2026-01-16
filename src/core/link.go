@@ -263,11 +263,26 @@ func (l *links) add(u *url.URL, sintf string, linkType linkType) error {
 		// peer removal most likely), in which case it returns false.
 		// The caller should check the return value to decide whether
 		// or not to give up trying.
+		// Optimized: Use adaptive backoff starting with shorter delays
+		// for faster reconnection after temporary failures
 		backoffNow := func() bool {
+			var duration time.Duration
 			if backoff < 32 {
 				backoff++
 			}
-			duration := time.Second << backoff
+			// Adaptive backoff: 100ms, 250ms, 500ms, 1s, 2s, 4s, 8s...
+			// This allows faster retries for temporary failures
+			switch {
+			case backoff == 1:
+				duration = 100 * time.Millisecond
+			case backoff == 2:
+				duration = 250 * time.Millisecond
+			case backoff == 3:
+				duration = 500 * time.Millisecond
+			default:
+				// After 3 attempts, use exponential backoff
+				duration = time.Second << (backoff - 3)
+			}
 			if duration > options.maxBackoff {
 				duration = options.maxBackoff
 			}
@@ -609,7 +624,8 @@ func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, s
 	if err != nil {
 		return fmt.Errorf("failed to generate handshake: %w", err)
 	}
-	if err := conn.SetDeadline(time.Now().Add(time.Second * 6)); err != nil {
+	// Reduced from 6s to 3s for faster failure detection and retry
+	if err := conn.SetDeadline(time.Now().Add(time.Second * 3)); err != nil {
 		return fmt.Errorf("failed to set handshake deadline: %w", err)
 	}
 	n, err := conn.Write(metaBytes)
@@ -699,7 +715,8 @@ func (l *links) findSuitableIP(url *url.URL, fn func(hostname string, ip net.IP,
 	if err != nil {
 		return nil, err
 	}
-	resp, err := net.LookupIP(host)
+	// Use DNS cache to reduce lookup latency
+	resp, err := lookupIPWithCache(host)
 	if err != nil {
 		return nil, err
 	}

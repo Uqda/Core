@@ -132,9 +132,10 @@ func (l *linkWS) listen(ctx context.Context, url *url.URL, _ string) (net.Listen
 			ch:  ch,
 			ctx: ctx,
 		},
-		BaseContext:  func(_ net.Listener) context.Context { return ctx },
-		ReadTimeout:  time.Second * 10,
-		WriteTimeout: time.Second * 10,
+		BaseContext: func(_ net.Listener) context.Context { return ctx },
+		// Reduced from 10s to 5s for faster timeout detection
+		ReadTimeout:  time.Second * 5,
+		WriteTimeout: time.Second * 5,
 	}
 
 	lwl := &linkWSListener{

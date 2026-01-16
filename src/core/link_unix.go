@@ -19,8 +19,9 @@ type linkUNIX struct {
 func (l *links) newLinkUNIX() *linkUNIX {
 	lt := &linkUNIX{
 		links: l,
+		// Reduced from 5s to 2s for faster connection attempts
 		dialer: &net.Dialer{
-			Timeout:   time.Second * 5,
+			Timeout:   time.Second * 2,
 			KeepAlive: -1,
 		},
 		listener: &net.ListenConfig{

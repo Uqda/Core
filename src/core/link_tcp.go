@@ -60,8 +60,9 @@ func (l *linkTCP) dialerFor(dst *net.TCPAddr, sintf string) (*net.Dialer, error)
 			return nil, fmt.Errorf("link-local address requires a zone")
 		}
 	}
+	// Reduced from 5s to 3s for faster connection attempts
 	dialer := &net.Dialer{
-		Timeout:   time.Second * 5,
+		Timeout:   time.Second * 3,
 		KeepAlive: -1,
 		Control:   l.tcpContext,
 	}
