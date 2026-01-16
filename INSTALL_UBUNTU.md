@@ -64,7 +64,7 @@ sudo uqdactl getPeers
 
 ---
 
-## Method 2: Build from Source
+## Method 2: Build from Source (Recommended if pre-built package doesn't work)
 
 ### Step 1: Install Dependencies
 
@@ -77,6 +77,7 @@ sudo apt-get install -y golang-go git build-essential
 
 # Verify Go installation
 go version
+# Should show: go version go1.22.x or later
 ```
 
 ### Step 2: Clone and Build
@@ -93,7 +94,21 @@ cd Core
 ls -lh uqda uqdactl
 ```
 
-### Step 3: Install Binaries
+### Step 3: Build Debian Package (Alternative: Direct Installation)
+
+**Option A: Build Debian Package (Recommended)**
+
+```bash
+# Build Debian package
+PKGARCH=amd64 sh contrib/deb/generate.sh
+
+# This will create: Uqda-v0.1.0-0.1.0-amd64.deb
+# Install it:
+sudo dpkg -i Uqda-v0.1.0-0.1.0-amd64.deb
+sudo apt-get install -f
+```
+
+**Option B: Direct Binary Installation**
 
 ```bash
 # Copy binaries to system path
@@ -409,14 +424,35 @@ sudo rm -rf /etc/uqda
 
 ## Quick Start Summary
 
-For a quick installation:
+**If pre-built package works:**
 
 ```bash
 # Download and install
 wget https://github.com/Uqda/Core/releases/download/v0.1.0/Uqda-v0.1.0-0.1.0-amd64.deb
 sudo dpkg -i Uqda-v0.1.0-0.1.0-amd64.deb
 sudo apt-get install -f
+```
 
+**If pre-built package doesn't work (build from source):**
+
+```bash
+# Install dependencies
+sudo apt-get update
+sudo apt-get install -y golang-go git build-essential
+
+# Clone and build
+git clone https://github.com/Uqda/Core.git
+cd Core
+PKGARCH=amd64 sh contrib/deb/generate.sh
+
+# Install the built package
+sudo dpkg -i Uqda-v0.1.0-0.1.0-amd64.deb
+sudo apt-get install -f
+```
+
+**After installation:**
+
+```bash
 # Check status
 sudo systemctl status uqda
 
