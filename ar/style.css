@@ -227,13 +227,19 @@ a:hover {
     align-items: center;
     flex-wrap: wrap;
     gap: 15px;
-    direction: ltr;
+    direction: rtl;
 }
 
 .navbar-links {
     display: flex;
     gap: 15px;
     flex-wrap: wrap;
+    direction: rtl;
+}
+
+.navbar-lang {
+    margin-right: auto;
+    margin-left: 0;
     direction: ltr;
 }
 
