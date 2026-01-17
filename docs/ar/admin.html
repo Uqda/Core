@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="وثائق واجهة الإدارة لشبكة عُقدة">
+    <title>واجهة الإدارة - شبكة عُقدة</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">شبكة عُقدة</a></h1>
+            <div class="subtitle">واجهة الإدارة</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// مقبس الإدارة</div>
+            <p>يوفر مقبس الإدارة واجهة للاستعلام عن عُقدة وتكوينها أثناء التشغيل. افتراضياً، تستمع عُقدة لاتصالات الإدارة على <code>localhost:9001</code>.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// أداة التحكم</div>
+            <p>توفر أداة <code>uqdactl</code> واجهة سطر أوامر سهلة الاستخدام لمقبس إدارة عُقدة. يمكنها الاتصال بكل من مثيلات عُقدة المحلية والبعيدة.</p>
+            <p>الأمثلة تشمل:</p>
+            <div class="code-block">
+                <div class="code-line">uqdactl getSelf</div>
+                <div class="code-line">uqdactl getPeers</div>
+                <div class="code-line">uqdactl addPeer tcp://peer.example.com:12345</div>
+                <div class="code-line">uqdactl removePeer tcp://peer.example.com:12345</div>
+            </div>
+            <p>للحصول على قائمة بالأوامر المدعومة:</p>
+            <div class="code-block">
+                <div class="code-line">uqdactl list</div>
+            </div>
+            <p>لتنفيذ إجراء على عقدة عُقدة بعيدة، حدد معامل <code>-endpoint</code>:</p>
+            <div class="code-block">
+                <div class="code-line">uqdactl -endpoint=tcp://10.0.0.1:9001 getPeers</div>
+                <div class="code-line">uqdactl -endpoint=unix:///var/run/uqda.sock getSelf</div>
+            </div>
+            <p>للحصول على نص استجابة JSON بدلاً من إخراج "ودود"، حدد معامل <code>-json</code>:</p>
+            <div class="code-block">
+                <div class="code-line">uqdactl -json getPeers</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// بروتوكول مقبس الإدارة</div>
+            <p>يستخدم مقبس إدارة عُقدة JSON لتنسيقات الطلب والاستجابة.</p>
+            <p>يجب أن يكون الطلب:</p>
+            <ul style="margin-right: 30px; margin-bottom: 20px;">
+                <li>مقطع JSON كامل</li>
+                <li>متبوعاً بحرف سطر جديد <code>\n</code></li>
+            </ul>
+            <p>بمجرد استلام طلب صالح، يتم إرجاع مقطع الاستجابة.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// تنسيق الطلب</div>
+            <p>هيكل الطلب النموذجي كما يلي:</p>
+            <div class="code-block">
+                <div class="code-line">{</div>
+                <div class="code-line">  "request": "XXX",</div>
+                <div class="code-line">  "foo": "bar",</div>
+                <div class="code-line">  "baz": "qux"</div>
+                <div class="code-line">}</div>
+            </div>
+            <p>الطلب:</p>
+            <ul style="margin-right: 30px; margin-bottom: 20px;">
+                <li><strong>يجب</strong> أن يحتوي على حقل <code>"request"</code> (<code>string</code>) - قيمة تحتوي على فعل الطلب</li>
+                <li><strong>يمكن</strong> أن يحتوي على حقل <code>"keepalive"</code> (<code>bool</code>) - قيمة <code>true</code> أو <code>false</code> تشير إلى ما إذا كان يجب الحفاظ على الاتصال لطلبات إضافية</li>
+                <li><strong>يجب</strong> أن يحتوي على أي حقول مطلوبة أخرى للطلب</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// تنسيق الاستجابة</div>
+            <p>الاستجابة النموذجية منظمة على النحو التالي:</p>
+            <div class="code-block">
+                <div class="code-line">{</div>
+                <div class="code-line">  "request": { ... },</div>
+                <div class="code-line">  "response": { ... },</div>
+                <div class="code-line">  "status": "success"</div>
+                <div class="code-line">}</div>
+            </div>
+            <p>الاستجابة:</p>
+            <ul style="margin-right: 30px; margin-bottom: 20px;">
+                <li><strong>دائماً</strong> تحتوي على حقل <code>"request"</code>، الذي يحتوي على نص الطلب الأصلي</li>
+                <li><strong>دائماً</strong> تحتوي على حقل <code>"status"</code>، الذي يكون إما <code>"success"</code> أو <code>"error"</code></li>
+                <li><strong>اختيارياً</strong> تحتوي على قسم <code>"response"</code>، الذي يحتوي على بيانات الاستجابة من الطلب</li>
+                <li><strong>اختيارياً</strong> تحتوي على حقل <code>"error"</code>، الذي يحتوي على نص الخطأ</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// أوامر شائعة</div>
+            <div class="grid-2">
+                <div class="box">
+                    <div class="box-title">getSelf</div>
+                    <div class="box-description">إرجاع معلومات حول عقدة عُقدة الحالية، بما في ذلك عنوان IPv6 والمفتاح العام والشبكة الفرعية.</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">getPeers</div>
+                    <div class="box-description">إرجاع معلومات حول جلسات النظير النشطة. السجل الأول يشير عادة إلى العقدة الحالية.</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">addPeer</div>
+                    <div class="box-description">إضافة اتصال نظير جديد. يتطلب معامل URI (على سبيل المثال، tcp://peer.example.com:12345).</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">removePeer</div>
+                    <div class="box-description">إزالة اتصال نظير. يتطلب معامل URI يطابق النظير المراد إزالته.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// الخطوات التالية</div>
+            <div class="grid-2">
+                <a href="configuration.html" class="box">
+                    <div class="box-title">الإعداد</div>
+                    <div class="box-description">تعلم حول ملفات الإعداد</div>
+                </a>
+                <a href="implementation.html" class="box">
+                    <div class="box-title">التنفيذ</div>
+                    <div class="box-description">تعلم كيف تعمل عُقدة</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

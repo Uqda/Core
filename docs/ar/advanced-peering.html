@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="إعدادات الاتصال المتقدمة لشبكة عُقدة">
+    <title>إعدادات متقدمة - شبكة عُقدة</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">شبكة عُقدة</a></h1>
+            <div class="subtitle">إعدادات متقدمة</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// اتصالات النظير متعددة الواجهات</div>
+            <p>على جهاز يحتوي على واجهات شبكة متعددة، حيث يمكن استخدام أكثر من واجهة واحدة للوصول إلى نظير معين (أو الإنترنت)، يمكن استخدام خيار <code>InterfacePeers</code> بدلاً من خيار <code>Peers</code> لإنشاء اتصالات عبر واجهات محددة.</p>
+            <p>من الممكن الاتصال <strong>بنفس النظير عدة مرات</strong> باستخدام واجهات مختلفة، مما يخلق تكوين اتصال عالي التوفر.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// المستمعون ذات الأولوية</div>
+            <p>كما في مثال متعدد الواجهات أعلاه، قد يحتوي الجهاز على واجهتين شبكة أو أكثر. مثال قد يكون واجهة Wi-Fi وواجهة Ethernet سلكية. إذا كنت تريد قبول اتصالات النظير الواردة على كليهما، ولكن تفضيل إرسال حركة المرور عبر رابط واحد أو آخر كلما أمكن، يمكنك استخدام حقل <code>priority</code> في URI الاتصال.</p>
+            <p>الأرقام الأقل أفضل. في هذا المثال، سيتم استخدام اتصالات إلى منفذ الاتصال ذي الأولوية 1 كلما أمكن، وبالتالي إذا اتصلت عقدة أخرى بكلتا الواجهتين، سيتم تفضيل الاتصال السلكي على اللاسلكي:</p>
+            <div class="code-block">
+                <div class="code-line">tls://a.b.c.d:e?priority=1</div>
+                <div class="code-line">tls://f.g.h.i:e?priority=2</div>
+            </div>
+            <p>لاحظ أن حقل <code>priority</code> يؤثر فقط على حركة المرور بين اتصالين لنفس العقدة. لا يؤثر على قرارات التوجيه عبر عقد مختلفة.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// واجهات multicast ذات الأولوية</div>
+            <p>إذا كان لديك واجهات شبكة متعددة كما أعلاه ولكنك تستخدم أقران multicast، ولكنك تريد تفضيل واجهة شبكة واحدة على الأخرى، يمكنك تحديد <code>Priority</code> لواجهة multicast معينة.</p>
+            <p>الأرقام الأقل أفضل. في هذا المثال، سيتم تفضيل الاتصالات التي يتم اكتشافها وإنشاؤها تلقائياً عبر <code>eth0</code> على الاتصالات لنفس العقدة التي تم إجراؤها عبر <code>eth1</code>.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// اتصالات multicast مع جدار الحماية</div>
+            <p>إذا كان جهازك يحتوي على جدار حماية مفعّل، قد لا يعمل اكتشاف multicast للأقران عبر <code>MulticastInterfaces</code> افتراضياً. لجعل هذا يعمل، قم بتنفيذ الخطوات الثلاث التالية:</p>
+            <ol style="margin-right: 30px; margin-bottom: 20px;">
+                <li>تحت <code>MulticastInterfaces</code>، قم بتعيين <code>Port</code> إلى رقم منفذ TCP ثابت</li>
+                <li>اسمح باتصال TCP الوارد إلى رقم المنفذ المختار هذا عبر جدار الحماية الخاص بك</li>
+                <li>اسمح باتصال UDP الوارد على المنفذ 9001 (اختيارياً مع عنوان وجهة <code>ff02::114</code>) عبر جدار الحماية الخاص بك</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// المزيد من المعلومات</div>
+            <p>لإعداد الاتصال الأساسي، راجع <a href="configuration.html">دليل الإعداد</a>.</p>
+        </div>
+    </div>
+</body>
+</html>
+

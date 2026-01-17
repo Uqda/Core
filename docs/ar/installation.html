@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="دليل التثبيت لشبكة عُقدة">
+    <title>التثبيت - شبكة عُقدة</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">شبكة عُقدة</a></h1>
+            <div class="subtitle">التثبيت</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// التحميل</div>
+            <p>يمكن تحميل عُقدة للمنصات الرئيسية من صفحة <a href="https://github.com/Uqda/Core/releases">GitHub Releases</a> الخاصة بنا.</p>
+            <p><strong>🚨 يرجى تذكر التحقق من تحديثات عُقدة بانتظام.</strong> لا تحتوي عُقدة على طريقة مدمجة لإشعارك عند توفر إصدارات جديدة. قد ترغب في الاشتراك في <a href="https://github.com/Uqda/Core/releases.atom">GitHub Releases Atom feed</a> أو التفكير في <a href="https://github.com/Uqda/Core">مشاهدة مستودع GitHub</a>.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// لينكس</div>
+            <p>عُقدة مدعومة جيداً على Linux. تتوفر حزم التوزيع:</p>
+            
+            <div class="box">
+                <div class="box-title">ديبيان / أوبونتو</div>
+                <div class="code-block">
+                    <div class="code-line">wget https://github.com/Uqda/Core/releases/latest/download/uqda-*.deb</div>
+                    <div class="code-line">sudo dpkg -i uqda-*.deb</div>
+                </div>
+            </div>
+
+            <div class="box" style="margin-top: 20px;">
+                <div class="box-title">من المصدر</div>
+                <div class="code-block">
+                    <div class="code-line">git clone https://github.com/Uqda/Core.git</div>
+                    <div class="code-line">cd Core</div>
+                    <div class="code-line">./build</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// ويندوز</div>
+            <p>عُقدة تعمل على Windows. قم بتنزيل مثبت MSI من <a href="https://github.com/Uqda/Core/releases">GitHub Releases</a> وقم بتشغيله.</p>
+            <p>أو قم بالبناء من المصدر باستخدام Go 1.22+.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// ماك أو إس</div>
+            <p>عُقدة مدعومة جيداً على macOS. قم بتنزيل مثبت .pkg من <a href="https://github.com/Uqda/Core/releases">GitHub Releases</a> أو قم بالبناء من المصدر.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// البدء السريع</div>
+            <p>بعد التثبيت، يمكنك بدء عُقدة في وضع الإعداد التلقائي:</p>
+            <div class="code-block">
+                <div class="code-line">sudo uqda -autoconf</div>
+            </div>
+            <p>أو قم بإنشاء ملف إعداد:</p>
+            <div class="code-block">
+                <div class="code-line">uqda -genconf > uqda.conf</div>
+                <div class="code-line">sudo uqda -useconffile uqda.conf</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// الخطوات التالية</div>
+            <div class="grid-2">
+                <a href="configuration.html" class="box">
+                    <div class="box-title">الإعداد</div>
+                    <div class="box-description">تعلم كيفية إعداد عُقدة</div>
+                </a>
+                <a href="about.html" class="box">
+                    <div class="box-title">حول المشروع</div>
+                    <div class="box-description">تعرف على المزيد حول عُقدة</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
