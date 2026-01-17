@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="مرجع الإعداد لشبكة عُقدة">
+    <title>مرجع الإعداد - شبكة عُقدة</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">شبكة عُقدة</a></h1>
+            <div class="subtitle">مرجع الإعداد</div>
+        </div>
+
+        <div class="navbar">
+            <div class="navbar-links">
+                <a href="index.html" class="navbar-link">الرئيسية</a>
+                <a href="about.html" class="navbar-link">حول</a>
+                <a href="installation.html" class="navbar-link">التثبيت</a>
+                <a href="configuration.html" class="navbar-link">الإعداد</a>
+                <a href="admin.html" class="navbar-link">الإدارة</a>
+                <a href="faq.html" class="navbar-link">الأسئلة</a>
+                <a href="uqda_network_docs.html" class="navbar-link">الوثائق</a>
+            </div>
+            <a href="../configurationref.html" class="navbar-lang">ENGLISH</a>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// الأقران</div>
+            <p>قائمة باتصالات النظير الصادرة للإنشاء. يتم تحديد الأقران بتنسيق URL. أنواع الأقران التالية مدعومة:</p>
+            <div class="code-block">
+                <div class="code-line">tcp://1.1.1.1:1234 (TCP)</div>
+                <div class="code-line">tls://1.1.1.1:1234 (TCP+TLS)</div>
+                <div class="code-line">quic://1.1.1.1:1234 (QUIC+TLS)</div>
+                <div class="code-line">ws://1.1.1.1:1234 (WebSockets)</div>
+                <div class="code-line">wss://1.1.1.1:1234 (WebSockets+TLS)</div>
+                <div class="code-line">socks://2.2.2.2:2345/1.1.1.1:1234 (TCP عبر SOCKS)</div>
+                <div class="code-line">unix:///path/to/sock.sock (UNIX)</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// الاستماع</div>
+            <p>قائمة بالمستمعين لفتحها لقبول الاتصالات الواردة. بدلاً من توفير عنوان بعيد، يجب عليك بدلاً من ذلك توفير عنوان ربط. سيكون هذا إما <code>0.0.0.0</code> لـ IPv4، <code>::</code> لـ IPv4+IPv6 أو عنوان IP لواجهة شبكة على جهازك.</p>
+            <div class="code-block">
+                <div class="code-line">tcp://[::]:1234 (TCP)</div>
+                <div class="code-line">tls://[::]:1234 (TCP+TLS)</div>
+                <div class="code-line">quic://[::]:1234 (QUIC+TLS)</div>
+                <div class="code-line">ws://[::]:444 (WebSockets)</div>
+                <div class="code-line">wss://[::]:444 (WebSockets+TLS)</div>
+                <div class="code-line">unix:///path/to/sock.sock (UNIX)</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// واجهات MULTICAST</div>
+            <p>يتحكم في الواجهات التي يجب تمكين أو تعطيل اكتشاف النظير multicast عليها. الافتراضي يختلف حسب المنصة.</p>
+            <p>كل كتلة واجهة multicast لها الخيارات التالية:</p>
+            <ul style="margin-right: 30px; margin-bottom: 20px;">
+                <li><code>Regex</code> — تطابق أسماء واجهات محددة</li>
+                <li><code>Beacon</code> — يتحكم في ما إذا كانت هذه العقدة يجب أن تعلن عن وجودها</li>
+                <li><code>Listen</code> — يتحكم في ما إذا كانت هذه العقدة يجب أن تحاول الاتصال بعقد قريبة أخرى</li>
+                <li><code>Port</code> — يحدد رقم المنفذ لمستمع TLS</li>
+                <li><code>Password</code> — يحدد بشكل اختياري كلمة مرور للاكتشاف</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// المفاتيح العامة المسموح بها</div>
+            <p>قائمة بالمفاتيح العامة التي ستسمح عقدتك بقبول اتصالات النظير الواردة منها.</p>
+            <p>إذا تم تحديد المفاتيح العامة، يتم تمكين القائمة البيضاء وستتمكن فقط العقد التي تحتوي على تلك المفاتيح العامة من الاتصال. إذا لم يتم تحديد مفاتيح عامة في هذا القسم، فسيتم السماح باتصالات النظير وفقاً لإعداد <code>Listen</code> و/أو <code>MulticastInterfaces</code>.</p>
+            <p><strong>ملاحظة:</strong> هذا ليس جدار حماية ولا يتحكم في من يمكنه إرسال حركة المرور إليك عبر شبكة عُقدة أو الوصول إلى المنافذ والخدمات المفتوحة على جهازك. لذلك تحتاج إلى جدار حماية IPv6.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// IFNAME</div>
+            <p>يحدد واجهة TUN التي يجب استخدامها. الافتراضي مضبوط على <code>auto</code> والذي سيحاول إعداد TUN تلقائياً. إذا تم تعيينه على <code>none</code>، سيتم تعطيل TUN وستعمل العقدة في وضع الموجه فقط بدون واجهة.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// المفتاح الخاص</div>
+            <p>المفتاح الخاص لهذه العقدة، محدد كسلسلة سداسية عشرية. إذا لم يتم تحديده، سيتم إنشاء مفتاح خاص عشوائي عند بدء التشغيل.</p>
+            <p>بدلاً من ذلك، يمكنك استخدام <code>PrivateKeyPath</code> لتحديد المسار إلى ملف يحتوي على المفتاح الخاص.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// المزيد من المعلومات</div>
+            <p>للحصول على أمثلة إعداد كاملة وخيارات متقدمة، راجع <a href="configuration.html">دليل الإعداد</a>.</p>
+        </div>
+    </div>
+</body>
+</html>
+

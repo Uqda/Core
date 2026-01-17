@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="دليل الإعداد لشبكة عُقدة">
+    <title>الإعداد - شبكة عُقدة</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">شبكة عُقدة</a></h1>
+            <div class="subtitle">الإعداد</div>
+        </div>
+
+        <div class="navbar">
+            <div class="navbar-links">
+                <a href="index.html" class="navbar-link">الرئيسية</a>
+                <a href="about.html" class="navbar-link">حول</a>
+                <a href="installation.html" class="navbar-link">التثبيت</a>
+                <a href="configuration.html" class="navbar-link">الإعداد</a>
+                <a href="admin.html" class="navbar-link">الإدارة</a>
+                <a href="faq.html" class="navbar-link">الأسئلة</a>
+                <a href="uqda_network_docs.html" class="navbar-link">الوثائق</a>
+            </div>
+            <a href="../configuration.html" class="navbar-lang">ENGLISH</a>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// أوضاع الإعداد</div>
+            <p>يمكن لعُقدة أن تعمل في أحد وضعين: مع ملف إعداد، أو في وضع الإعداد التلقائي.</p>
+            <p>ملف الإعداد الثابت يبسط معظم الإعدادات لأنه يسمح لك بالاحتفاظ بنفس زوج المفاتيح (وبالتالي عنوان IP)، والحفاظ على قائمة الأقران وما إلى ذلك. بالنسبة لمعظم المستخدمين، سيكون هذا هو الإعداد الموصى به.</p>
+            <p>ومع ذلك، يسمح لك وضع الإعداد التلقائي ببدء عُقدة بسرعة باستخدام إعدادات افتراضية معقولة، مع <code>uqda -autoconf</code>. في هذا الوضع، ستحاول عُقدة تلقائياً الاتصال بعقد أخرى على نفس الشبكة الفرعية ولكن <strong>لن تحاول الاتصال بأقران عامة افتراضياً</strong>. كما أنها تولد مجموعة عشوائية من المفاتيح في كل مرة يتم تشغيلها، وبالتالي عنوان IP عشوائي في كل مرة.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// إنشاء ملف إعداد</div>
+            <p>يمكنك إنشاء ملف إعداد بالطرق التالية:</p>
+            <div class="code-block">
+                <div class="code-line">uqda -genconf > uqda.conf</div>
+            </div>
+            <p>يقع ملف الإعداد عادة في <code>/etc/uqda/uqda.conf</code> أو <code>/etc/uqda.conf</code> حسب منصتك.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// استخدام ملف إعداد</div>
+            <p>يمكن لعُقدة قبول ملف إعداد إما من خلال <code>stdin</code> أو بإعطاء مسار في نظام الملفات لملف إعداد:</p>
+            <div class="code-block">
+                <div class="code-line">uqda -useconf < uqda.conf</div>
+                <div class="code-line">uqda -useconffile /etc/uqda/uqda.conf</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// الاتصال يدوياً بالأقران</div>
+            <p>يمكن إعداد عُقدة للاتصال بأقران أخرى عن طريق إضافة إدخالات في قسم <code>Peers</code> للإعداد. عند بدء التشغيل، ستحاول عُقدة فتح اتصال بهؤلاء الأقران.</p>
+            <p>سيبدو URI الاتصال مشابهاً لأحد التالي:</p>
+            <div class="code-block">
+                <div class="code-line">tcp://hostname:port</div>
+                <div class="code-line">tls://hostname:port</div>
+                <div class="code-line">quic://hostname:port</div>
+                <div class="code-line">ws://hostname:port</div>
+                <div class="code-line">wss://hostname:port</div>
+            </div>
+            <p>افتراضياً، يتم تمكين الاتصال التلقائي المحلي فقط. هذا يربط الأجهزة المتصلة مباشرة ببعضها البعض على الطبقة 2، بما في ذلك الأجهزة على نفس LAN.</p>
+            <p>إذا لم تتمكن من العثور على عقد في المنطقة المجاورة، يمكنك إضافة أقران عامة إلى إعدادك. راجع <a href="configurationref.html">مرجع الإعداد</a> لمزيد من التفاصيل.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// مرجع الإعداد</div>
+            <p>معلومات حول الخيارات المختلفة في ملف الإعداد <a href="configurationref.html">يمكن العثور عليها هنا</a>.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// الخطوات التالية</div>
+            <div class="grid-2">
+                <a href="configurationref.html" class="box">
+                    <div class="box-title">مرجع الإعداد</div>
+                    <div class="box-description">خيارات الإعداد الكاملة</div>
+                </a>
+                <a href="admin.html" class="box">
+                    <div class="box-title">واجهة الإدارة</div>
+                    <div class="box-description">الإعداد أثناء التشغيل عبر مقبس الإدارة</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
