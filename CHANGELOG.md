@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-01-17
+
+### Added
+- Complete technical documentation:
+  - Technical Whitepaper (`docs/WHITEPAPER.md`) - Comprehensive technical documentation
+  - Executive Summary (`docs/EXECUTIVE_SUMMARY.md`) - One-page overview
+  - FAQ (`docs/FAQ.md`) - Frequently asked questions
+- Complete Arabic documentation (`docs/ar/`):
+  - Arabic README, Whitepaper, Executive Summary, and FAQ
+- Security Policy (`SECURITY.md`) - Security reporting and best practices
+- Contributing Guidelines (`CONTRIBUTING.md`) - Contribution guidelines
+- Creative pitch document (`uqda_creative_pitch.html`) - HTML presentation
+
+### Changed
+- Updated README.md with improved documentation links
+- Enhanced ATTRIBUTION.md with detailed credits
+
+### Removed
+- Removed outdated `INSTALL_UBUNTU.md`
+- Removed `docs/PERFORMANCE_OPTIMIZATIONS.md` (content integrated into Whitepaper)
+- Removed `docs/TECHNICAL_REPORT.md`
+
+## [0.1.4] - 2026-01-16
+
+### Fixed
+- Compatibility: Increased handshake timeout to 5s for backward compatibility with older Uqda versions
+
+## [0.1.3] - 2026-01-16
+
+### Changed
+- Further optimized handshake timeout (reverted to 5s for compatibility)
+
+## [0.1.2] - 2026-01-16
+
+### Changed
+- Reduced handshake timeout from 6s to 3s (later adjusted to 5s)
+
 ## [0.1.1] - 2026-01-16
 
 ### Added
