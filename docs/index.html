@@ -108,6 +108,153 @@
             margin: 25px 0;
         }
 
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        ul, ol {
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+
+        p {
+            margin-bottom: 20px;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        a {
+            color: #000;
+            text-decoration: underline;
+        }
+
+        a:hover {
+            text-decoration: none;
+        }
+
+        .code-block {
+            background: #000;
+            color: #00ff00;
+            padding: 30px;
+            margin: 25px 0;
+            border: 3px solid #000;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            border-radius: 2px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            overflow-x: auto;
+        }
+
+        .code-line {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+            line-height: 1.8;
+        }
+
+        .code-line::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .navbar {
+            background: #fff;
+            border: 3px solid #000;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .navbar-links {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .navbar-link {
+            padding: 8px 15px;
+            border: 2px solid #000;
+            text-decoration: none;
+            color: #000;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .navbar-link:hover {
+            background: #000;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .navbar-lang {
+            padding: 8px 15px;
+            border: 2px solid #000;
+            text-decoration: none;
+            color: #000;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .navbar-lang:hover {
+            background: #000;
+            color: #fff;
+        }
+
+        @media (max-width: 1024px) {
+            .grid-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .navbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .navbar-links {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .navbar-link, .navbar-lang {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
         .box {
             border: 3px solid #000;
             padding: 30px;
@@ -179,6 +326,10 @@
             .section-title {
                 font-size: 26px;
             }
+            
+            .grid-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 768px) {
@@ -213,7 +364,7 @@
                 padding-bottom: 12px;
             }
             
-            .grid-2 { 
+            .grid-2, .grid-3 { 
                 grid-template-columns: 1fr; 
                 gap: 20px;
             }
@@ -224,6 +375,21 @@
             
             .box-title {
                 font-size: 18px;
+            }
+            
+            .navbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .navbar-links {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .navbar-link, .navbar-lang {
+                width: 100%;
+                text-align: center;
             }
         }
 
