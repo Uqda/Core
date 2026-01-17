@@ -9,9 +9,9 @@
 
 **End-to-End Encrypted • Self-Healing • Zero Configuration**
 
-[Quick Start](#-quick-start) • [Documentation](#-documentation) • [Download](https://github.com/Uqda/Core/releases) • [Community](#-community)
+[Quick Start](#-quick-start) • [Documentation](https://uqda.github.io/) • [Download](https://github.com/Uqda/Core/releases) • [Community](#-community)
 
-**🇸🇾 [العربية](https://github.com/Uqda/Core/tree/main/docs/ar/README.md)** • **🇬🇧 English**
+**🇸🇾 [العربية](https://uqda.github.io/ar/) • [English](https://uqda.github.io/)** 🇬🇧
 
 </div>
 
