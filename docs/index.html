@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uqda Network Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 60px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        p {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        .links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 40px;
+        }
+        .link-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-decoration: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: block;
+        }
+        .link-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        .link-card h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .link-card p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.9);
+            margin: 0;
+        }
+        @media (max-width: 768px) {
+            .links {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 36px;
+            }
+            .container {
+                padding: 40px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Uqda Network</h1>
+        <p>End-to-End Encrypted Mesh Networking Documentation</p>
+        
+        <div class="links">
+            <a href="uqda_network_docs.html" class="link-card">
+                <h2>📄 English</h2>
+                <p>Complete technical documentation in English</p>
+            </a>
+            
+            <a href="ar/uqda_network_docs.html" class="link-card">
+                <h2>📄 العربية</h2>
+                <p>الوثائق التقنية الكاملة بالعربية</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
+
