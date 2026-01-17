@@ -11,19 +11,25 @@
 
 [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Download](https://github.com/Uqda/Core/releases) • [Community](#-community)
 
+**🇸🇾 [العربية](docs/ar/README.md)** • **🇬🇧 English**
+
 </div>
 
 ---
 
 ## 📌 What is Uqda?
 
-**Uqda Network** (from Arabic **عُقدة** meaning "node") is an end-to-end encrypted IPv6 mesh network that:
+**Uqda Network** (from Arabic **عُقدة** meaning "node") is a decentralized routing protocol for building resilient, self-organizing multi-hop mesh networks with end-to-end encryption.
 
-- 🔒 **Encrypts Everything** - All traffic is encrypted by default
-- 🌐 **Works Everywhere** - Runs over IPv4 or IPv6 internet
-- 🔄 **Self-Organizing** - No central servers or configuration needed
-- 🪶 **Lightweight** - Minimal CPU and memory usage
-- 🎯 **Location Independent** - Your address stays the same wherever you go
+### Key Features
+
+- 🔒 **End-to-End Encrypted** - All traffic encrypted by default (ChaCha20-Poly1305)
+- 🌐 **Protocol Compatible** - Works seamlessly with Yggdrasil v0.5 nodes
+- ⚡ **Performance Optimized** - 20-50ms latency improvement over baseline
+- 🔄 **Self-Healing Mesh** - Automatic path discovery and recovery
+- 🎯 **Location Independent** - Permanent IPv6 address derived from your identity
+- 🪶 **Zero Configuration** - Networks form automatically
+- 💰 **Free Forever** - No cost, no registration, no central authority
 
 ---
 
@@ -115,10 +121,12 @@ GOOS=darwin GOARCH=arm64 ./build     # macOS Apple Silicon
 
 ## 📚 Documentation
 
-- **Installation Guide** - Platform-specific installation instructions
-- **Configuration Guide** - How to configure Uqda for your network
-- **FAQ** - Frequently asked questions
-- **Changelog** - See [CHANGELOG.md](CHANGELOG.md)
+- **[Technical Whitepaper](docs/WHITEPAPER.md)** - Complete technical documentation
+- **[Executive Summary](docs/EXECUTIVE_SUMMARY.md)** - One-page overview
+- **[FAQ](docs/FAQ.md)** - Frequently asked questions
+- **[Security Policy](SECURITY.md)** - Security reporting and best practices
+- **[Changelog](CHANGELOG.md)** - Version history and changes
+- **[Attribution](ATTRIBUTION.md)** - Credits and licensing information
 
 For detailed documentation, visit the [Wiki](https://github.com/Uqda/Core/wiki).
 
