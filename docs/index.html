@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Uqda Network - End-to-end encrypted mesh networking protocol with permanent IPv6 addresses and zero configuration">
+    <meta name="keywords" content="Uqda, mesh network, IPv6, encryption, decentralized, peer-to-peer">
+    <title>Uqda Network - Documentation</title>
+    <link rel="canonical" href="https://uqda.github.io/">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            color: #000000;
+            line-height: 1.8;
+            padding: 20px;
+            min-width: 320px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .header {
+            border: 4px solid #000;
+            padding: 60px 40px;
+            margin-bottom: 40px;
+            text-align: center;
+            background: #fff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #000 0%, #666 50%, #000 100%);
+        }
+
+        h1 {
+            font-size: 56px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            letter-spacing: 3px;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        .section {
+            border: 3px solid #000;
+            margin-bottom: 40px;
+            padding: 40px;
+            background: #fff;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        }
+
+        .section-title {
+            font-size: 30px;
+            font-weight: bold;
+            margin-bottom: 35px;
+            border-bottom: 4px solid #000;
+            padding-bottom: 18px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 120px;
+            height: 4px;
+            background: #666;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 25px 0;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        ul, ol {
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+
+        p {
+            margin-bottom: 20px;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        a {
+            color: #000;
+            text-decoration: underline;
+        }
+
+        a:hover {
+            text-decoration: none;
+        }
+
+        .code-block {
+            background: #000;
+            color: #00ff00;
+            padding: 30px;
+            margin: 25px 0;
+            border: 3px solid #000;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            border-radius: 2px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            overflow-x: auto;
+        }
+
+        .code-line {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+            line-height: 1.8;
+        }
+
+        .code-line::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .navbar {
+            background: #fff;
+            border: 3px solid #000;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .navbar-links {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .navbar-link {
+            padding: 8px 15px;
+            border: 2px solid #000;
+            text-decoration: none;
+            color: #000;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .navbar-link:hover {
+            background: #000;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .navbar-lang {
+            padding: 8px 15px;
+            border: 2px solid #000;
+            text-decoration: none;
+            color: #000;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .navbar-lang:hover {
+            background: #000;
+            color: #fff;
+        }
+
+        @media (max-width: 1024px) {
+            .grid-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .navbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .navbar-links {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .navbar-link, .navbar-lang {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        .box {
+            border: 3px solid #000;
+            padding: 30px;
+            background: #fff;
+            transition: all 0.3s ease;
+            position: relative;
+            text-decoration: none;
+            color: #000;
+            display: block;
+        }
+
+        .box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #000, #666);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .box:hover::before {
+            transform: scaleX(1);
+        }
+
+        .box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .box-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .box-description {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                max-width: 100%;
+                padding: 0 15px;
+            }
+            
+            h1 {
+                font-size: 48px;
+                letter-spacing: 6px;
+            }
+            
+            .section {
+                padding: 35px 25px;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            h1 {
+                font-size: 42px;
+                letter-spacing: 5px;
+            }
+            
+            .section-title {
+                font-size: 26px;
+            }
+            
+            .grid-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 32px;
+                letter-spacing: 3px;
+            }
+            
+            .subtitle {
+                font-size: 16px;
+                letter-spacing: 2px;
+            }
+            
+            .header {
+                padding: 40px 20px;
+                margin-bottom: 30px;
+            }
+            
+            .section {
+                padding: 25px 20px;
+                margin-bottom: 30px;
+            }
+            
+            .section-title {
+                font-size: 22px;
+                letter-spacing: 2px;
+                margin-bottom: 25px;
+                padding-bottom: 12px;
+            }
+            
+            .grid-2, .grid-3 { 
+                grid-template-columns: 1fr; 
+                gap: 20px;
+            }
+            
+            .box {
+                padding: 25px 20px;
+            }
+            
+            .box-title {
+                font-size: 18px;
+            }
+            
+            .navbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .navbar-links {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .navbar-link, .navbar-lang {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 26px;
+                letter-spacing: 2px;
+            }
+            
+            .subtitle {
+                font-size: 14px;
+                letter-spacing: 1px;
+            }
+            
+            .header {
+                padding: 30px 15px;
+            }
+            
+            .section {
+                padding: 20px 15px;
+                margin-bottom: 20px;
+            }
+            
+            .section-title {
+                font-size: 20px;
+                letter-spacing: 1px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            h1 {
+                font-size: 22px;
+                letter-spacing: 1px;
+            }
+            
+            .section {
+                padding: 15px 10px;
+            }
+            
+            .section-title {
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 320px) {
+            body {
+                padding: 5px;
+            }
+            
+            h1 {
+                font-size: 20px;
+                letter-spacing: 1px;
+            }
+            
+            .subtitle {
+                font-size: 12px;
+            }
+            
+            .header {
+                padding: 25px 10px;
+            }
+            
+            .section {
+                padding: 15px 8px;
+                margin-bottom: 15px;
+            }
+            
+            .section-title {
+                font-size: 16px;
+                padding-bottom: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>UQDA NETWORK</h1>
+            <div class="subtitle">END-TO-END ENCRYPTED MESH NETWORKING</div>
+        </div>
+
+        <div class="navbar">
+            <div class="navbar-links">
+                <a href="index.html" class="navbar-link">HOME</a>
+                <a href="about.html" class="navbar-link">ABOUT</a>
+                <a href="installation.html" class="navbar-link">INSTALL</a>
+                <a href="configuration.html" class="navbar-link">CONFIG</a>
+                <a href="admin.html" class="navbar-link">ADMIN</a>
+                <a href="faq.html" class="navbar-link">FAQ</a>
+                <a href="uqda_network_docs.html" class="navbar-link">DOCS</a>
+            </div>
+            <a href="ar/index.html" class="navbar-lang">العربية</a>
+        </div>
+
+        <!-- Documentation Links -->
+        <div class="section">
+            <div class="section-title">// DOCUMENTATION</div>
+            
+            <div class="grid-2">
+                <a href="uqda_network_docs.html" class="box">
+                    <div class="box-title">ENGLISH</div>
+                    <div class="box-description">Complete technical documentation in English</div>
+                </a>
+                
+                <a href="ar/index.html" class="box">
+                    <div class="box-title">العربية</div>
+                    <div class="box-description">الوثائق التقنية الكاملة بالعربية</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="section">
+            <div class="section-title">// QUICK LINKS</div>
+            
+            <div class="grid-3">
+                <a href="about.html" class="box">
+                    <div class="box-title">ABOUT</div>
+                    <div class="box-description">Learn about Uqda Network</div>
+                </a>
+                
+                <a href="installation.html" class="box">
+                    <div class="box-title">INSTALLATION</div>
+                    <div class="box-description">Install Uqda on your system</div>
+                </a>
+                
+                <a href="configuration.html" class="box">
+                    <div class="box-title">CONFIGURATION</div>
+                    <div class="box-description">Configure your Uqda node</div>
+                </a>
+                
+                <a href="admin.html" class="box">
+                    <div class="box-title">ADMIN API</div>
+                    <div class="box-description">Runtime configuration interface</div>
+                </a>
+                
+                <a href="faq.html" class="box">
+                    <div class="box-title">FAQ</div>
+                    <div class="box-description">Frequently asked questions</div>
+                </a>
+                
+                <a href="implementation.html" class="box">
+                    <div class="box-title">IMPLEMENTATION</div>
+                    <div class="box-description">How Uqda works</div>
+                </a>
+                
+                <a href="configurationref.html" class="box">
+                    <div class="box-title">CONFIG REFERENCE</div>
+                    <div class="box-description">Complete configuration options</div>
+                </a>
+                
+                <a href="advanced-peering.html" class="box">
+                    <div class="box-title">ADVANCED PEERING</div>
+                    <div class="box-description">Advanced peering setups</div>
+                </a>
+                
+                <a href="developers.html" class="box">
+                    <div class="box-title">DEVELOPERS</div>
+                    <div class="box-description">Contributing to Uqda</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
