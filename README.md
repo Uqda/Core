@@ -11,7 +11,7 @@
 
 [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Download](https://github.com/Uqda/Core/releases) • [Community](#-community)
 
-**🇸🇾 [العربية](docs/ar/README.md)** • **🇬🇧 English**
+**🇸🇾 [العربية](https://github.com/Uqda/Core/tree/main/docs/ar/README.md)** • **🇬🇧 English**
 
 </div>
 

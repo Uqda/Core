@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Advanced peering configuration for Uqda Network">
+    <title>Advanced Peering - Uqda Network</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">UQDA NETWORK</a></h1>
+            <div class="subtitle">ADVANCED PEERING</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// MULTI-HOMED OUTBOUND PEERINGS</div>
+            <p>On a machine that has multiple network interfaces, where more than one interface can be used to reach a given peer (or the Internet), the <code>InterfacePeers</code> option can be used instead of the <code>Peers</code> option to create peerings over specific interfaces.</p>
+            <p>It is possible to connect to the <strong>same peer multiple times</strong> using different interfaces, creating a highly-available peering configuration.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// PRIORITISED LISTENERS</div>
+            <p>Like in the above multi-homed example, the machine may have two or more network interfaces. An example may be a Wi-Fi interface and a wired ethernet interface. If you want to accept incoming peering connections on both, but to specifically prefer sending traffic over one or other link whenever possible, you can use the <code>priority</code> field in the peering URI.</p>
+            <p>Lower numbers are better. In this example, peerings to the priority 1 peering port will be used whenever possible, therefore if another node peers to both interfaces, the wired peering will be preferred over wireless one:</p>
+            <div class="code-block">
+                <div class="code-line">tls://a.b.c.d:e?priority=1</div>
+                <div class="code-line">tls://f.g.h.i:e?priority=2</div>
+            </div>
+            <p>Note that the <code>priority</code> field only influences traffic between two peerings to the same node. It does not affect routing decisions across different nodes.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// PRIORITISED MULTICAST INTERFACES</div>
+            <p>If like above you have multiple network interfaces but are using multicast peers, but want to prefer one network interface over the other, you can specify the <code>Priority</code> for a given multicast interface.</p>
+            <p>Lower numbers are better. In this example, peerings that are automatically discovered and established over <code>eth0</code> will be preferred over peerings to the same node made over <code>eth1</code>.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// MULTICAST PEERINGS WITH FIREWALL</div>
+            <p>If your device has a firewall enabled, multicast discovery of peers through <code>MulticastInterfaces</code> may not work by default. To get this to work, perform the following three steps:</p>
+            <ol style="margin-left: 30px; margin-bottom: 20px;">
+                <li>Under <code>MulticastInterfaces</code>, set <code>Port</code> to a fixed TCP port number</li>
+                <li>Allow inbound TCP connectivity to this chosen port number through your firewall</li>
+                <li>Allow inbound UDP connectivity on port 9001 (optionally with a destination address of <code>ff02::114</code>) through your firewall</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// MORE INFORMATION</div>
+            <p>For basic peering setup, see the <a href="configuration.html">Configuration Guide</a>.</p>
+        </div>
+    </div>
+</body>
+</html>
+

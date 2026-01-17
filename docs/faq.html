@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Frequently Asked Questions about Uqda Network">
+    <title>FAQ - Uqda Network</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">UQDA NETWORK</a></h1>
+            <div class="subtitle">FREQUENTLY ASKED QUESTIONS</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// WHY UQDA?</div>
+            <p>Uqda was created in order to build a decentralised routing scheme for mesh networks that can potentially operate at a global scale, with performance optimizations and improvements over the base protocol. See the <a href="about.html">About</a> page for more information around the problems we are trying to solve.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// IS UQDA SAFE?</div>
+            <p>All traffic sent across the Uqda Network is encrypted end-to-end, such that it cannot be decrypted or read by any intermediate nodes and can only be decrypted by the recipient for which it was intended.</p>
+            <p>However, it is still a public network, therefore you should take adequate precautions when using Uqda, such as using a firewall and not exposing services you do not want others to be able to reach.</p>
+            <p>We also feel that it is important to highlight that, even though Uqda is using industry-standard cryptographic implementations, our codebase has not been officially externally audited.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// IS UQDA STABLE?</div>
+            <p>Uqda is relatively stable and very rarely crashes, although our official stance is that it is still alpha software and comes with all of the usual warnings. You should expect things to not be wholly smooth in all cases and therefore you should probably not run any mission-critical or life-and-death workloads over Uqda at this time.</p>
+            <p>You should also make sure that you stay up-to-date as often as possible with the latest versions to ensure that your node continues to be compatible as we make protocol changes.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// IS UQDA ANONYMOUS?</div>
+            <p>No, it is not a goal of the Uqda project to provide anonymity. Direct peers over the Internet will be able to see your IP address and may be able to use this information to determine your location or identity.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// WILL MY MACHINE BE EXPOSED?</div>
+            <p>Typically yes, you will be routable from other nodes on the network. If you want to restrict incoming connections to your machine, you should use an IPv6 firewall. The steps for this will vary from platform to platform.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// DOES UQDA REQUIRE IPV6?</div>
+            <p>Your system must be IPv6-enabled in order to send or receive traffic to/from the Uqda Network, which just about all modern operating systems are.</p>
+            <p>While Uqda does transport only IPv6 traffic internally, you do not need an IPv6 internet connection to peer with other Uqda users. You can peer with other Uqda nodes over either IPv4 or IPv6.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// WILL MY NODE ROUTE TRAFFIC?</div>
+            <p>If you have peerings to more than one node, your node can potentially route traffic on behalf of other network users. If you have only peerings to a single node, you will typically not route traffic, although you may still handle some occasional protocol messages. Keep this in mind if you are restricted by data usage caps.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// I CAN'T PING ANYONE</div>
+            <p>Uqda requires that you configure either a static peer to another Uqda node, or that you discover another Uqda node <em>on the same subnet</em> using multicast discovery (which is enabled by default). Without peers, you will be isolated from the rest of the network.</p>
+            <p>You can check if you have any peers by running <code>uqdactl getPeers</code> - peer on port 0 is your own node, ports 1 and above are your active peers.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// MORE QUESTIONS?</div>
+            <p>For more detailed questions and answers, see the <a href="uqda_network_docs.html">complete documentation</a> or visit our <a href="https://github.com/Uqda/Core/discussions">GitHub Discussions</a>.</p>
+        </div>
+    </div>
+</body>
+</html>
+

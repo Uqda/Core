@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Implementation details for Uqda Network">
+    <title>Implementation - Uqda Network</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">UQDA NETWORK</a></h1>
+            <div class="subtitle">IMPLEMENTATION</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// OVERVIEW</div>
+            <p>The public Uqda Network is a testbed overlay network running the Uqda routing protocol.</p>
+            <p>All network nodes are userspace software routers that run under a single process. The router optionally provides a virtual TUN adapter to the host operating system which allows sending and receiving IPv6 traffic over the Uqda Network. Peering connections between these nodes are established over local area networks, point-to-point links or the Internet using mainly TCP/TLS connections.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// HOW IS UQDA SECURED?</div>
+            <p>In order to ensure that traffic is private as it is routed across other network nodes, all traffic is end-to-end encrypted at all times. Even plain-text application traffic will be encrypted using the destination node's public key, ensuring that intermediate nodes cannot snoop on the contents of traffic being forwarded through the network.</p>
+            <p>It is possible for anyone to join the public Uqda Network and it should therefore be considered as an untrusted network, similar to a public Wi-Fi network or a direct Internet connection. An IPv6-capable firewall that blocks unexpected incoming traffic is highly recommended in order to prevent services on your machine from being accidentally exposed to all users of the Uqda Network.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// HOW DO NODES PEER?</div>
+            <p>Network nodes establish peerings either in one of two ways:</p>
+            <ol style="margin-left: 30px; margin-bottom: 20px;">
+                <li><strong>Manually by the user.</strong> Any node can be configured to accept peering connections and can establish outbound connections to other listening nodes. These are referred to as "static peerings" in that they are present in the configuration file and do not typically change at runtime.</li>
+                <li><strong>Link-local multicast discovery.</strong> Nodes can optionally advertise their presence on the local network to other listening nodes, which will then attempt to establish peerings automatically. For the most part, this allows any two nodes that are connected together with an IP link to automatically discover each other and create a peering connection in a "plug and play" fashion.</li>
+            </ol>
+            <p>It is important to note that Uqda nodes <strong>never</strong> establish new peerings with remote (that is, non-multicast-discovered) nodes automatically. Uqda intentionally has no concept of peer exchange, as is often found in other overlay and DHT designs.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// HOW ARE NODES IDENTIFIED?</div>
+            <p>In the Uqda design, a node's true identity is its public key. The current overlay implementation generates an IPv6 address based on the truncated public key. Translation between IPv6 addresses and partial public keys, as well as searching the network based on those keys, is performed transparently by the Uqda router, therefore all you need to know in order to communicate with a remote node is the IPv6 address it has generated.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// WHAT DOES UQDA DO DIFFERENTLY?</div>
+            <p>Uqda takes a very different approach to sharing routing knowledge. Rather than distributing address ranges as paths through centrally assigned autonomous systems, Uqda instead builds up a single distributed global network topology.</p>
+            <p>A spanning tree is used to provide synchronisation and to allow nodes to allocate themselves a set of tree coordinates, which are used to exchange and establish bootstrap and path setup messages. Nodes then exchange bloom filters which contain information about which keyspace neighbours are reachable through each node. Intermediate nodes then populate their routing tables with these paths, enabling nodes to forward packets closer to their destination public key.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// WHAT ARE THE BENEFITS?</div>
+            <ul style="margin-left: 30px; margin-bottom: 20px;">
+                <li>Devices need to only maintain a comparatively small amount of state in order to function and to be able to forward packets</li>
+                <li>Paths are discovered and built through the network automatically, so manual configuration of routing entries is not required</li>
+                <li>The network can setup and tear down paths quickly without needing to discard all routing state</li>
+                <li>Networks automatically form when any two or more Uqda nodes are connected to each other, even if those connections are entirely ad-hoc in nature</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// TECHNICAL DETAILS</div>
+            <p>For complete technical documentation, see the <a href="uqda_network_docs.html">Technical Documentation</a> or the <a href="https://github.com/Uqda/Core/blob/main/docs/WHITEPAPER.md">Technical Whitepaper</a>.</p>
+        </div>
+    </div>
+</body>
+</html>
+

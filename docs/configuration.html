@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Configuration guide for Uqda Network">
+    <title>Configuration - Uqda Network</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">UQDA NETWORK</a></h1>
+            <div class="subtitle">CONFIGURATION</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// CONFIGURATION MODES</div>
+            <p>Uqda can run in one of two modes: with a configuration file, or in autoconfigure mode.</p>
+            <p>A static configuration file simplifies most setups as it allows you to keep the same keypair (and therefore IP address), maintain a list of peers and so on. For most users this will be the recommended configuration.</p>
+            <p>However, autoconfigure mode allows you to quickly start Uqda using sane-ish default settings, with <code>uqda -autoconf</code>. In this mode, Uqda will automatically attempt to peer with other nodes on the same subnet but <strong>will not attempt to connect to public peers by default</strong>. It also generates a random set of keys each time it is started, and therefore a random IP address each time.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// GENERATING A CONFIG FILE</div>
+            <p>You can generate a configuration file in the following ways:</p>
+            <div class="code-block">
+                <div class="code-line">uqda -genconf > uqda.conf</div>
+            </div>
+            <p>The configuration file is typically located in <code>/etc/uqda/uqda.conf</code> or <code>/etc/uqda.conf</code> depending on your platform.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// USING A CONFIG FILE</div>
+            <p>Uqda can accept a configuration file either through <code>stdin</code> or by being given a path on the filesystem to a configuration file:</p>
+            <div class="code-block">
+                <div class="code-line">uqda -useconf < uqda.conf</div>
+                <div class="code-line">uqda -useconffile /etc/uqda/uqda.conf</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// MANUALLY CONNECTING TO PEERS</div>
+            <p>Uqda can be configured to connect to other peers by adding entries into the <code>Peers</code> configuration section. At startup, Uqda will attempt to open a connection to these peers.</p>
+            <p>A peering URI will look similar to one of the following:</p>
+            <div class="code-block">
+                <div class="code-line">tcp://hostname:port</div>
+                <div class="code-line">tls://hostname:port</div>
+                <div class="code-line">quic://hostname:port</div>
+                <div class="code-line">ws://hostname:port</div>
+                <div class="code-line">wss://hostname:port</div>
+            </div>
+            <p>By default, only link-local auto-peering is enabled. This connects devices that are connected directly to each other at layer 2, including devices on the same LAN.</p>
+            <p>If you are unable to find nodes in the nearby area, you can add public peers to your configuration. See the <a href="configurationref.html">Configuration Reference</a> for more details.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// CONFIGURATION REFERENCE</div>
+            <p>Information about the various options in the configuration file <a href="configurationref.html">can be found here</a>.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// NEXT STEPS</div>
+            <div class="grid-2">
+                <a href="configurationref.html" class="box">
+                    <div class="box-title">CONFIGURATION REFERENCE</div>
+                    <div class="box-description">Complete configuration options</div>
+                </a>
+                <a href="admin.html" class="box">
+                    <div class="box-title">ADMIN API</div>
+                    <div class="box-description">Runtime configuration via admin socket</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
