@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Uqda Network Technical Whitepaper - Complete technical documentation covering architecture, routing, security, performance, and implementation details">
+    <meta name="keywords" content="Uqda Network, whitepaper, technical documentation, mesh network, routing protocol, encryption, IPv6, decentralized networking">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="Technical Whitepaper - Uqda Network">
+    <meta property="og:description" content="Uqda Network Technical Whitepaper - Complete technical documentation covering architecture, routing, security, performance, and implementation details">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://uqda.github.io/whitepaper.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Technical Whitepaper - Uqda Network">
+    <meta name="twitter:description" content="Uqda Network Technical Whitepaper - Complete technical documentation">
+    <title>Technical Whitepaper - Uqda Network</title>
+    <link rel="canonical" href="https://uqda.github.io/whitepaper.html">
+    <link rel="alternate" hreflang="ar" href="https://uqda.github.io/ar/whitepaper.html">
+    <link rel="alternate" hreflang="en" href="https://uqda.github.io/whitepaper.html">
+    <link rel="stylesheet" href="style.css">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "Uqda Network – Technical Whitepaper",
+        "description": "Complete technical documentation covering architecture, routing, security, performance, and implementation details",
+        "author": {
+            "@type": "Organization",
+            "name": "Uqda Network"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Uqda Network",
+            "url": "https://uqda.github.io/"
+        },
+        "datePublished": "2026-01-01",
+        "dateModified": "2026-01-17",
+        "inLanguage": "en",
+        "url": "https://uqda.github.io/whitepaper.html"
+    }
+    </script>
+    <style>
+        .whitepaper-content {
+            line-height: 1.9;
+        }
+        .whitepaper-content h1 {
+            font-size: 36px;
+            margin: 40px 0 20px 0;
+            border-bottom: 4px solid #000;
+            padding-bottom: 15px;
+        }
+        .whitepaper-content h2 {
+            font-size: 28px;
+            margin: 35px 0 15px 0;
+            border-bottom: 3px solid #000;
+            padding-bottom: 10px;
+        }
+        .whitepaper-content h3 {
+            font-size: 22px;
+            margin: 25px 0 12px 0;
+            font-weight: bold;
+        }
+        .whitepaper-content h4 {
+            font-size: 18px;
+            margin: 20px 0 10px 0;
+            font-weight: bold;
+        }
+        .whitepaper-content p {
+            margin: 15px 0;
+            text-align: justify;
+        }
+        .whitepaper-content ul, .whitepaper-content ol {
+            margin: 15px 0 15px 30px;
+        }
+        .whitepaper-content li {
+            margin: 8px 0;
+        }
+        .whitepaper-content strong {
+            font-weight: bold;
+        }
+        .whitepaper-content em {
+            font-style: italic;
+        }
+        .whitepaper-content code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .whitepaper-content pre {
+            background: #000;
+            color: #00ff00;
+            padding: 20px;
+            margin: 20px 0;
+            border: 3px solid #000;
+            border-radius: 2px;
+            overflow-x: auto;
+        }
+        .whitepaper-content pre code {
+            background: transparent;
+            border: none;
+            padding: 0;
+            color: #00ff00;
+        }
+        .whitepaper-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            border: 2px solid #000;
+        }
+        .whitepaper-content table th,
+        .whitepaper-content table td {
+            border: 1px solid #000;
+            padding: 12px;
+            text-align: left;
+        }
+        .whitepaper-content table th {
+            background: #000;
+            color: #fff;
+            font-weight: bold;
+        }
+        .whitepaper-content table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .whitepaper-content hr {
+            border: none;
+            border-top: 3px solid #000;
+            margin: 40px 0;
+        }
+        .whitepaper-content blockquote {
+            border-left: 4px solid #000;
+            padding-left: 20px;
+            margin: 20px 0;
+            font-style: italic;
+        }
+        .toc {
+            background: #fff;
+            border: 3px solid #000;
+            padding: 30px;
+            margin: 30px 0;
+        }
+        .toc h3 {
+            margin-top: 0;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+        .toc ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        .toc li {
+            margin: 8px 0;
+        }
+        .toc a {
+            color: #000;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .whitepaper-content h1 {
+                font-size: 28px;
+            }
+            .whitepaper-content h2 {
+                font-size: 24px;
+            }
+            .whitepaper-content h3 {
+                font-size: 20px;
+            }
+            .whitepaper-content table {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">UQDA NETWORK</a></h1>
+            <div class="subtitle">TECHNICAL WHITEPAPER</div>
+        </div>
+
+        <div class="navbar">
+            <div class="navbar-links">
+                <a href="index.html" class="navbar-link">HOME</a>
+                <a href="about.html" class="navbar-link">ABOUT</a>
+                <a href="installation.html" class="navbar-link">INSTALL</a>
+                <a href="configuration.html" class="navbar-link">CONFIG</a>
+                <a href="admin.html" class="navbar-link">ADMIN</a>
+                <a href="faq.html" class="navbar-link">FAQ</a>
+                <a href="uqda_network_docs.html" class="navbar-link">DOCS</a>
+                <a href="whitepaper.html" class="navbar-link">WHITEPAPER</a>
+            </div>
+            <a href="ar/whitepaper.html" class="navbar-lang">العربية</a>
+        </div>
+
+        <div class="section whitepaper-content">
+            <h1>Uqda Network – Technical Whitepaper</h1>
+            
+            <p><strong>Version 1.0</strong><br>
+            January 2026</p>
+
+            <hr>
+
+            <div class="toc">
+                <h3>Table of Contents</h3>
+                <ul>
+                    <li><a href="#executive-summary">Executive Summary</a></li>
+                    <li><a href="#introduction">1. Introduction</a></li>
+                    <li><a href="#architecture">2. Architecture Overview</a></li>
+                    <li><a href="#identity">3. Identity and Addressing</a></li>
+                    <li><a href="#routing">4. Routing Protocol</a></li>
+                    <li><a href="#peering">5. Peering and Connectivity</a></li>
+                    <li><a href="#security">6. Security Model</a></li>
+                    <li><a href="#performance">7. Performance Optimizations</a></li>
+                    <li><a href="#operational">8. Operational Characteristics</a></li>
+                    <li><a href="#usecases">9. Use Cases</a></li>
+                    <li><a href="#limitations">10. Limitations and Non-Goals</a></li>
+                    <li><a href="#status">11. Project Status and Roadmap</a></li>
+                    <li><a href="#specs">12. Technical Specifications</a></li>
+                    <li><a href="#comparison">13. Comparative Analysis</a></li>
+                    <li><a href="#conclusion">14. Conclusion</a></li>
+                </ul>
+            </div>
+
+            <h2 id="executive-summary">Executive Summary</h2>
+
+            <p>Uqda Network is a decentralized routing protocol designed for building resilient, self-organizing multi-hop mesh networks with end-to-end encryption, minimal configuration, and independence from centralized infrastructure.</p>
+
+            <p>Built upon proven cryptographic primitives and innovative routing algorithms, Uqda enables direct peer-to-peer connectivity across dynamic network topologies while maintaining stable, location-independent addressing through IPv6.</p>
+
+            <p>This whitepaper presents the technical architecture, design principles, and practical optimizations that distinguish Uqda as a pragmatic solution for modern decentralized networking challenges.</p>
+
+            <hr>
+
+            <h2 id="introduction">1. Introduction</h2>
+
+            <h3>1.1 Motivation</h3>
+
+            <p>Contemporary network infrastructure faces fundamental challenges:</p>
+
+            <ul>
+                <li><strong>Centralization</strong>: Heavy reliance on ISPs, BGP routing hierarchies, and autonomous system architectures</li>
+                <li><strong>Configuration complexity</strong>: Manual setup requirements that scale poorly</li>
+                <li><strong>Topology rigidity</strong>: Poor adaptation to dynamic or ad-hoc network conditions</li>
+                <li><strong>Infrastructure dependence</strong>: Inability to operate without existing Internet connectivity</li>
+            </ul>
+
+            <p>Emerging use cases demand different properties:</p>
+
+            <ul>
+                <li>Community-operated mesh networks</li>
+                <li>Edge computing with direct device-to-device communication</li>
+                <li>Resilient networks in infrastructure-limited environments</li>
+                <li>Rapid deployment scenarios (emergency response, temporary installations)</li>
+                <li>Privacy-preserving peer-to-peer applications</li>
+            </ul>
+
+            <p>Uqda addresses these requirements through a fundamentally different approach to network routing and organization.</p>
+
+            <h3>1.2 Design Philosophy</h3>
+
+            <p>Uqda is built on three core principles:</p>
+
+            <ol>
+                <li><strong>Decentralization by default</strong>: No central authorities, coordinators, or single points of failure</li>
+                <li><strong>Simplicity of operation</strong>: Networks should form automatically with minimal human intervention</li>
+                <li><strong>Practical performance</strong>: Theoretical elegance must yield to real-world usability</li>
+            </ol>
+
+            <h3>1.3 Relationship to Yggdrasil Network</h3>
+
+            <p>Uqda Core is a <strong>derivative work</strong> of the Yggdrasil Network protocol (v0.5), maintained as an independent project with focus on:</p>
+
+            <ul>
+                <li><strong>Performance optimizations</strong> for production deployments</li>
+                <li><strong>Operational improvements</strong> based on real-world usage</li>
+                <li><strong>Enhanced tooling</strong> for monitoring and diagnostics</li>
+            </ul>
+
+            <p><strong>Protocol Compatibility</strong>: Uqda nodes are protocol-compatible with Yggdrasil v0.5 nodes and can peer with them seamlessly.</p>
+
+            <p><strong>Governance</strong>: Uqda operates as an independent project with its own release cycle, prioritization, and development roadmap.</p>
+
+            <p>Full attribution and licensing information: <a href="https://github.com/Uqda/Core/blob/main/ATTRIBUTION.md">ATTRIBUTION.md</a></p>
+
+            <hr>
+
+            <h2 id="architecture">2. Architecture Overview</h2>
+
+            <h3>2.1 Network Model</h3>
+
+            <p>Uqda operates as an <strong>overlay network</strong> running atop existing IP infrastructure, though the protocol design does not inherently require overlay operation.</p>
+
+            <p>Each network node consists of:</p>
+
+            <ul>
+                <li><strong>Userspace router process</strong>: Single-process software router</li>
+                <li><strong>Virtual TUN interface</strong>: IPv6 packet injection/extraction to host OS</li>
+                <li><strong>Peering layer</strong>: Connection management with neighboring nodes</li>
+                <li><strong>Routing engine</strong>: Path discovery and packet forwarding logic</li>
+                <li><strong>Administrative interface</strong>: Monitoring and control socket</li>
+            </ul>
+
+            <h3>2.2 Node Equality</h3>
+
+            <p>All nodes are <strong>functionally equivalent</strong>. There are no designated:</p>
+
+            <ul>
+                <li>Root nodes (though spanning tree construction produces transient roots)</li>
+                <li>Supernodes or privileged coordinators</li>
+                <li>Gateway nodes (unless explicitly configured for specific services)</li>
+            </ul>
+
+            <p>Each node can simultaneously:</p>
+
+            <ul>
+                <li>Originate traffic</li>
+                <li>Receive traffic destined for it</li>
+                <li>Forward traffic on behalf of other nodes</li>
+            </ul>
+
+            <hr>
+
+            <h2 id="identity">3. Identity and Addressing</h2>
+
+            <h3>3.1 Cryptographic Identity</h3>
+
+            <p>Each node possesses a <strong>public/private key pair</strong> (Ed25519):</p>
+
+            <ul>
+                <li>The <strong>public key</strong> serves as the node's true identity</li>
+                <li>The private key remains secret and is used for signing protocol messages</li>
+            </ul>
+
+            <h3>3.2 IPv6 Address Generation</h3>
+
+            <p>A stable IPv6 address is <strong>deterministically derived</strong> from the public key:</p>
+
+            <pre><code>IPv6 address = truncate(hash(public_key))</code></pre>
+
+            <p>This provides:</p>
+
+            <ul>
+                <li><strong>Location independence</strong>: Address is tied to identity, not network position</li>
+                <li><strong>Mobility</strong>: Nodes retain their address as they move through the network</li>
+                <li><strong>No central allocation</strong>: No DHCP, no address registries, no coordination required</li>
+            </ul>
+
+            <h3>3.3 Application Compatibility</h3>
+
+            <p>Most IPv6-capable applications work over Uqda <strong>without modification</strong>, as the network presents standard IPv6 addresses to the host operating system.</p>
+
+            <hr>
+
+            <h2 id="routing">4. Routing Protocol</h2>
+
+            <h3>4.1 Design Objectives</h3>
+
+            <p>The routing system must satisfy:</p>
+
+            <ul>
+                <li><strong>Minimal state</strong>: Nodes should not maintain full routing tables</li>
+                <li><strong>Automatic convergence</strong>: Paths discovered without manual configuration</li>
+                <li><strong>Fast recovery</strong>: Quick adaptation to topology changes</li>
+                <li><strong>Scalability</strong>: Efficient operation as network size grows</li>
+            </ul>
+
+            <h3>4.2 Routing Approach</h3>
+
+            <p>Uqda employs a <strong>hybrid routing scheme</strong>:</p>
+
+            <ol>
+                <li><strong>Spanning tree construction</strong> for coordination and bootstrap messaging</li>
+                <li><strong>Greedy routing in keyspace</strong> using distributed hash table principles</li>
+                <li><strong>Source routing</strong> for optimized paths when available</li>
+            </ol>
+
+            <h4>Spanning Tree</h4>
+
+            <ul>
+                <li>Provides global synchronization</li>
+                <li>Enables coordinate allocation for nodes</li>
+                <li>Used as fallback routing mechanism</li>
+                <li>Root selection based on public key (lowest wins)</li>
+            </ul>
+
+            <h4>Keyspace Routing</h4>
+
+            <ul>
+                <li>Nodes exchange bloom filters describing reachable key ranges</li>
+                <li>Intermediate nodes populate routing tables with keyspace paths</li>
+                <li>Packets forwarded toward destination's position in keyspace</li>
+            </ul>
+
+            <h4>Path Optimization</h4>
+
+            <ul>
+                <li>Tree routing establishes initial connectivity</li>
+                <li>Shorter paths discovered through direct keyspace routing</li>
+                <li>Source routes used when more efficient than keyspace routing</li>
+                <li>Automatic fallback to tree routing if optimized path fails</li>
+            </ul>
+
+            <h3>4.3 Protocol Security</h3>
+
+            <p>All routing messages are <strong>cryptographically signed</strong> to prevent:</p>
+
+            <ul>
+                <li>Forgery</li>
+                <li>Tampering</li>
+                <li>Route injection attacks</li>
+            </ul>
+
+            <hr>
+
+            <h2 id="peering">5. Peering and Connectivity</h2>
+
+            <h3>5.1 Peering Establishment</h3>
+
+            <p>Nodes establish peerings through two mechanisms:</p>
+
+            <h4>Static Peering</h4>
+            <ul>
+                <li>Manual configuration of peer addresses</li>
+                <li>Persistent across restarts</li>
+                <li>Can operate over any IP transport (LAN, WAN, Internet)</li>
+            </ul>
+
+            <h4>Multicast Discovery</h4>
+            <ul>
+                <li>Automatic peer discovery on local networks</li>
+                <li>Link-local multicast advertisements</li>
+                <li>Zero-configuration "plug-and-play" operation</li>
+            </ul>
+
+            <h3>5.2 Transport</h3>
+
+            <p>Peering connections support:</p>
+
+            <ul>
+                <li><strong>TCP</strong> (with optional TLS)</li>
+                <li><strong>QUIC</strong> (in experimental implementations)</li>
+                <li><strong>IPv4 or IPv6</strong> transport</li>
+            </ul>
+
+            <h3>5.3 NAT Traversal</h3>
+
+            <p>Uqda handles NAT environments gracefully:</p>
+
+            <ul>
+                <li>Peering connections are <strong>bidirectional</strong> once established</li>
+                <li>No port forwarding required for outbound peerings</li>
+                <li>Nodes behind NAT remain fully reachable within the Uqda network</li>
+                <li>Effective for scenarios with carrier-grade NAT (CGNAT)</li>
+            </ul>
+
+            <hr>
+
+            <h2 id="security">6. Security Model</h2>
+
+            <h3>6.1 Threat Model</h3>
+
+            <p>Uqda assumes:</p>
+
+            <ul>
+                <li><strong>Network adversaries</strong>: Any node or peering link may be controlled by an attacker</li>
+                <li><strong>Passive surveillance</strong>: Traffic may be observed at any point</li>
+                <li><strong>Active interference</strong>: Packets may be dropped, delayed, or reordered</li>
+            </ul>
+
+            <p>Uqda does <strong>not</strong> attempt to hide:</p>
+
+            <ul>
+                <li>Peering relationships (who connects to whom)</li>
+                <li>Traffic patterns or timing</li>
+                <li>Source and destination identities</li>
+            </ul>
+
+            <h3>6.2 Cryptographic Protection</h3>
+
+            <p>All traffic is <strong>end-to-end encrypted</strong>:</p>
+
+            <ul>
+                <li>Encryption uses destination's public key</li>
+                <li>Forward secrecy through ephemeral key exchange</li>
+                <li>Intermediate nodes cannot decrypt payload</li>
+                <li>Authentication prevents impersonation</li>
+            </ul>
+
+            <h3>6.3 What Uqda Is Not</h3>
+
+            <p><strong>Uqda is not an anonymity network.</strong> It does not provide:</p>
+
+            <ul>
+                <li>Traffic anonymization</li>
+                <li>Onion routing</li>
+                <li>Hidden services</li>
+                <li>Unlinkability of communications</li>
+            </ul>
+
+            <p>Direct peers can observe IP addresses and may infer location or identity.</p>
+
+            <h3>6.4 Security Audit Status</h3>
+
+            <p><strong>Current status</strong>: Uqda has <strong>not undergone independent security audit</strong>.</p>
+
+            <p>The codebase inherits cryptographic implementations from:</p>
+            <ul>
+                <li>Go standard library (audited)</li>
+                <li>Yggdrasil Network (community-reviewed since 2017)</li>
+            </ul>
+
+            <p><strong>Recommendations</strong>:</p>
+            <ul>
+                <li>Do not use for high-security applications without independent review</li>
+                <li>Assume presence of undiscovered vulnerabilities</li>
+                <li>Defense-in-depth: Use application-layer encryption for sensitive data</li>
+            </ul>
+
+            <p><strong>Planned</strong>: Community-funded audit scheduled for Q2 2026.</p>
+
+            <hr>
+
+            <h2 id="performance">7. Performance Optimizations</h2>
+
+            <p>Uqda incorporates practical optimizations based on real-world deployment experience:</p>
+
+            <h3>7.1 Connection Establishment</h3>
+
+            <ul>
+                <li><strong>Reduced handshake timeout</strong>: 5s (optimized from 6s)</li>
+                <li><strong>Faster TCP dial</strong>: 3s timeout</li>
+                <li><strong>Adaptive backoff algorithm</strong>:
+                    <ul>
+                        <li>First retry: 100ms</li>
+                        <li>Second retry: 250ms</li>
+                        <li>Third retry: 500ms</li>
+                        <li>Exponential thereafter</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h3>7.2 DNS Caching</h3>
+
+            <ul>
+                <li>Successful lookups cached for 5 minutes</li>
+                <li>Failed lookups cached for 30 seconds</li>
+                <li>Reduces latency by 10-30ms per connection</li>
+            </ul>
+
+            <h3>7.3 Protocol Timeouts</h3>
+
+            <ul>
+                <li>WebSocket: 5s read/write timeout</li>
+                <li>UNIX socket: 2s timeout</li>
+                <li>Optimized for responsiveness without sacrificing reliability</li>
+            </ul>
+
+            <h3>7.4 Performance Comparison</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Baseline (Yggdrasil 0.5.12)</th>
+                        <th>Uqda 0.1.1</th>
+                        <th>Improvement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Handshake timeout</td>
+                        <td>6s</td>
+                        <td>5s</td>
+                        <td>-16.7%</td>
+                    </tr>
+                    <tr>
+                        <td>TCP dial timeout</td>
+                        <td>5s</td>
+                        <td>3s</td>
+                        <td>-40%</td>
+                    </tr>
+                    <tr>
+                        <td>First reconnect delay</td>
+                        <td>1s</td>
+                        <td>100ms</td>
+                        <td>-90%</td>
+                    </tr>
+                    <tr>
+                        <td>Connection establishment</td>
+                        <td>50-100ms</td>
+                        <td>20-40ms</td>
+                        <td>~60% faster</td>
+                    </tr>
+                    <tr>
+                        <td>DNS overhead (uncached)</td>
+                        <td>30-50ms</td>
+                        <td>&lt;10ms</td>
+                        <td>~75% reduction</td>
+                    </tr>
+                    <tr>
+                        <td>Reconnection time</td>
+                        <td>1-1.5s</td>
+                        <td>500-900ms</td>
+                        <td>~50% faster</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>Real-world impact</strong>: In a 10-hop network with 3 temporary link failures per hour, these optimizations reduce average end-to-end latency by 35-55ms and improve user-perceived responsiveness significantly.</p>
+
+            <hr>
+
+            <h2 id="operational">8. Operational Characteristics</h2>
+
+            <h3>8.1 Bandwidth Consumption</h3>
+
+            <p>Nodes with multiple peerings will <strong>route traffic for others</strong>:</p>
+
+            <ul>
+                <li>Protocol overhead is minimal (bloom filter exchanges, tree maintenance)</li>
+                <li>Data forwarding proportional to network position and connectivity</li>
+                <li>Fair packet queuing prevents single-node saturation</li>
+            </ul>
+
+            <h3>8.2 MTU Handling</h3>
+
+            <p>Uqda uses <strong>high MTU values</strong> (up to 65535) on TUN interfaces:</p>
+
+            <ul>
+                <li>Stream-based peerings eliminate fragmentation issues</li>
+                <li>Reduces system call overhead</li>
+                <li>Improves throughput and reduces CPU usage</li>
+                <li>Mitigates TCP-over-TCP amplification</li>
+            </ul>
+
+            <h3>8.3 Firewall Recommendations</h3>
+
+            <p>As a <strong>public network</strong>, Uqda nodes are globally reachable by default.</p>
+
+            <p><strong>Strongly recommended</strong>: Deploy IPv6 firewall rules to:</p>
+
+            <ul>
+                <li>Block unexpected incoming connections</li>
+                <li>Prevent service exposure</li>
+                <li>Implement principle of least privilege</li>
+            </ul>
+
+            <h3>8.4 Deployment Best Practices</h3>
+
+            <h4>Firewall Configuration</h4>
+
+            <p><strong>Minimum security posture</strong> (all platforms):</p>
+            <ul>
+                <li>Block all incoming IPv6 traffic on Uqda interface by default</li>
+                <li>Allow only established/related connections</li>
+                <li>Explicitly whitelist required services</li>
+            </ul>
+
+            <h4>Peer Selection</h4>
+
+            <p><strong>For stable networks:</strong></p>
+            <ul>
+                <li>Prefer geographically close peers to minimize latency</li>
+                <li>Maintain 2-4 static peers for redundancy</li>
+                <li>Avoid excessive peering (diminishing returns beyond 5-6 peers)</li>
+            </ul>
+
+            <p><strong>For mobile/dynamic scenarios:</strong></p>
+            <ul>
+                <li>Enable multicast discovery</li>
+                <li>Use public peers as fallback</li>
+                <li>Accept higher latency for convenience</li>
+            </ul>
+
+            <h4>Monitoring</h4>
+
+            <p>Essential metrics to track:</p>
+            <ul>
+                <li>Active peer count (<code>uqdactl getPeers</code>)</li>
+                <li>Routing table size</li>
+                <li>Protocol traffic overhead</li>
+                <li>Connection stability (reconnect frequency)</li>
+            </ul>
+
+            <hr>
+
+            <h2 id="usecases">9. Use Cases</h2>
+
+            <h3>9.1 Community Mesh Networks</h3>
+
+            <ul>
+                <li>Neighborhoods building independent infrastructure</li>
+                <li>Resilient local communication</li>
+                <li>Reduced dependence on ISPs</li>
+            </ul>
+
+            <h3>9.2 Edge Computing</h3>
+
+            <ul>
+                <li>Direct device-to-device communication</li>
+                <li>Low-latency local processing</li>
+                <li>No cloud intermediary required</li>
+            </ul>
+
+            <h3>9.3 Emergency Networks</h3>
+
+            <ul>
+                <li>Rapid deployment without infrastructure</li>
+                <li>Resilience to partial connectivity</li>
+                <li>Communication when Internet unavailable</li>
+            </ul>
+
+            <h3>9.4 Research and Development</h3>
+
+            <ul>
+                <li>Protocol experimentation</li>
+                <li>Distributed systems testing</li>
+                <li>Network topology research</li>
+            </ul>
+
+            <h3>9.5 Decentralized Applications</h3>
+
+            <ul>
+                <li>Peer-to-peer services</li>
+                <li>Censorship-resistant communication</li>
+                <li>Privacy-preserving applications</li>
+            </ul>
+
+            <hr>
+
+            <h2 id="limitations">10. Limitations and Non-Goals</h2>
+
+            <h3>10.1 Not a VPN Replacement</h3>
+
+            <p>While Uqda can be used for private networks, it is <strong>not designed as a traditional VPN</strong>:</p>
+
+            <ul>
+                <li>Connecting to public peers bridges networks together</li>
+                <li>No built-in Internet gateway functionality</li>
+                <li>No exit node concept</li>
+            </ul>
+
+            <h3>10.2 Not an Anonymity System</h3>
+
+            <p>Uqda <strong>does not provide anonymity</strong>:</p>
+
+            <ul>
+                <li>Peers know each other's IP addresses</li>
+                <li>Traffic patterns may be observable</li>
+                <li>No protection against traffic analysis</li>
+            </ul>
+
+            <h3>10.3 Current Routing Metric Limitations</h3>
+
+            <p><strong>Why hop-count only?</strong></p>
+
+            <p>The protocol prioritizes <strong>verifiable, non-gameable metrics</strong>. Interactive link quality measurements (RTT, bandwidth probes) can be:</p>
+
+            <ul>
+                <li>Spoofed by malicious nodes</li>
+                <li>Expensive to verify independently</li>
+                <li>Difficult to secure in adversarial environments</li>
+            </ul>
+
+            <p><strong>Practical impact:</strong></p>
+
+            <ul>
+                <li>Some Internet-based peerings may be suboptimal</li>
+                <li>Physical proximity doesn't guarantee routing proximity</li>
+                <li>Users should manually tune peerings for performance-critical scenarios</li>
+            </ul>
+
+            <p><strong>Future work</strong>: Research into secure, verifiable quality metrics is ongoing.</p>
+
+            <hr>
+
+            <h2 id="status">11. Project Status and Roadmap</h2>
+
+            <h3>11.1 Current Status</h3>
+
+            <ul>
+                <li><strong>Maturity</strong>: Active development, production-ready for non-critical workloads</li>
+                <li><strong>Stability</strong>: Reliable for experimental and community deployments</li>
+                <li><strong>Not recommended</strong>: Mission-critical or life-safety applications</li>
+            </ul>
+
+            <h3>11.2 Future Development</h3>
+
+            <p>Planned enhancements include:</p>
+
+            <ul>
+                <li>Advanced routing optimizations</li>
+                <li>Improved monitoring and diagnostics tools</li>
+                <li>Enhanced performance analytics</li>
+                <li>Broader platform support</li>
+                <li>Potential protocol evolution as requirements emerge</li>
+            </ul>
+
+            <hr>
+
+            <h2 id="specs">12. Technical Specifications</h2>
+
+            <h3>12.1 Protocol Version</h3>
+
+            <ul>
+                <li>Current version: <strong>0.5-compatible</strong></li>
+                <li>Backward compatibility maintained across minor versions</li>
+            </ul>
+
+            <h3>12.2 Cryptography</h3>
+
+            <ul>
+                <li><strong>Signing</strong>: Ed25519</li>
+                <li><strong>Key exchange</strong>: X25519</li>
+                <li><strong>Encryption</strong>: ChaCha20-Poly1305</li>
+            </ul>
+
+            <h3>12.3 Address Space</h3>
+
+            <ul>
+                <li><strong>IPv6 range</strong>: <code>0200::/7</code> (IETF-deprecated range, no conflict with ULA)</li>
+            </ul>
+
+            <h3>12.4 Supported Platforms</h3>
+
+            <ul>
+                <li>Linux (kernel 3.x+)</li>
+                <li>Windows (7+)</li>
+                <li>macOS (10.12+)</li>
+                <li>FreeBSD (experimental)</li>
+            </ul>
+
+            <hr>
+
+            <h2 id="comparison">13. Comparative Analysis</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Uqda</th>
+                        <th>Yggdrasil</th>
+                        <th>Tailscale</th>
+                        <th>Nebula</th>
+                        <th>I2P/Tor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Decentralized</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                        <td>❌ (coordinator)</td>
+                        <td>❌ (lighthouse)</td>
+                        <td>✅</td>
+                    </tr>
+                    <tr>
+                        <td>Zero-config mesh</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                        <td>⚠️ (managed)</td>
+                        <td>⚠️ (manual PKI)</td>
+                        <td>❌</td>
+                    </tr>
+                    <tr>
+                        <td>Protocol-level encryption</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                    </tr>
+                    <tr>
+                        <td>Anonymity</td>
+                        <td>❌</td>
+                        <td>❌</td>
+                        <td>❌</td>
+                        <td>❌</td>
+                        <td>✅</td>
+                    </tr>
+                    <tr>
+                        <td>NAT traversal</td>
+                        <td>✅ (bidirectional)</td>
+                        <td>✅</td>
+                        <td>✅ (STUN/relay)</td>
+                        <td>⚠️ (limited)</td>
+                        <td>✅</td>
+                    </tr>
+                    <tr>
+                        <td>Performance focus</td>
+                        <td>✅</td>
+                        <td>⚠️</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                        <td>❌ (latency high)</td>
+                    </tr>
+                    <tr>
+                        <td>Works without Internet</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                        <td>❌</td>
+                        <td>⚠️</td>
+                        <td>❌</td>
+                    </tr>
+                    <tr>
+                        <td>Production ready</td>
+                        <td>⚠️ (non-critical)</td>
+                        <td>⚠️ (alpha)</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>Legend</strong>: ✅ Full support | ⚠️ Partial/Limited | ❌ Not supported</p>
+
+            <hr>
+
+            <h2 id="conclusion">14. Conclusion</h2>
+
+            <p>Uqda represents a <strong>production-focused evolution</strong> of proven decentralized routing principles, optimized for:</p>
+
+            <ul>
+                <li><strong>Real-world performance</strong>: Measurable latency improvements</li>
+                <li><strong>Operational simplicity</strong>: Minimal configuration overhead</li>
+                <li><strong>Practical deployment</strong>: Community networks, edge computing, research</li>
+            </ul>
+
+            <h3>Not a Silver Bullet</h3>
+
+            <p>Uqda does <strong>not</strong> solve all networking problems. It is:</p>
+
+            <ul>
+                <li><strong>Not</strong> a replacement for the Internet</li>
+                <li><strong>Not</strong> an anonymity system</li>
+                <li><strong>Not</strong> ready for mission-critical applications (yet)</li>
+            </ul>
+
+            <h3>What Uqda Enables</h3>
+
+            <ul>
+                <li><strong>Community ownership</strong> of network infrastructure</li>
+                <li><strong>Direct connectivity</strong> without intermediaries</li>
+                <li><strong>Resilient communication</strong> in adverse conditions</li>
+                <li><strong>Foundation for decentralized applications</strong></li>
+            </ul>
+
+            <h3>Get Involved</h3>
+
+            <ul>
+                <li><strong>Documentation</strong>: <a href="https://github.com/Uqda/Core">https://github.com/Uqda/Core</a></li>
+                <li><strong>Source code</strong>: <a href="https://github.com/Uqda/Core">https://github.com/Uqda/Core</a></li>
+                <li><strong>Community</strong>: Join discussions on GitHub</li>
+            </ul>
+
+            <p>Uqda returns control of network infrastructure to its users.<br>
+            <strong>Build the network you need. Own the network you build.</strong></p>
+
+            <hr>
+
+            <h2>References</h2>
+
+            <ul>
+                <li>Original protocol research: Yggdrasil Network Project</li>
+                <li>Cryptographic primitives: libsodium, Go standard library</li>
+                <li>Network topology research: Various distributed hash table and spanning tree publications</li>
+            </ul>
+
+            <hr>
+
+            <h2>Attribution</h2>
+
+            <p>Uqda Core is based on the Yggdrasil Network protocol, with significant implementation optimizations and operational improvements. See <a href="https://github.com/Uqda/Core/blob/main/ATTRIBUTION.md">ATTRIBUTION.md</a> for full credits.</p>
+
+            <hr>
+
+            <p><strong>Document Version</strong>: 1.0<br>
+            <strong>Last Updated</strong>: January 2026<br>
+            <strong>Contact</strong>: <a href="mailto:uqda@proton.me">uqda@proton.me</a><br>
+            <strong>License</strong>: See LICENSE file in repository</p>
+
+            <div style="margin-top: 50px; padding-top: 30px; border-top: 3px solid #000;">
+                <p style="text-align: center;">
+                    <a href="markdown/WHITEPAPER.md" style="color: #000; text-decoration: underline; font-weight: bold;">Download as Markdown</a> | 
+                    <a href="index.html" style="color: #000; text-decoration: underline; font-weight: bold;">Back to Home</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

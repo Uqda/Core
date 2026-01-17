@@ -114,6 +114,14 @@
         <xhtml:link rel="alternate" hreflang="en" href="https://uqda.github.io/nodeinfo.html" />
     </url>
     <url>
+        <loc>https://uqda.github.io/whitepaper.html</loc>
+        <lastmod>2026-01-17</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.9</priority>
+        <xhtml:link rel="alternate" hreflang="ar" href="https://uqda.github.io/ar/whitepaper.html" />
+        <xhtml:link rel="alternate" hreflang="en" href="https://uqda.github.io/whitepaper.html" />
+    </url>
+    <url>
         <loc>https://uqda.github.io/ar/</loc>
         <lastmod>2026-01-17</lastmod>
         <changefreq>weekly</changefreq>
