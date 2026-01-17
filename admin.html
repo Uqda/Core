@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Admin API documentation for Uqda Network">
+    <title>Admin API - Uqda Network</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">UQDA NETWORK</a></h1>
+            <div class="subtitle">ADMIN API</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// ADMIN SOCKET</div>
+            <p>The admin socket provides an interface to query and configure Uqda during runtime. By default, Uqda listens for admin connections on <code>localhost:9001</code>.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// CONTROL UTILITY</div>
+            <p>The <code>uqdactl</code> utility provides a human-friendly CLI interface to the Uqda admin socket. It can connect to both local and remote Uqda instances.</p>
+            <p>Examples include:</p>
+            <div class="code-block">
+                <div class="code-line">uqdactl getSelf</div>
+                <div class="code-line">uqdactl getPeers</div>
+                <div class="code-line">uqdactl addPeer tcp://peer.example.com:12345</div>
+                <div class="code-line">uqdactl removePeer tcp://peer.example.com:12345</div>
+            </div>
+            <p>To get a list of supported commands:</p>
+            <div class="code-block">
+                <div class="code-line">uqdactl list</div>
+            </div>
+            <p>To perform an action on a remote Uqda node, specify the <code>-endpoint</code> parameter:</p>
+            <div class="code-block">
+                <div class="code-line">uqdactl -endpoint=tcp://10.0.0.1:9001 getPeers</div>
+                <div class="code-line">uqdactl -endpoint=unix:///var/run/uqda.sock getSelf</div>
+            </div>
+            <p>To get the JSON response body instead of a "friendly" output, specify the <code>-json</code> parameter:</p>
+            <div class="code-block">
+                <div class="code-line">uqdactl -json getPeers</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// ADMIN SOCKET PROTOCOL</div>
+            <p>The Uqda admin socket uses JSON for request and response formats.</p>
+            <p>A request must be:</p>
+            <ul style="margin-left: 30px; margin-bottom: 20px;">
+                <li>A complete JSON stanza</li>
+                <li>Followed by a newline <code>\n</code> character</li>
+            </ul>
+            <p>Once a valid request is received, the response stanza is returned.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// REQUEST FORMAT</div>
+            <p>The structure of a typical request is as below:</p>
+            <div class="code-block">
+                <div class="code-line">{</div>
+                <div class="code-line">  "request": "XXX",</div>
+                <div class="code-line">  "foo": "bar",</div>
+                <div class="code-line">  "baz": "qux"</div>
+                <div class="code-line">}</div>
+            </div>
+            <p>A request:</p>
+            <ul style="margin-left: 30px; margin-bottom: 20px;">
+                <li><strong>Must</strong> have a <code>"request"</code> (<code>string</code>) field - a value containing the verb of the request</li>
+                <li><strong>Can</strong> have a <code>"keepalive"</code> (<code>bool</code>) field - a <code>true</code> or <code>false</code> value stating whether the connection should be kept alive for further requests</li>
+                <li><strong>Must</strong> have any other required fields for the request</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// RESPONSE FORMAT</div>
+            <p>A typical response is structured like this:</p>
+            <div class="code-block">
+                <div class="code-line">{</div>
+                <div class="code-line">  "request": { ... },</div>
+                <div class="code-line">  "response": { ... },</div>
+                <div class="code-line">  "status": "success"</div>
+                <div class="code-line">}</div>
+            </div>
+            <p>A response:</p>
+            <ul style="margin-left: 30px; margin-bottom: 20px;">
+                <li><strong>Always</strong> has a <code>"request"</code> field, which contains the body of the original request</li>
+                <li><strong>Always</strong> has a <code>"status"</code> field, which is either <code>"success"</code> or <code>"error"</code></li>
+                <li><strong>Optionally</strong> has a <code>"response"</code> section, which contains the response data from the request</li>
+                <li><strong>Optionally</strong> has an <code>"error"</code> field, which contains error text</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// COMMON COMMANDS</div>
+            <div class="grid-2">
+                <div class="box">
+                    <div class="box-title">getSelf</div>
+                    <div class="box-description">Returns information about the current Uqda node, including IPv6 address, public key, and subnet.</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">getPeers</div>
+                    <div class="box-description">Returns information about active peer sessions. The first record typically refers to the current node.</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">addPeer</div>
+                    <div class="box-description">Adds a new peer connection. Requires a URI parameter (e.g., tcp://peer.example.com:12345).</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">removePeer</div>
+                    <div class="box-description">Removes a peer connection. Requires a URI parameter matching the peer to remove.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// NEXT STEPS</div>
+            <div class="grid-2">
+                <a href="configuration.html" class="box">
+                    <div class="box-title">CONFIGURATION</div>
+                    <div class="box-description">Learn about configuration files</div>
+                </a>
+                <a href="implementation.html" class="box">
+                    <div class="box-title">IMPLEMENTATION</div>
+                    <div class="box-description">Learn how Uqda works</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

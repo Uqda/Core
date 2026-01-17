@@ -139,10 +139,10 @@ uqdactl addPeer tcp://peer.example.com:12345
 
 ## Learn More
 
-- **Technical Whitepaper**: [WHITEPAPER.md](WHITEPAPER.md) (this file)
-- **FAQ**: [FAQ.md](FAQ.md) (this file)
+- **Technical Whitepaper**: [WHITEPAPER.md](WHITEPAPER.md)
+- **FAQ**: [FAQ.md](FAQ.md)
 - **Full Documentation**: [../README.md](../README.md)
-- **Security**: [SECURITY.md](SECURITY.md)
+- **Security**: [../SECURITY.md](../SECURITY.md)
 - **Source Code**: [github.com/Uqda/Core](https://github.com/Uqda/Core)
 - **Releases**: [github.com/Uqda/Core/releases](https://github.com/Uqda/Core/releases)
 
@@ -160,7 +160,7 @@ uqdactl addPeer tcp://peer.example.com:12345
 
 **GNU Lesser General Public License v3.0 (LGPLv3)**
 
-Commercial use allowed. See [LICENSE](LICENSE) for details.
+Commercial use allowed. See [../LICENSE](../LICENSE) for details.
 
 ---
 

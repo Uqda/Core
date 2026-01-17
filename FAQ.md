@@ -86,7 +86,7 @@ block in on uqda0 all
 pass in on uqda0 proto tcp from any to any port 22
 ```
 
-See [SECURITY.md](SECURITY.md) for more details.
+See [../SECURITY.md](../SECURITY.md) for more details.
 
 ### How does addressing work?
 
@@ -141,7 +141,7 @@ Uqda includes several performance optimizations:
    - First retry: 100ms (vs 1s)
    - Faster reconnection after temporary failures
 
-See [docs/PERFORMANCE_OPTIMIZATIONS.md](docs/PERFORMANCE_OPTIMIZATIONS.md) for details.
+See the [Technical Whitepaper](WHITEPAPER.md) for performance details.
 
 ### What's the latency improvement?
 
@@ -189,7 +189,7 @@ The codebase inherits cryptographic implementations from:
 3. **Use application-layer encryption** for highly sensitive data
 4. **Monitor your node** for unexpected traffic
 
-See [SECURITY.md](SECURITY.md) for detailed security guidance.
+See [../SECURITY.md](../SECURITY.md) for detailed security guidance.
 
 ### How do I report a security vulnerability?
 
@@ -239,7 +239,7 @@ We will acknowledge receipt within 48 hours and work with you on responsible dis
 
 1. **Check peer distance** - Prefer geographically close peers
 2. **Monitor routing table** - Use `uqdactl getPeers` to see active connections
-3. **Review performance metrics** - See [docs/PERFORMANCE_OPTIMIZATIONS.md](docs/PERFORMANCE_OPTIMIZATIONS.md)
+3. **Review performance metrics** - See the [Technical Whitepaper](WHITEPAPER.md)
 
 ### How do I add/remove peers?
 
@@ -264,7 +264,7 @@ Edit `uqda.conf` and add/remove entries from the `Peers` array.
 
 ### How can I contribute?
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+See [../CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines on:
 - Code contributions
 - Documentation improvements
 - Bug reports
@@ -288,7 +288,7 @@ Currently, we use GitHub Discussions for community interaction. This may expand 
 
 **GNU Lesser General Public License v3.0 (LGPLv3)** with binary distribution exception.
 
-See [LICENSE](LICENSE) for full details.
+See [../LICENSE](../LICENSE) for full details.
 
 ### Can I use Uqda commercially?
 

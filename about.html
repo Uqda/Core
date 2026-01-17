@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="About Uqda Network - Decentralized mesh networking protocol">
+    <title>About - Uqda Network</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">UQDA NETWORK</a></h1>
+            <div class="subtitle">ABOUT</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// ABOUT UQDA</div>
+            <p>Uqda Network (from Arabic <strong>عُقدة</strong> meaning "node") is an experimental software router and routing protocol for building effortless multi-hop computer networks. It is a <strong>fully decentralised</strong> design and only requires a small amount of state to work. It is predominantly a shortest-path routing scheme, whereby the network will attempt to find the most direct path from source to destination.</p>
+            <p>With support for a number of operating systems, it can be installed on everyday computers or devices.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// HOW IT WORKS</div>
+            <p>Every network node is a router capable of forwarding traffic and connect to each other using <strong>peering connections</strong> which carry network traffic. Peerings can be set up over any IP network — whether that's a direct wired or wireless link, a local area network or even the Internet.</p>
+            <p>Uqda nodes automatically pass traffic to help it get closer to its destination where possible. This means that, even in a network that is only sparsely connected, <strong>all nodes will be reachable</strong> by all other nodes on that network. It doesn't even matter if a node is behind a NAT — once a peering is established, traffic flows in both directions over that peering, making it reachable to other network nodes.</p>
+            <p>Uqda is also designed to tolerate changes in the network. For example, if a link fails, the network will quickly self-heal and use other links to route traffic where available. This makes it <strong>suitable for use in mesh networks</strong>, where links go up and down frequently and the network topology often changes.</p>
+            <p>Each node on the network has a location-independent <strong>cryptographic identity</strong> and stable IPv6 addresses are generated from this key. This allows IPv6-supporting applications to work over Uqda largely without modification. The address is fully mobile and stays with the node as it moves around the network.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// WHY UQDA?</div>
+            <p>Many networks that exist today are hierarchical in nature, require extensive manual configuration and often rely on a certain degree of centralisation in order to scale. This often makes it difficult or impractical to set up networks quickly on an ad-hoc basis and so most people are heavily reliant on their Internet Service Providers (ISPs).</p>
+            <p>On the other hand, Uqda requires <strong>very little configuration</strong> in order to work and full multi-hop networks can be built up very quickly and easily using Uqda.</p>
+            <p>Nodes do not need to be assigned an address from a centralised authority; they can <strong>generate their own cryptographic identity</strong> and, more importantly, they can keep this address as they roam. Once peering connections are established, routing information is propagated quickly and automatically throughout the network.</p>
+            <p>This ability to provide full end-to-end routability between all network nodes means that Uqda is potentially an enabling technology for true edge computing scenarios, as well as real-world mesh networks. Most importantly, <strong>does not rely on the Internet to function</strong>, therefore it can be used to rapidly build networks in places with little or no existing infrastructure.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// RELATIONSHIP TO YGGDRASIL</div>
+            <p>Uqda Network is derived from the <a href="https://yggdrasil-network.github.io/">Yggdrasil Network</a> project. We maintain compatibility with Yggdrasil v0.5 protocol while implementing performance optimizations and improvements.</p>
+            <p>Uqda exists to <strong>complement, not compete</strong> with Yggdrasil, by serving users who prioritize operational performance and production readiness. See <a href="https://github.com/Uqda/Core/blob/main/ATTRIBUTION.md">ATTRIBUTION.md</a> for full details.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// PROJECT STATUS</div>
+            <p>Uqda is currently an <strong>alpha-level project</strong>, with ongoing development and active maintenance. The primary goal is to test the scalability of the routing scheme and optimize performance for real-world use cases.</p>
+            <p>As an alpha project, it may be dangerous to rely solely on Uqda for any life-or-death workloads. There may be failure modes that we don't yet know about yet!</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// GET STARTED</div>
+            <div class="grid-2">
+                <a href="installation.html" class="box">
+                    <div class="box-title">INSTALLATION</div>
+                    <div class="box-description">Install Uqda on your system</div>
+                </a>
+                <a href="configuration.html" class="box">
+                    <div class="box-title">CONFIGURATION</div>
+                    <div class="box-description">Configure your Uqda node</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

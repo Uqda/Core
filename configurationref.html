@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Configuration reference for Uqda Network">
+    <title>Configuration Reference - Uqda Network</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">UQDA NETWORK</a></h1>
+            <div class="subtitle">CONFIGURATION REFERENCE</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// PEERS</div>
+            <p>A list of outbound peering connections to make. Peers are specified in URL format. The following types of peers are supported:</p>
+            <div class="code-block">
+                <div class="code-line">tcp://1.1.1.1:1234 (TCP)</div>
+                <div class="code-line">tls://1.1.1.1:1234 (TCP+TLS)</div>
+                <div class="code-line">quic://1.1.1.1:1234 (QUIC+TLS)</div>
+                <div class="code-line">ws://1.1.1.1:1234 (WebSockets)</div>
+                <div class="code-line">wss://1.1.1.1:1234 (WebSockets+TLS)</div>
+                <div class="code-line">socks://2.2.2.2:2345/1.1.1.1:1234 (TCP via SOCKS)</div>
+                <div class="code-line">unix:///path/to/sock.sock (UNIX)</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// LISTEN</div>
+            <p>A list of listeners to open for accepting incoming connections. Instead of supplying the remote address, you should instead supply a bind address. This would either be <code>0.0.0.0</code> for IPv4, <code>::</code> for IPv4+IPv6 or the IP address of a network interface on your machine.</p>
+            <div class="code-block">
+                <div class="code-line">tcp://[::]:1234 (TCP)</div>
+                <div class="code-line">tls://[::]:1234 (TCP+TLS)</div>
+                <div class="code-line">quic://[::]:1234 (QUIC+TLS)</div>
+                <div class="code-line">ws://[::]:444 (WebSockets)</div>
+                <div class="code-line">wss://[::]:444 (WebSockets+TLS)</div>
+                <div class="code-line">unix:///path/to/sock.sock (UNIX)</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// MULTICAST INTERFACES</div>
+            <p>Controls which interfaces to enable or disable multicast peer discovery on. The default varies by platform.</p>
+            <p>Each multicast interface block has the following options:</p>
+            <ul style="margin-left: 30px; margin-bottom: 20px;">
+                <li><code>Regex</code> — match the names of specific interfaces</li>
+                <li><code>Beacon</code> — controls whether this node should advertise its presence</li>
+                <li><code>Listen</code> — controls whether this node should attempt to connect to other nearby nodes</li>
+                <li><code>Port</code> — sets the port number for the TLS listener</li>
+                <li><code>Password</code> — optionally sets a password for discovery</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// ALLOWED PUBLIC KEYS</div>
+            <p>A list of public keys from which your node will allow incoming peering connections.</p>
+            <p>If public keys are specified, whitelisting is enabled and only nodes with those public keys will be able to peer. If no public keys are specified in this section then peering connections will be allowed as per the <code>Listen</code> and/or <code>MulticastInterfaces</code> configuration.</p>
+            <p><strong>NOTE:</strong> This is not a firewall and does not control who can send you traffic over the Uqda Network or reach open ports and services on your machine. For that you need an IPv6 firewall.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// IFNAME</div>
+            <p>Determines which TUN interface to use. The default is set to <code>auto</code> which will try to set up a TUN automatically. If set to <code>none</code>, TUN will be disabled and the node will run in headless router-only mode.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// PRIVATE KEY</div>
+            <p>The private key for this node, specified as a hexadecimal string. If not specified, a random private key will be generated on startup.</p>
+            <p>Alternatively, you can use <code>PrivateKeyPath</code> to specify the path to a file containing the private key.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// MORE INFORMATION</div>
+            <p>For complete configuration examples and advanced options, see the <a href="configuration.html">Configuration Guide</a>.</p>
+        </div>
+    </div>
+</body>
+</html>
+

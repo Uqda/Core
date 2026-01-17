@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Installation guide for Uqda Network">
+    <title>Installation - Uqda Network</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">UQDA NETWORK</a></h1>
+            <div class="subtitle">INSTALLATION</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// DOWNLOAD</div>
+            <p>Uqda can be downloaded for major platforms from our <a href="https://github.com/Uqda/Core/releases">GitHub Releases</a> page.</p>
+            <p><strong>🚨 Please remember to check for Uqda updates regularly.</strong> Uqda does not have a built-in method of notifying you when new versions are available. You may want to subscribe to the <a href="https://github.com/Uqda/Core/releases.atom">GitHub Releases Atom feed</a> or consider <a href="https://github.com/Uqda/Core">watching the GitHub repository</a>.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// LINUX</div>
+            <p>Uqda is well supported on Linux. There are distribution packages available:</p>
+            
+            <div class="box">
+                <div class="box-title">DEBIAN / UBUNTU</div>
+                <div class="code-block">
+                    <div class="code-line">wget https://github.com/Uqda/Core/releases/latest/download/uqda-*.deb</div>
+                    <div class="code-line">sudo dpkg -i uqda-*.deb</div>
+                </div>
+            </div>
+
+            <div class="box" style="margin-top: 20px;">
+                <div class="box-title">FROM SOURCE</div>
+                <div class="code-block">
+                    <div class="code-line">git clone https://github.com/Uqda/Core.git</div>
+                    <div class="code-line">cd Core</div>
+                    <div class="code-line">./build</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// WINDOWS</div>
+            <p>Uqda works on Windows. Download the MSI installer from <a href="https://github.com/Uqda/Core/releases">GitHub Releases</a> and run it.</p>
+            <p>Or build from source using Go 1.22+.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// MACOS</div>
+            <p>Uqda is well supported on macOS. Download the .pkg installer from <a href="https://github.com/Uqda/Core/releases">GitHub Releases</a> or build from source.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// QUICK START</div>
+            <p>After installation, you can start Uqda in auto-configuration mode:</p>
+            <div class="code-block">
+                <div class="code-line">sudo uqda -autoconf</div>
+            </div>
+            <p>Or generate a configuration file:</p>
+            <div class="code-block">
+                <div class="code-line">uqda -genconf > uqda.conf</div>
+                <div class="code-line">sudo uqda -useconffile uqda.conf</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// NEXT STEPS</div>
+            <div class="grid-2">
+                <a href="configuration.html" class="box">
+                    <div class="box-title">CONFIGURATION</div>
+                    <div class="box-description">Learn how to configure Uqda</div>
+                </a>
+                <a href="about.html" class="box">
+                    <div class="box-title">ABOUT</div>
+                    <div class="box-description">Learn more about Uqda</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
