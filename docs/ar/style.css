@@ -227,12 +227,14 @@ a:hover {
     align-items: center;
     flex-wrap: wrap;
     gap: 15px;
+    direction: ltr;
 }
 
 .navbar-links {
     display: flex;
     gap: 15px;
     flex-wrap: wrap;
+    direction: ltr;
 }
 
 .navbar-link {
@@ -245,6 +247,7 @@ a:hover {
     transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 1px;
+    white-space: nowrap;
 }
 
 .navbar-link:hover {
@@ -263,6 +266,7 @@ a:hover {
     transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 1px;
+    white-space: nowrap;
 }
 
 .navbar-lang:hover {
@@ -270,29 +274,166 @@ a:hover {
     color: #fff;
 }
 
+@media (max-width: 1200px) {
+    .container {
+        max-width: 100%;
+        padding: 0 15px;
+    }
+    
+    .header h1 {
+        font-size: 48px;
+        letter-spacing: 6px;
+    }
+    
+    .section {
+        padding: 35px 25px;
+    }
+}
+
 @media (max-width: 1024px) {
+    .header h1 {
+        font-size: 42px;
+        letter-spacing: 5px;
+    }
+    
+    .section-title {
+        font-size: 26px;
+    }
+    
     .grid-3 {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .header h1 {
+        font-size: 32px;
+        letter-spacing: 3px;
+    }
+    
+    .subtitle {
+        font-size: 16px;
+        letter-spacing: 2px;
+    }
+    
+    .header {
+        padding: 40px 20px;
+        margin-bottom: 30px;
+    }
+    
+    .section {
+        padding: 25px 20px;
+        margin-bottom: 30px;
+    }
+    
+    .section-title {
+        font-size: 22px;
+        letter-spacing: 2px;
+        margin-bottom: 25px;
+        padding-bottom: 12px;
+    }
+    
     .grid-2, .grid-3 {
         grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .box {
+        padding: 25px 20px;
+    }
+    
+    .box-title {
+        font-size: 18px;
     }
     
     .navbar {
         flex-direction: column;
         align-items: stretch;
+        direction: rtl;
     }
     
     .navbar-links {
         flex-direction: column;
         width: 100%;
+        direction: rtl;
     }
     
     .navbar-link, .navbar-lang {
         width: 100%;
         text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .header h1 {
+        font-size: 26px;
+        letter-spacing: 2px;
+    }
+    
+    .subtitle {
+        font-size: 14px;
+        letter-spacing: 1px;
+    }
+    
+    .header {
+        padding: 30px 15px;
+    }
+    
+    .section {
+        padding: 20px 15px;
+        margin-bottom: 20px;
+    }
+    
+    .section-title {
+        font-size: 20px;
+        letter-spacing: 1px;
+    }
+}
+
+@media (max-width: 360px) {
+    .header h1 {
+        font-size: 22px;
+        letter-spacing: 1px;
+    }
+    
+    .section {
+        padding: 15px 10px;
+    }
+    
+    .section-title {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 320px) {
+    body {
+        padding: 5px;
+    }
+    
+    .header h1 {
+        font-size: 20px;
+        letter-spacing: 1px;
+    }
+    
+    .subtitle {
+        font-size: 12px;
+    }
+    
+    .header {
+        padding: 25px 10px;
+    }
+    
+    .section {
+        padding: 15px 8px;
+        margin-bottom: 15px;
+    }
+    
+    .section-title {
+        font-size: 16px;
+        padding-bottom: 8px;
     }
 }
