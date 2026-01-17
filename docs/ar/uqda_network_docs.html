@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="شبكة عُقدة - بروتوكول شبكة mesh مشفر من طرف إلى طرف مع عناوين IPv6 دائمة وبدون إعدادات">
+    <meta name="keywords" content="عُقدة, شبكة mesh, IPv6, تشفير, لامركزي, نظير إلى نظير">
+    <title>شبكة عُقدة - الوثائق التقنية</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            color: #000000;
+            line-height: 1.8;
+            padding: 20px;
+            min-width: 320px;
+            overflow-x: hidden;
+            direction: rtl;
+            text-align: right;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .header {
+            border: 4px solid #000;
+            padding: 60px 40px;
+            margin-bottom: 40px;
+            text-align: center;
+            background: #fff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #000 0%, #666 50%, #000 100%);
+        }
+
+        h1 {
+            font-size: 56px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            letter-spacing: 3px;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        .section {
+            border: 3px solid #000;
+            margin-bottom: 40px;
+            padding: 40px;
+            background: #fff;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        }
+
+        .section-title {
+            font-size: 30px;
+            font-weight: bold;
+            margin-bottom: 35px;
+            border-bottom: 4px solid #000;
+            padding-bottom: 18px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            right: 0;
+            width: 120px;
+            height: 4px;
+            background: #666;
+        }
+
+        .diagram,
+        .ascii-art,
+        .code-block {
+            max-width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .diagram::-webkit-scrollbar,
+        .ascii-art::-webkit-scrollbar,
+        .code-block::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .diagram::-webkit-scrollbar-track,
+        .ascii-art::-webkit-scrollbar-track,
+        .code-block::-webkit-scrollbar-track {
+            background: #333;
+        }
+
+        .diagram::-webkit-scrollbar-thumb,
+        .ascii-art::-webkit-scrollbar-thumb,
+        .code-block::-webkit-scrollbar-thumb {
+            background: #00ff00;
+            border-radius: 4px;
+        }
+
+        .diagram::-webkit-scrollbar-thumb:hover,
+        .ascii-art::-webkit-scrollbar-thumb:hover,
+        .code-block::-webkit-scrollbar-thumb:hover {
+            background: #00cc00;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 25px 0;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        .box {
+            border: 3px solid #000;
+            padding: 30px;
+            background: #fff;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #000, #666);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .box:hover::before {
+            transform: scaleX(1);
+        }
+
+        .box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .box-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .flow-step {
+            flex: 1;
+            min-width: 180px;
+            text-align: center;
+            padding: 30px 20px;
+            border: 3px solid #000;
+            background: #fff;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .flow-step::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border: 3px solid #000;
+            transform: scale(0);
+            transition: transform 0.3s ease;
+        }
+
+        .flow-step:hover::before {
+            transform: scale(1.05);
+        }
+
+        .flow-step:hover {
+            transform: scale(1.08);
+            z-index: 10;
+        }
+
+        .flow-arrow {
+            font-size: 28px;
+            font-weight: bold;
+            padding: 0 15px;
+            color: #333;
+        }
+
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow-x: auto;
+            display: block;
+        }
+
+        .spec-table thead,
+        .spec-table tbody,
+        .spec-table tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .spec-table thead {
+            width: calc(100% - 1em);
+        }
+
+        .spec-table th,
+        .spec-table td {
+            border: 2px solid #000;
+            padding: 18px;
+            text-align: right;
+            vertical-align: top;
+        }
+
+        .spec-table th {
+            background: #000;
+            color: #fff;
+            font-weight: bold;
+            font-size: 16px;
+            letter-spacing: 1px;
+        }
+
+        .spec-table tr {
+            transition: background 0.2s ease;
+        }
+
+        .spec-table tbody tr:hover {
+            background: #f5f5f5;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .feature-box {
+            border: 3px solid #000;
+            padding: 35px 25px;
+            text-align: center;
+            background: #fff;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-box::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(0,0,0,0.05);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s ease, height 0.3s ease;
+        }
+
+        .feature-box:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .feature-box:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+        }
+
+        .feature-icon {
+            font-size: 56px;
+            margin-bottom: 20px;
+            display: block;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-box > div:last-child {
+            position: relative;
+            z-index: 1;
+        }
+
+        .diagram {
+            background: #1a1a1a;
+            border: 3px solid #000;
+            padding: 35px;
+            margin: 25px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            line-height: 1.5;
+            color: #00ff00;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            border-radius: 2px;
+            white-space: pre-wrap;
+            word-break: keep-all;
+        }
+
+        .ascii-art {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 35px;
+            border: 3px solid #000;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            border-radius: 2px;
+            word-break: keep-all;
+        }
+
+        .code-block {
+            background: #000;
+            color: #00ff00;
+            padding: 30px;
+            margin: 25px 0;
+            border: 3px solid #000;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            border-radius: 2px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .code-line {
+            margin: 10px 0;
+            padding-right: 25px;
+            position: relative;
+            line-height: 1.8;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .code-line::before {
+            content: '>';
+            position: absolute;
+            right: 0;
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .code-comment {
+            color: #888;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 35px 20px;
+            border: 3px solid #000;
+            background: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .metric:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .metric-value {
+            font-size: 72px;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 15px;
+            line-height: 1;
+            color: #000;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #333;
+        }
+
+        .network-visual {
+            padding: 40px 30px;
+            text-align: center;
+            border: 3px solid #000;
+            background: #f5f5f5;
+            margin: 25px 0;
+        }
+
+        .node {
+            display: inline-block;
+            width: 70px;
+            height: 70px;
+            border: 4px solid #000;
+            border-radius: 50%;
+            line-height: 62px;
+            text-align: center;
+            font-weight: bold;
+            background: #fff;
+            margin: 15px;
+            transition: all 0.3s ease;
+            font-size: 20px;
+        }
+
+        .node:hover {
+            transform: scale(1.2);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .connection {
+            display: inline-block;
+            width: 50px;
+            height: 4px;
+            background: #000;
+            vertical-align: middle;
+        }
+
+        .timeline {
+            border-right: 4px solid #000;
+            margin-right: 40px;
+            padding-right: 40px;
+        }
+
+        .timeline-item {
+            margin-bottom: 40px;
+            position: relative;
+            padding: 20px;
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-item:hover {
+            background: #fff;
+            border-color: #000;
+            transform: translateX(-10px);
+        }
+
+        .timeline-item::before {
+            content: '';
+            width: 24px;
+            height: 24px;
+            background: #000;
+            border: 4px solid #fff;
+            position: absolute;
+            right: -54px;
+            top: 20px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 4px #000;
+        }
+
+        .timeline-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 18px;
+            letter-spacing: 2px;
+            color: #000;
+        }
+
+        .timeline-item > div:nth-child(2) {
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        .cta-box {
+            border: 5px solid #000;
+            padding: 60px 40px;
+            text-align: center;
+            margin: 50px 0;
+            background: #000;
+            color: #fff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .cta-title {
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            letter-spacing: 4px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 18px 45px;
+            border: 3px solid #fff;
+            background: transparent;
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 15px 10px;
+            transition: all 0.3s ease;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .btn:hover {
+            background: #fff;
+            color: #000;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255,255,255,0.3);
+        }
+
+        .ascii-art {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 35px;
+            border: 3px solid #000;
+            overflow-x: auto;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            border-radius: 2px;
+            word-break: keep-all;
+        }
+
+        .label {
+            background: #000;
+            color: #fff;
+            padding: 8px 15px;
+            display: inline-block;
+            margin: 8px 0;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        hr {
+            border: none;
+            border-top: 3px solid #000;
+            margin: 40px 0;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                max-width: 100%;
+                padding: 0 15px;
+            }
+            
+            h1 {
+                font-size: 48px;
+                letter-spacing: 6px;
+            }
+            
+            .section {
+                padding: 35px 25px;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            h1 {
+                font-size: 42px;
+                letter-spacing: 5px;
+            }
+            
+            .grid-4 { 
+                grid-template-columns: repeat(2, 1fr); 
+            }
+            
+            .feature-grid { 
+                grid-template-columns: repeat(2, 1fr); 
+            }
+            
+            .section-title {
+                font-size: 26px;
+            }
+            
+            .metric-value {
+                font-size: 64px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 32px;
+                letter-spacing: 3px;
+            }
+            
+            .subtitle {
+                font-size: 16px;
+                letter-spacing: 2px;
+            }
+            
+            .header {
+                padding: 40px 20px;
+                margin-bottom: 30px;
+            }
+            
+            .section {
+                padding: 25px 20px;
+                margin-bottom: 30px;
+            }
+            
+            .section-title {
+                font-size: 22px;
+                letter-spacing: 2px;
+                margin-bottom: 25px;
+                padding-bottom: 12px;
+            }
+            
+            .grid-2 { 
+                grid-template-columns: 1fr; 
+                gap: 20px;
+            }
+            
+            .grid-4 { 
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .feature-grid { 
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .flow-diagram { 
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .flow-arrow { 
+                transform: rotate(90deg); 
+                margin: 10px 0;
+                font-size: 24px;
+            }
+            
+            .flow-step {
+                min-width: 100%;
+                padding: 25px 15px;
+            }
+            
+            .metric-value { 
+                font-size: 52px; 
+            }
+            
+            .metric-label {
+                font-size: 13px;
+            }
+            
+            .box {
+                padding: 25px 20px;
+            }
+            
+            .box-title {
+                font-size: 18px;
+            }
+            
+            .feature-box {
+                padding: 30px 20px;
+            }
+            
+            .feature-icon {
+                font-size: 48px;
+            }
+            
+            .feature-title {
+                font-size: 16px;
+            }
+            
+            .spec-table th,
+            .spec-table td {
+                padding: 12px 10px;
+                font-size: 14px;
+            }
+            
+            .diagram,
+            .ascii-art,
+            .code-block {
+                padding: 20px;
+                font-size: 13px;
+                overflow-x: auto;
+            }
+            
+            .timeline {
+                margin-right: 25px;
+                padding-right: 25px;
+            }
+            
+            .timeline-item {
+                padding: 15px;
+                margin-bottom: 30px;
+            }
+            
+            .timeline-item::before {
+                right: -40px;
+                width: 20px;
+                height: 20px;
+            }
+            
+            .timeline-number {
+                font-size: 20px;
+                margin-bottom: 12px;
+            }
+            
+            .cta-box {
+                padding: 40px 20px;
+                margin: 30px 0;
+            }
+            
+            .cta-title {
+                font-size: 28px;
+                letter-spacing: 2px;
+                margin-bottom: 20px;
+            }
+            
+            .btn {
+                display: block;
+                width: 100%;
+                margin: 10px 0;
+                padding: 15px 30px;
+                font-size: 14px;
+            }
+            
+            .node {
+                width: 60px;
+                height: 60px;
+                line-height: 54px;
+                font-size: 18px;
+                margin: 10px;
+            }
+            
+            .network-visual {
+                padding: 30px 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 26px;
+                letter-spacing: 2px;
+            }
+            
+            .subtitle {
+                font-size: 14px;
+                letter-spacing: 1px;
+            }
+            
+            .header {
+                padding: 30px 15px;
+            }
+            
+            .section {
+                padding: 20px 15px;
+                margin-bottom: 20px;
+            }
+            
+            .section-title {
+                font-size: 20px;
+                letter-spacing: 1px;
+            }
+            
+            .metric-value {
+                font-size: 42px;
+            }
+            
+            .metric {
+                padding: 25px 15px;
+            }
+            
+            .feature-icon {
+                font-size: 40px;
+            }
+            
+            .cta-title {
+                font-size: 24px;
+                letter-spacing: 1px;
+            }
+            
+            .diagram,
+            .ascii-art,
+            .code-block {
+                padding: 15px;
+                font-size: 12px;
+            }
+            
+            .code-line {
+                padding-right: 20px;
+            }
+            
+            .spec-table {
+                font-size: 13px;
+            }
+            
+            .spec-table th,
+            .spec-table td {
+                padding: 10px 8px;
+            }
+            
+            .timeline {
+                margin-right: 15px;
+                padding-right: 20px;
+                border-right-width: 3px;
+            }
+            
+            .timeline-item::before {
+                right: -31px;
+                width: 16px;
+                height: 16px;
+            }
+            
+            .timeline-number {
+                font-size: 18px;
+            }
+            
+            .node {
+                width: 50px;
+                height: 50px;
+                line-height: 44px;
+                font-size: 16px;
+                margin: 8px;
+            }
+            
+            .connection {
+                width: 30px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            h1 {
+                font-size: 22px;
+                letter-spacing: 1px;
+            }
+            
+            .section {
+                padding: 15px 10px;
+            }
+            
+            .section-title {
+                font-size: 18px;
+            }
+            
+            .metric-value {
+                font-size: 36px;
+            }
+            
+            .cta-title {
+                font-size: 20px;
+            }
+            
+            .diagram,
+            .ascii-art,
+            .code-block {
+                padding: 12px;
+                font-size: 11px;
+            }
+        }
+
+        /* Extra small devices (phones in portrait, < 320px) */
+        @media (max-width: 320px) {
+            body {
+                padding: 5px;
+            }
+            
+            h1 {
+                font-size: 20px;
+                letter-spacing: 1px;
+            }
+            
+            .subtitle {
+                font-size: 12px;
+            }
+            
+            .header {
+                padding: 25px 10px;
+            }
+            
+            .section {
+                padding: 15px 8px;
+                margin-bottom: 15px;
+            }
+            
+            .section-title {
+                font-size: 16px;
+                padding-bottom: 8px;
+            }
+            
+            .metric-value {
+                font-size: 32px;
+            }
+            
+            .metric {
+                padding: 20px 10px;
+            }
+            
+            .feature-icon {
+                font-size: 36px;
+            }
+            
+            .feature-title {
+                font-size: 14px;
+            }
+            
+            .cta-title {
+                font-size: 18px;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 12px;
+            }
+            
+            .diagram,
+            .ascii-art,
+            .code-block {
+                padding: 10px;
+                font-size: 10px;
+            }
+            
+            .spec-table th,
+            .spec-table td {
+                padding: 8px 6px;
+                font-size: 12px;
+            }
+            
+            .node {
+                width: 45px;
+                height: 45px;
+                line-height: 39px;
+                font-size: 14px;
+                margin: 5px;
+            }
+        }
+
+        /* Touch device optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .btn {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            .node {
+                min-width: 50px;
+                min-height: 50px;
+            }
+            
+            .flow-step {
+                min-height: 120px;
+            }
+        }
+
+        /* Landscape orientation fixes for tablets */
+        @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+            .grid-4 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .feature-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .grid-2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+                box-shadow: none;
+            }
+            
+            .btn {
+                display: none;
+            }
+        }
+
+        .highlight-box {
+            background: #f9f9f9;
+            border-right: 6px solid #000;
+            padding: 25px;
+            margin: 30px 0;
+            line-height: 2;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .check-mark {
+            color: #00ff00;
+            font-weight: bold;
+            margin-left: 12px;
+            font-size: 18px;
+        }
+
+        .cross-mark {
+            color: #ff0000;
+            font-weight: bold;
+            margin-left: 12px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>شبكة عُقدة</h1>
+            <div class="subtitle">شبكة MESH مشفرة من طرف إلى طرف</div>
+        </div>
+
+        <!-- The Concept -->
+        <div class="section">
+            <div class="section-title">// المفهوم</div>
+            <div class="ascii-art">
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│   الإنترنت التقليدي = قفزات متعددة، مراقبون متعددون      │
+│   شبكة عُقدة        = مسار مباشر، خصوصية كاملة              │
+│                                                             │
+│   بياناتك → [مشفرة] → شبكة Mesh → [مشفرة]                  │
+│                                                             │
+│   النتيجة: عنوان دائم + تشفير تلقائي + ثقة صفر             │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+            </div>
+        </div>
+
+        <!-- Problem Analysis -->
+        <div class="section">
+            <div class="section-title">// بيان المشكلة</div>
+            
+            <div class="diagram">مسار الإنترنت التقليدي:
+
+┌──────────┐
+│   أنت    │
+└────┬─────┘
+     │
+     ▼
+┌──────────┐   ← الموجه 1  [يمكنه رؤية بياناتك]
+└────┬─────┘
+     │
+     ▼
+┌──────────┐   ← الموجه 2  [يمكنه رؤية بياناتك]
+└────┬─────┘
+     │
+     ▼
+┌──────────┐   ← مزود الإنترنت [يمكنه رؤية بياناتك]
+└────┬─────┘
+     │
+    ...
+     │ (12 موجه إضافي يراقبون)
+     │
+     ▼
+┌──────────┐   ← الموجه 16 [يمكنه رؤية بياناتك]
+└────┬─────┘
+     │
+     ▼
+┌──────────┐
+│  الوجهة  │
+└──────────┘</div>
+
+            <div class="highlight-box">
+                <strong>مشاكل حرجة:</strong><br><br>
+                <span class="cross-mark">[×]</span> 16 نقطة مراقبة محتملة<br>
+                <span class="cross-mark">[×]</span> عنوان IP يتغير باستمرار<br>
+                <span class="cross-mark">[×]</span> لا يوجد ضمان للخصوصية<br>
+                <span class="cross-mark">[×]</span> اعتمادات توجيه معُقدة
+            </div>
+        </div>
+
+        <!-- Solution Architecture -->
+        <div class="section">
+            <div class="section-title">// بنية الحل</div>
+            
+            <div class="diagram">مسار شبكة عُقدة:
+
+┌──────────┐
+│   أنت    │
+└────┬─────┘
+     │
+     │ [مشفرة]
+     │
+     ▼
+┌─────────────────────┐
+│   قفزة Mesh مباشرة  │  ← جميع حركة المرور مشفرة
+└─────────┬───────────┘
+          │
+          │ [مشفرة]
+          │
+          ▼
+     ┌──────────┐
+     │  الوجهة  │
+     └──────────┘</div>
+
+            <div class="highlight-box">
+                <strong>مزايا رئيسية:</strong><br><br>
+                <span class="check-mark">[✓]</span> قفزة مشفرة واحدة<br>
+                <span class="check-mark">[✓]</span> عنوان دائم: 200:a3f2:8b1c:4d5e::<br>
+                <span class="check-mark">[✓]</span> لا حاجة للثقة<br>
+                <span class="check-mark">[✓]</span> طوبولوجيا mesh ذاتية الإصلاح
+            </div>
+        </div>
+
+        <!-- Network Topology Comparison -->
+        <div class="section">
+            <div class="section-title">// طوبولوجيا الشبكة</div>
+            
+            <div class="grid-2">
+                <div class="box">
+                    <div class="box-title">مركزي (تقليدي)</div>
+                    <div class="network-visual">
+                        <div class="node">S</div>
+                        <div style="margin: 20px 0; font-size: 24px;">↓</div>
+                        <div>
+                            <div class="node">A</div>
+                            <div class="node">B</div>
+                            <div class="node">C</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <div class="label">المشكلة</div>
+                        <div style="margin-top: 15px;">فشل الخادم → انقطاع جميع العقد</div>
+                    </div>
+                </div>
+
+                <div class="box">
+                    <div class="box-title">Mesh (عُقدة)</div>
+                    <div class="network-visual">
+                        <div>
+                            <div class="node">A</div>
+                            <span class="connection"></span>
+                            <div class="node">B</div>
+                        </div>
+                        <div style="margin: 20px 0; font-size: 24px;">↕ × ↕</div>
+                        <div>
+                            <div class="node">C</div>
+                            <span class="connection"></span>
+                            <div class="node">D</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <div class="label">الحل</div>
+                        <div style="margin-top: 15px;">مسارات متعددة زائدة → شبكة ذاتية الإصلاح</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specifications -->
+        <div class="section">
+            <div class="section-title">// المواصفات التقنية</div>
+            
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>المكون</th>
+                        <th>المواصفة</th>
+                        <th>الفائدة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>التشفير</strong></td>
+                        <td>ChaCha20-Poly1305</td>
+                        <td>أمان عسكري المستوى</td>
+                    </tr>
+                    <tr>
+                        <td><strong>التوقيع</strong></td>
+                        <td>Ed25519 (256-bit)</td>
+                        <td>آمن تشفيرياً</td>
+                    </tr>
+                    <tr>
+                        <td><strong>تبادل المفاتيح</strong></td>
+                        <td>X25519</td>
+                        <td>إنشاء مفاتيح آمن</td>
+                    </tr>
+                    <tr>
+                        <td><strong>العنونة</strong></td>
+                        <td>IPv6 (0200::/7 prefix)</td>
+                        <td>هوية تشفيرية دائمة</td>
+                    </tr>
+                    <tr>
+                        <td><strong>الطوبولوجيا</strong></td>
+                        <td>Mesh موزع</td>
+                        <td>لا توجد نقطة فشل واحدة</td>
+                    </tr>
+                    <tr>
+                        <td><strong>التوجيه</strong></td>
+                        <td>Distance-Vector (DHT)</td>
+                        <td>اختيار المسار الأمثل</td>
+                    </tr>
+                    <tr>
+                        <td><strong>النقل</strong></td>
+                        <td>TCP/TLS/QUIC/WS/WSS</td>
+                        <td>خيارات اتصال مرنة</td>
+                    </tr>
+                    <tr>
+                        <td><strong>إصدار البروتوكول</strong></td>
+                        <td>0.5</td>
+                        <td>متوافق مع Yggdrasil v0.5</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="section">
+            <div class="section-title">// مقاييس الأداء</div>
+            
+            <div class="grid-4">
+                <div class="metric">
+                    <span class="metric-value">1</span>
+                    <div class="metric-label">قفزة</div>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">$0</span>
+                    <div class="metric-label">التكلفة/الشهر</div>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">&lt;1m</span>
+                    <div class="metric-label">وقت الإعداد</div>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">∞</span>
+                    <div class="metric-label">عمر العنوان</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Address Permanence -->
+        <div class="section">
+            <div class="section-title">// ديمومة العنوان</div>
+            
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <div style="font-size: 40px; margin-bottom: 15px;">🏠</div>
+                    <div style="font-weight: bold;">المنزل</div>
+                    <div style="margin-top: 15px; font-weight: bold; font-size: 13px; color: #666;">200:a3f2:8b1c:4d5e::1</div>
+                </div>
+                <div class="flow-arrow">←</div>
+                <div class="flow-step">
+                    <div style="font-size: 40px; margin-bottom: 15px;">🏢</div>
+                    <div style="font-weight: bold;">المكتب</div>
+                    <div style="margin-top: 15px; font-weight: bold; font-size: 13px; color: #666;">200:a3f2:8b1c:4d5e::1</div>
+                </div>
+                <div class="flow-arrow">←</div>
+                <div class="flow-step">
+                    <div style="font-size: 40px; margin-bottom: 15px;">✈️</div>
+                    <div style="font-weight: bold;">السفر</div>
+                    <div style="margin-top: 15px; font-weight: bold; font-size: 13px; color: #666;">200:a3f2:8b1c:4d5e::1</div>
+                </div>
+                <div class="flow-arrow">←</div>
+                <div class="flow-step">
+                    <div style="font-size: 40px; margin-bottom: 15px;">🌍</div>
+                    <div style="font-weight: bold;">أي مكان</div>
+                    <div style="margin-top: 15px; font-weight: bold; font-size: 13px; color: #666;">200:a3f2:8b1c:4d5e::1</div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="text-align: center; border-right: none; border: 3px solid #000;">
+                <strong style="font-size: 18px;">عنونة مستقلة عن الموقع</strong>
+                <div style="margin-top: 10px;">هويتك تبقى ثابتة بغض النظر عن موقعك الفيزيائي</div>
+            </div>
+        </div>
+
+        <!-- Core Features -->
+        <div class="section">
+            <div class="section-title">// الميزات الأساسية</div>
+            
+            <div class="feature-grid">
+                <div class="feature-box">
+                    <span class="feature-icon">🔒</span>
+                    <div class="feature-title">تشفير تلقائي</div>
+                    <div>جميع حركة المرور مشفرة افتراضياً بدون إعدادات</div>
+                </div>
+
+                <div class="feature-box">
+                    <span class="feature-icon">🎯</span>
+                    <div class="feature-title">عنوان دائم</div>
+                    <div>لا يتغير أبداً بغض النظر عن الموقع أو الشبكة</div>
+                </div>
+
+                <div class="feature-box">
+                    <span class="feature-icon">🕸️</span>
+                    <div class="feature-title">طوبولوجيا Mesh</div>
+                    <div>بنية شبكية لامركزية ذاتية الإصلاح</div>
+                </div>
+
+                <div class="feature-box">
+                    <span class="feature-icon">💰</span>
+                    <div class="feature-title">تكلفة صفر</div>
+                    <div>مجاني تماماً ومفتوح المصدر للأبد</div>
+                </div>
+
+                <div class="feature-box">
+                    <span class="feature-icon">🚫</span>
+                    <div class="feature-title">ثقة صفر</div>
+                    <div>لا سلطة مركزية أو اعتمادات على أطراف ثالثة</div>
+                </div>
+
+                <div class="feature-box">
+                    <span class="feature-icon">⚡</span>
+                    <div class="feature-title">إعدادات صفر</div>
+                    <div>يعمل مباشرة مع الحد الأدنى من الإعدادات المطلوبة</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Matrix -->
+        <div class="section">
+            <div class="section-title">// مصفوفة المقارنة</div>
+            
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>المعامل</th>
+                        <th>الإنترنت</th>
+                        <th>VPN</th>
+                        <th>عُقدة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>التشفير</strong></td>
+                        <td>اختياري</td>
+                        <td>إلى الخادم فقط</td>
+                        <td><strong>من طرف إلى طرف</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>العنوان</strong></td>
+                        <td>ديناميكي</td>
+                        <td>ديناميكي</td>
+                        <td><strong>دائم</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>الثقة المطلوبة</strong></td>
+                        <td>مزود الإنترنت</td>
+                        <td>شركة VPN</td>
+                        <td><strong>لا شيء</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>التكلفة/الشهر</strong></td>
+                        <td>رسوم مزود الإنترنت</td>
+                        <td>$5-$15</td>
+                        <td><strong>$0</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>نقطة الفشل</strong></td>
+                        <td>موجهات متعددة</td>
+                        <td>خادم VPN</td>
+                        <td><strong>لا شيء</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>مستوى الخصوصية</strong></td>
+                        <td>منخفض</td>
+                        <td>متوسط</td>
+                        <td><strong>عالي</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Implementation Steps -->
+        <div class="section">
+            <div class="section-title">// التنفيذ</div>
+            
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-number">[01] التحميل</div>
+                    <div style="margin-bottom: 15px;">احصل على أحدث حزمة من إصدارات GitHub</div>
+                    <div class="code-block">
+                        <div class="code-line">wget https://github.com/Uqda/Core/releases/latest/download/uqda-*.deb</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-number">[02] التثبيت</div>
+                    <div style="margin-bottom: 15px;">نشر الحزمة على نظامك</div>
+                    <div class="code-block">
+                        <div class="code-line">sudo dpkg -i uqda-*.deb</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-number">[03] الإعداد</div>
+                    <div style="margin-bottom: 15px;">إنشاء الإعدادات أو استخدام الإعداد التلقائي</div>
+                    <div class="code-block">
+                        <div class="code-line">uqda -genconf > uqda.conf</div>
+                        <div class="code-line"><span class="code-comment"># أو استخدم الإعداد التلقائي</span></div>
+                        <div class="code-line">sudo uqda -autoconf</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-number">[04] الاتصال</div>
+                    <div style="margin-bottom: 15px;">إنشاء اتصالات الأقران مع شبكة mesh</div>
+                    <div class="code-block">
+                        <div class="code-line">uqdactl addPeer tcp://peer.example.com:12345</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-number">[05] التحقق</div>
+                    <div style="margin-bottom: 15px;">تأكيد حالة التشغيل والاتصال</div>
+                    <div class="code-block">
+                        <div class="code-line">uqdactl getSelf</div>
+                        <div class="code-line">uqdactl getPeers</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <div class="section-title">// مجالات التطبيق</div>
+            
+            <div class="grid-2">
+                <div class="box">
+                    <div class="box-title">الوصول عن بُعد</div>
+                    <div style="margin-bottom: 15px;">الوصول إلى البنية التحتية المنزلية من أي موقع في العالم</div>
+                    <div class="code-block">
+                        <div class="code-line">ssh user@[200:a3f2:8b1c:4d5e::]</div>
+                    </div>
+                </div>
+
+                <div class="box">
+                    <div class="box-title">استضافة الخدمات</div>
+                    <div style="margin-bottom: 15px;">نشر الخدمات على عناوين دائمة لا تتغير</div>
+                    <div class="code-block">
+                        <div class="code-line">http://[200:a3f2:8b1c:4d5e::]:8080</div>
+                    </div>
+                </div>
+
+                <div class="box">
+                    <div class="box-title">تعاون الفريق</div>
+                    <div style="margin-bottom: 15px;">إنشاء قنوات اتصال مشفرة للفرق</div>
+                    <div class="code-block">
+                        <div class="code-line">200:a3f2:8b1c:4d5e::1</div>
+                        <div class="code-line">200:a3f2:8b1c:4d5e::2</div>
+                    </div>
+                </div>
+
+                <div class="box">
+                    <div class="box-title">شبكات IoT</div>
+                    <div style="margin-bottom: 15px;">بنية اتصال آمنة من جهاز إلى جهاز</div>
+                    <div class="code-block">
+                        <div class="code-line">200:a3f2:8b1c:4d5e::device</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Encryption Details -->
+        <div class="section">
+            <div class="section-title">// التنفيذ التشفيري</div>
+            
+            <div class="diagram">خط أنابيب التشفير:
+
+┌────────────────┐
+│  النص العادي  │
+└───────┬────────┘
+        │
+        ▼
+┌────────────────┐
+│  ChaCha20      │  ← تشفير تدفق البيانات
+└───────┬────────┘
+        │
+        ▼
+┌────────────────┐
+│  Poly1305      │  ← توليد علامة المصادقة
+└───────┬────────┘
+        │
+        ▼
+┌────────────────┐
+│  النص المشفر   │  ← مشفر + مصادق
+└────────────────┘
+
+المعاملات:
+├─ الخوارزمية: ChaCha20-Poly1305
+├─ نوع المفتاح: Ed25519 (256-bit)
+├─ العدد العشوائي: 96-bit
+├─ العلامة: 128-bit
+└─ الوضع: AEAD (تشفير مصادق مع بيانات مرتبطة)</div>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="cta-box">
+            <div class="cta-title">نشر شبكة عُقدة</div>
+            <div style="margin-bottom: 35px; font-size: 20px; letter-spacing: 3px;">
+                مشفر • دائم • لامركزي
+            </div>
+            
+            <a href="https://github.com/Uqda/Core/releases" class="btn">تحميل</a>
+            <a href="https://github.com/Uqda/Core" class="btn">الوثائق</a>
+
+            <div style="margin-top: 40px; font-size: 16px; line-height: 2;">
+                <div><span class="check-mark">[✓]</span> تكلفة صفر</div>
+                <div><span class="check-mark">[✓]</span> مفتوح المصدر</div>
+                <div><span class="check-mark">[✓]</span> بدون تسجيل</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; border-top: 3px solid #000; padding: 40px 20px; margin-top: 50px; background: #fff;">
+            <div style="margin-bottom: 15px; font-size: 18px; font-weight: bold; letter-spacing: 2px;">مشروع شبكة عُقدة</div>
+            <div style="font-size: 16px;">
+                <a href="mailto:uqda@proton.me" style="color: #000; text-decoration: none; font-weight: bold;">uqda@proton.me</a> | 
+                <a href="https://github.com/Uqda/Core" style="color: #000; text-decoration: underline; font-weight: bold;">github.com/Uqda/Core</a>
+            </div>
+            <div style="margin-top: 20px; font-size: 14px; color: #666;">
+                © 2025-2026 شبكة عُقدة • مفتوح المصدر • ترخيص LGPLv3
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
