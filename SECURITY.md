@@ -163,6 +163,31 @@ If you need anonymity, use **Tor** or **I2P** instead.
 - No known critical vulnerabilities (as of January 2026)
 - Regular security updates as issues are discovered
 
+### Windows installers (MSI) and Smart App Control
+
+**Root cause:** Windows trusts installers that carry a valid **Authenticode** signature from a **publicly trusted** code-signing CA. Without that, **Smart App Control** and **SmartScreen** may block or warn — this is OS policy, not a bug in Uqda.
+
+**What this repo does:** The **Release** workflow (`release.yml`) runs `contrib/msi/sign-msi.ps1` after each MSI is built. If repository secrets are configured, the MSI is signed with **`signtool`** (SHA-256, RFC 3161 timestamp via DigiCert’s TSA) and verified before upload. That is the technical “fix from the root” for Windows trust.
+
+**Maintainers — required setup (one-time):**
+
+1. **Buy or obtain a code-signing certificate** (`.pfx` / PKCS#12) from a CA trusted for Authenticode (e.g. DigiCert, Sectigo, SSL.com). **EV** certificates usually gain SmartScreen reputation faster than OV; both work once Windows trusts the publisher.
+2. **Add two GitHub Actions secrets** on the repository (Settings → Secrets and variables → Actions):
+   - **`WINDOWS_CODESIGN_PFX_BASE64`** — entire `.pfx` file, **base64-encoded** (not the raw binary).  
+     Example (PowerShell):  
+     `[Convert]::ToBase64String([IO.File]::ReadAllBytes('path\to\cert.pfx'))`  
+     Paste the output string into the secret.
+   - **`WINDOWS_CODESIGN_PASSWORD`** — password for that `.pfx`.
+3. **Tag a new release** so the workflow runs; Windows job logs should show “Authenticode signing completed” (or a warning if secrets are missing).
+
+**If secrets are not set:** The script prints a workflow warning and leaves the MSI **unsigned** (same behavior as before). Forks and PRs from clones typically have no access to these secrets — expected.
+
+**Protecting the key:** Prefer HSM or cloud signing for production; storing a `.pfx` in GitHub Secrets is a common CI pattern but protect the file and rotate if leaked. Do not commit `.pfx` to git.
+
+**macOS:** Broad distribution without Gatekeeper issues requires **Developer ID** signing plus **notarization** — separate from Windows; not automated in this workflow yet.
+
+**Users on locked-down PCs:** If an MSI is still blocked after signing, it is often **reputation** (new cert); EV helps. Organizational devices may still require IT approval.
+
 ---
 
 ## Security Updates
@@ -204,5 +229,5 @@ For security-related inquiries:
 
 ---
 
-**Last Updated**: January 2026
+**Last Updated**: April 2026
 

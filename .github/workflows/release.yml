@@ -91,6 +91,14 @@ jobs:
           chmod +x build contrib/msi/build-msi.sh contrib/semver/*.sh
           sh contrib/msi/build-msi.sh ${{ matrix.arch }}
       
+      - name: Sign Windows MSI (Authenticode)
+        if: matrix.platform == 'windows'
+        env:
+          WINDOWS_CODESIGN_PFX_BASE64: ${{ secrets.WINDOWS_CODESIGN_PFX_BASE64 }}
+          WINDOWS_CODESIGN_PASSWORD: ${{ secrets.WINDOWS_CODESIGN_PASSWORD }}
+        shell: pwsh
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File contrib/msi/sign-msi.ps1
+      
       - name: Build macOS PKG
         if: matrix.platform == 'macos'
         env:
@@ -136,8 +144,24 @@ jobs:
       - name: Organize packages
         shell: bash
         run: |
+          set -euo pipefail
           mkdir -p packages
           find release-packages -type f \( -name "*.deb" -o -name "*.msi" -o -name "*.pkg" \) -exec cp {} packages/ \;
+          cd packages
+          # Build scripts emit semver-style names (e.g. Uqda-v1.0.0-1.0-x64.msi). Rename to stable
+          # names that match README and release notes (uqda-<platform>-<arch>.<ext>).
+          shopt -s nullglob
+          for f in *-amd64.deb; do mv -f "$f" uqda-debian-amd64.deb; done
+          for f in *-arm64.deb; do mv -f "$f" uqda-debian-arm64.deb; done
+          for f in *-x64.msi; do mv -f "$f" uqda-windows-x64.msi; done
+          for f in *-arm64.msi; do mv -f "$f" uqda-windows-arm64.msi; done
+          for f in *-macos-amd64.pkg; do mv -f "$f" uqda-macos-amd64.pkg; done
+          for f in *-macos-arm64.pkg; do mv -f "$f" uqda-macos-arm64.pkg; done
+          shopt -u nullglob
+          for want in uqda-debian-amd64.deb uqda-debian-arm64.deb uqda-windows-x64.msi uqda-windows-arm64.msi uqda-macos-amd64.pkg uqda-macos-arm64.pkg; do
+            test -f "$want" || { echo "missing $want after rename; got:"; ls -la; exit 1; }
+          done
+          cd ..
           ls -lh packages/
       
       - name: Create checksums

@@ -55,6 +55,7 @@ sudo dpkg -i uqda-debian-amd64.deb
 # Or via command line:
 msiexec /i uqda-windows-x64.msi
 ```
+Windows **`.msi`** builds are **signed in CI** when maintainers add **`WINDOWS_CODESIGN_PFX_BASE64`** and **`WINDOWS_CODESIGN_PASSWORD`** (Authenticode); otherwise the installer may be unsigned and Windows can still warn. See [SECURITY.md — Windows installers](SECURITY.md#windows-installers-msi-and-smart-app-control).
 
 **macOS**
 ```bash
