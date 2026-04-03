@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://uqda.github.io/sitemap.xml
+
+# Disallow admin and internal files
+Disallow: /ar/markdown/
+Disallow: /markdown/
+
+# Allow all HTML pages
+Allow: /*.html
+Allow: /ar/*.html
+
+# Allow CSS and other assets
+Allow: /*.css
+Allow: /*.xml
+

@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Uqda Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg:#0d0f14; --surface:#161a22; --border:rgba(255,255,255,.08); --text:#e8eaf0; --muted:#8892a4;
+      --accent:#38bdf8; --up:#1de9b6; --down:#ff4d4d; --tx:#f59e0b; --rx:#06b6d4; --hover:rgba(56,189,248,.12);
+    }
+    body.light-mode {
+      --bg:#f0f2f7; --surface:#fff; --border:rgba(0,0,0,.1); --text:#1a1d24; --muted:#5c6570;
+      --accent:#0284c7; --up:#059669; --down:#dc2626; --tx:#d97706; --rx:#0891b2; --hover:rgba(2,132,199,.1);
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:'JetBrains Mono',monospace; background:var(--bg); color:var(--text); font-size:14px; min-height:100vh; }
+    a { color:var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    .layout { display:flex; min-height:100vh; }
+    #sidebar {
+      width:220px; flex-shrink:0; background:var(--surface); border-right:1px solid var(--border);
+      display:flex; flex-direction:column; padding:16px 0;
+    }
+    .logo { font-weight:700; font-size:18px; padding:0 16px 16px; letter-spacing:.05em; }
+    .node-line { padding:8px 16px; font-size:12px; color:var(--muted); display:flex; align-items:center; gap:8px; }
+    .status-dot { width:8px; height:8px; border-radius:50%; background:var(--down); flex-shrink:0; }
+    .status-dot.ok { background:var(--up); animation:pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+    nav a {
+      display:block; padding:10px 16px; color:var(--muted); border-left:3px solid transparent; cursor:pointer;
+    }
+    nav a:hover { background:var(--hover); color:var(--text); }
+    nav a.active { color:var(--text); border-left-color:var(--accent); background:var(--hover); }
+    .sidebar-footer { margin-top:auto; padding:16px; font-size:11px; color:var(--muted); }
+    #main { flex:1; overflow:auto; padding:24px; }
+    .page { display:none; animation:fade .15s ease; }
+    .page.active { display:block; }
+    @keyframes fade { from{opacity:0} to{opacity:1} }
+    h1 { font-size:20px; font-weight:600; margin:0 0 20px; }
+    .row { display:flex; flex-wrap:wrap; gap:16px; margin-bottom:16px; }
+    .card {
+      background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:18px; flex:1; min-width:200px;
+    }
+    .card h3 { margin:0 0 8px; font-size:13px; color:var(--muted); font-weight:400; }
+    .metric-val { font-size:26px; font-weight:700; word-break:break-all; }
+    .btn {
+      display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border:1px solid var(--accent); background:transparent;
+      color:var(--accent); border-radius:6px; cursor:pointer; font-family:inherit; font-size:13px;
+    }
+    .btn:hover { background:var(--accent); color:var(--bg); }
+    .btn-danger { border-color:var(--down); color:var(--down); }
+    .btn-danger:hover { background:var(--down); color:#fff; }
+    .btn-sm { padding:4px 8px; font-size:12px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:10px 12px; text-align:left; border-bottom:1px solid var(--border); }
+    th { font-size:12px; color:var(--muted); cursor:pointer; user-select:none; }
+    tr:hover td { background:var(--hover); }
+    .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; }
+    .badge-in { background:rgba(56,189,248,.2); color:var(--accent); }
+    .badge-out { background:rgba(136,146,164,.2); color:var(--muted); }
+    .dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+    .dot.up { background:var(--up); }
+    .dot.down { background:var(--down); }
+    .muted { color:var(--muted); font-size:12px; }
+    .err { color:var(--down); font-size:12px; }
+    .modal-bg {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:100; align-items:flex-start; justify-content:center; padding-top:8vh;
+    }
+    .modal-bg.show { display:flex; }
+    .modal {
+      background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:24px; width:100%; max-width:440px;
+      animation:slide .2s ease;
+    }
+    @keyframes slide { from{ transform:translateY(-12px); opacity:0} to{ transform:translateY(0); opacity:1} }
+    .modal h2 { margin:0 0 16px; font-size:17px; }
+    label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
+    input[type="text"], input[type="password"], select {
+      width:100%; padding:10px; margin-bottom:12px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-family:inherit;
+    }
+    .skeleton { height:12px; background:linear-gradient(90deg,var(--surface),var(--border),var(--surface)); background-size:200% 100%; animation:sk 1.2s ease infinite; border-radius:4px; margin:6px 0; }
+    @keyframes sk { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    #overlay-unreach {
+      display:none; position:fixed; inset:0; background:var(--bg); z-index:200; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px;
+    }
+    #overlay-unreach.show { display:flex; }
+    .chart-wrap { position:relative; height:260px; margin-top:8px; }
+    .tabs { display:flex; gap:8px; margin-bottom:12px; }
+    .tabs button { background:transparent; border:1px solid var(--border); color:var(--muted); padding:6px 12px; border-radius:6px; cursor:pointer; font-family:inherit; }
+    .tabs button.active { border-color:var(--accent); color:var(--accent); }
+    .tree-pre { font-size:12px; overflow:auto; max-height:400px; background:var(--bg); padding:12px; border-radius:6px; border:1px solid var(--border); white-space:pre; }
+    .row-self { outline:1px solid var(--accent); }
+    .topbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px; }
+    .copy-hint { font-size:11px; color:var(--up); }
+    textarea.invite-ta { min-height:100px; font-size:12px; }
+    .peer-actions { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .mono-sm { font-size:11px; word-break:break-all; }
+  </style>
+</head>
+<body>
+  <div id="overlay-unreach">
+    <p style="font-size:18px;margin-bottom:12px">Cannot reach node. Is <code>uqda</code> running?</p>
+    <button class="btn" type="button" id="btn-retry">Retry</button>
+  </div>
+  <div id="modal-auth" class="modal-bg">
+    <div class="modal">
+      <h2>Admin authentication</h2>
+      <p class="muted">This node requires <code>AdminAuth</code>. Enter the token.</p>
+      <input type="password" id="auth-input" placeholder="Token" autocomplete="off"/>
+      <button class="btn" type="button" id="auth-save">Continue</button>
+      <p class="err" id="auth-err"></p>
+    </div>
+  </div>
+  <div id="modal-add" class="modal-bg">
+    <div class="modal">
+      <h2>Add peer</h2>
+      <label>Peer URI</label>
+      <input type="text" id="add-uri" placeholder="tls://1.2.3.4:12345"/>
+      <label>Source interface (optional)</label>
+      <input type="text" id="add-sintf" placeholder="eth0"/>
+      <p class="err" id="add-err"></p>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn" id="add-cancel">Cancel</button>
+        <button type="button" class="btn" id="add-submit">Add peer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <aside id="sidebar">
+      <div class="logo">Uqda</div>
+      <div class="node-line"><span class="status-dot" id="sidebar-dot"></span><span id="sidebar-addr">—</span></div>
+      <nav>
+        <a data-page="overview" class="active">Overview</a>
+        <a data-page="peers">Peers</a>
+        <a data-page="sessions">Sessions</a>
+        <a data-page="tree">Network Tree</a>
+        <a data-page="paths">Paths</a>
+        <a data-page="private">Private networks</a>
+        <a data-page="multicast">Multicast</a>
+        <a data-page="settings">Settings</a>
+      </nav>
+      <div class="sidebar-footer">
+        <label><input type="checkbox" id="theme-toggle"/> Light mode</label>
+        <div id="sidebar-ver" class="muted" style="margin-top:8px">—</div>
+      </div>
+    </aside>
+    <main id="main">
+      <section id="page-overview" class="page active">
+        <h1>Overview</h1>
+        <div class="row" id="overview-cards">
+          <div class="card"><h3>IPv6 Address</h3><div class="metric-val" id="m-addr">—</div></div>
+          <div class="card"><h3>Public Key</h3><div class="metric-val" id="m-key" style="font-size:14px">—</div><button type="button" class="btn btn-sm" id="copy-key">Copy</button></div>
+          <div class="card"><h3>Connected Peers</h3><div class="metric-val" id="m-peers">0</div></div>
+          <div class="card"><h3>Active Sessions</h3><div class="metric-val" id="m-sess">0</div></div>
+        </div>
+        <div class="card">
+          <h3>Bandwidth (all peers)</h3>
+          <div class="chart-wrap"><canvas id="bw-chart"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Peers summary <span class="muted">(top 5 by uptime)</span></h3>
+          <div id="overview-peers-wrap"><table><thead><tr><th>Status</th><th>Address</th><th>Protocol</th><th>Latency</th><th>TX</th><th>RX</th></tr></thead><tbody id="overview-peers-tb"></tbody></table></div>
+          <p><a href="#" data-page="peers" class="nav-link">View all peers →</a></p>
+        </div>
+      </section>
+
+      <section id="page-peers" class="page">
+        <div class="topbar">
+          <h1 style="margin:0">Peers</h1>
+          <div>
+            <label class="muted" style="display:inline"><input type="checkbox" id="peer-autorefresh" checked/> Auto-refresh</label>
+            <button type="button" class="btn" id="btn-add-peer">Add Peer</button>
+          </div>
+        </div>
+        <input type="text" id="peer-filter" placeholder="Filter by address or key…" style="max-width:360px;margin-bottom:12px"/>
+        <table><thead><tr id="peer-th"></tr></thead><tbody id="peer-tb"></tbody></table>
+      </section>
+
+      <section id="page-sessions" class="page">
+        <div class="topbar">
+          <h1 style="margin:0">Active Sessions <span class="badge" id="sess-count">0</span></h1>
+          <label class="muted"><input type="checkbox" id="sess-autorefresh" checked/> Auto-refresh</label>
+        </div>
+        <table><thead><tr><th>Address</th><th>Public Key</th><th>Uptime</th><th>TX</th><th>RX</th></tr></thead><tbody id="sess-tb"></tbody></table>
+        <p id="sess-empty" class="muted" style="display:none">No active sessions. Sessions appear when traffic flows to/from remote nodes.</p>
+      </section>
+
+      <section id="page-tree" class="page">
+        <h1>Network Tree <span class="muted" id="tree-count"></span></h1>
+        <div class="tabs">
+          <button type="button" class="active" data-tree="table">Table</button>
+          <button type="button" data-tree="visual">Visual</button>
+        </div>
+        <div id="tree-table-view"><table><thead><tr><th>Address</th><th>Public Key</th><th>Parent</th><th>Sequence</th></tr></thead><tbody id="tree-tb"></tbody></table></div>
+        <div id="tree-vis-view" style="display:none"><pre class="tree-pre" id="tree-vis"></pre></div>
+      </section>
+
+      <section id="page-paths" class="page">
+        <div class="topbar">
+          <h1 style="margin:0">Routing paths</h1>
+          <label class="muted"><input type="checkbox" id="paths-autorefresh" checked/> Auto-refresh</label>
+        </div>
+        <p class="muted">Established paths through this node (from Admin <code>getPaths</code>).</p>
+        <table><thead><tr><th>Address</th><th>Public Key</th><th>Path</th><th>Sequence</th></tr></thead><tbody id="paths-tb"></tbody></table>
+      </section>
+
+      <section id="page-private" class="page">
+        <h1>Private networks &amp; invites</h1>
+        <p class="muted">Create invite links, join with a token, or manage groups — same actions as <code>uqdactl network</code>. Requires a persistent config file on the node for create/join/leave.</p>
+
+        <div class="row">
+          <div class="card" style="flex:2;min-width:280px">
+            <h3>Create network</h3>
+            <label>Name</label>
+            <input type="text" id="pn-create-name" placeholder="home-lab"/>
+            <label>Bootstrap peer URIs (one per line)</label>
+            <textarea id="pn-create-peers" class="invite-ta" placeholder="tls://203.0.113.5:12345"></textarea>
+            <label>Invite valid (hours)</label>
+            <input type="number" id="pn-create-exp" value="24" min="1" max="8760"/>
+            <label>Owner admin in token <span class="muted">(optional, for auto notify — e.g. tcp://203.0.113.5:9001)</span></label>
+            <input type="text" id="pn-create-admin" placeholder="tcp://203.0.113.5:9001"/>
+            <p class="err" id="pn-create-err"></p>
+            <button type="button" class="btn" id="pn-create-btn">Create &amp; show token</button>
+            <div id="pn-create-out" class="muted mono-sm" style="margin-top:12px;display:none"></div>
+          </div>
+          <div class="card" style="flex:2;min-width:280px">
+            <h3>Join with invite token</h3>
+            <label>Paste token</label>
+            <textarea id="pn-join-token" class="invite-ta" placeholder="uqda-invite-v1-…"></textarea>
+            <label>Owner admin auth <span class="muted">(if their node uses AdminAuth for inviteRegister)</span></label>
+            <input type="password" id="pn-join-auth" placeholder="optional" autocomplete="off"/>
+            <p class="err" id="pn-join-err"></p>
+            <button type="button" class="btn" id="pn-join-btn">Join network</button>
+            <p id="pn-join-msg" class="muted" style="margin-top:8px"></p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="topbar" style="margin-bottom:12px">
+            <h3 style="margin:0">Your private networks</h3>
+            <button type="button" class="btn btn-sm" id="pn-refresh-btn">Refresh</button>
+          </div>
+          <table><thead><tr><th>Name</th><th>Owner</th><th>Peers</th><th>Members (keys)</th><th></th></tr></thead><tbody id="pn-list-tb"></tbody></table>
+          <p id="pn-list-empty" class="muted" style="display:none">No private networks in config.</p>
+        </div>
+
+        <div class="card">
+          <h3>Register guest (owner)</h3>
+          <p class="muted">If a joiner cannot reach your admin socket automatically, paste the same invite token and their public key (hex) to add them to your allowlist.</p>
+          <label>Invite token</label>
+          <textarea id="pn-reg-token" class="invite-ta" rows="3"></textarea>
+          <label>Guest public key (hex)</label>
+          <input type="text" id="pn-reg-guest" placeholder="64 hex chars"/>
+          <p class="err" id="pn-reg-err"></p>
+          <button type="button" class="btn" id="pn-reg-btn">Register guest key</button>
+          <p id="pn-reg-msg" class="muted" style="margin-top:8px"></p>
+        </div>
+      </section>
+
+      <section id="page-multicast" class="page">
+        <div class="topbar">
+          <h1 style="margin:0">Multicast interfaces</h1>
+          <label class="muted"><input type="checkbox" id="mc-autorefresh" checked/> Auto-refresh</label>
+        </div>
+        <p class="muted">From <code>getMulticastInterfaces</code> — discovery on the LAN.</p>
+        <table><thead><tr><th>Interface</th><th>Listen address</th><th>Beacon</th><th>Listen</th><th>Password set</th></tr></thead><tbody id="mc-tb"></tbody></table>
+      </section>
+
+      <section id="page-settings" class="page">
+        <h1>Settings</h1>
+        <div class="card">
+          <h3>Node info</h3>
+          <p><span class="muted">Build</span> <span id="set-build"></span></p>
+          <p><span class="muted">Address</span> <span id="set-addr"></span></p>
+          <p><span class="muted">Subnet</span> <span id="set-sub"></span></p>
+          <p><span class="muted">Public key</span> <code id="set-pkey"></code> <button type="button" class="btn btn-sm" id="copy-pkey">Copy</button></p>
+        </div>
+        <div class="card">
+          <h3>Connection</h3>
+          <p><span class="muted">AdminListen (this node)</span> <code id="set-admin">—</code></p>
+          <p><span class="muted">Web UI</span> You are using this dashboard (same origin).</p>
+        </div>
+        <div class="card">
+          <h3>Auto-refresh</h3>
+          <label><input type="checkbox" id="set-autorefresh" checked/> Enable</label>
+          <p><span class="muted">Interval</span></p>
+          <select id="set-interval">
+            <option value="2000">2s</option>
+            <option value="5000" selected>5s</option>
+            <option value="10000">10s</option>
+            <option value="30000">30s</option>
+          </select>
+        </div>
+        <div class="card">
+          <h3>Auth token</h3>
+          <p class="muted">Stored in sessionStorage for this tab only.</p>
+          <input type="password" id="set-token" placeholder="AdminAuth token"/>
+          <button type="button" class="btn" id="btn-test-auth">Test connection</button>
+          <p id="set-auth-msg" class="muted"></p>
+        </div>
+        <div class="card">
+          <h3>Metrics</h3>
+          <p><a href="/metrics-proxy" target="_blank" rel="noopener">Open Prometheus scrape</a> <span class="muted">(if MetricsListen is set)</span></p>
+        </div>
+        <div class="card">
+          <h3>About</h3>
+          <p><a href="https://uqda.github.io" target="_blank" rel="noopener">Documentation</a> · <a href="https://github.com/Uqda/Core" target="_blank" rel="noopener">GitHub</a></p>
+          <p class="muted" style="margin-top:8px">This dashboard covers Admin API: peers, sessions, tree, paths, multicast, private networks, and settings — no CLI required for day-to-day operation.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+<script>
+(function(){
+  const CONFIG = { refreshMs: 5000 };
+  const STATE = {
+    self: null, peers: [], sessions: [], tree: [], paths: [], privateNetworks: [], multicastIfs: [],
+    bwHist: [], chart: null, peerSort: { key: 'uptime', dir: -1 }, unreachable: false,
+    peerRemovePending: null, networkLeavePending: null
+  };
+
+  function formatBytes(n) {
+    if (n == null || isNaN(n)) return '—';
+    n = Number(n);
+    if (n === 0) return '0 B';
+    const u = ['B','KB','MB','GB','TB'];
+    const i = Math.floor(Math.log(n) / Math.log(1024));
+    return (n / Math.pow(1024, i)).toFixed(1) + ' ' + u[i];
+  }
+  function formatUptime(sec) {
+    if (sec == null || sec === '') return '—';
+    const s = Number(sec);
+    if (s < 60) return Math.round(s) + 's';
+    if (s < 3600) return Math.round(s/60) + 'm';
+    const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+    return h + 'h ' + m + 'm';
+  }
+  function formatLatency(lat) {
+    if (lat == null || lat === '') return '—';
+    if (typeof lat === 'string') return lat;
+    const ns = Number(lat);
+    if (!ns) return '—';
+    const ms = ns / 1e6;
+    return ms < 1 ? '<1ms' : Math.round(ms) + 'ms';
+  }
+  function getProtocol(uri) {
+    if (!uri) return '—';
+    const p = uri.split('://')[0];
+    return p ? p.toUpperCase() : '—';
+  }
+  function authPayload() {
+    const t = sessionStorage.getItem('uqda_auth');
+    return t ? { auth: t } : {};
+  }
+  function mergeAuth(obj) {
+    return Object.assign({}, obj || {}, authPayload());
+  }
+
+  async function api(cmd, body) {
+    const r = await fetch('/api/' + encodeURIComponent(cmd), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(mergeAuth(body || {}))
+    });
+    if (!r.ok) {
+      const t = await r.text();
+      throw new Error(t || ('HTTP ' + r.status));
+    }
+    const text = await r.text();
+    let data;
+    try { data = JSON.parse(text); } catch (e) { throw new Error(text || 'bad json'); }
+    if (data.status === 'error') {
+      const err = data.error || data.Error || 'error';
+      if (/auth/i.test(err) && /invalid|required/i.test(err)) {
+        document.getElementById('modal-auth').classList.add('show');
+      }
+      throw new Error(err);
+    }
+    let inner = data.response;
+    if (typeof inner === 'string') {
+      try { inner = JSON.parse(inner); } catch (e) { inner = {}; }
+    }
+    return inner;
+  }
+
+  function setReachable(ok) {
+    STATE.unreachable = !ok;
+    document.getElementById('overlay-unreach').classList.toggle('show', !ok);
+    document.getElementById('sidebar-dot').classList.toggle('ok', ok);
+  }
+
+  async function poll() {
+    const interval = parseInt(document.getElementById('set-interval')?.value || '5000', 10) || 5000;
+    if (!document.getElementById('set-autorefresh')?.checked) return;
+    try {
+      const self = await api('getSelf', {});
+      STATE.self = self;
+      setReachable(true);
+      document.getElementById('sidebar-addr').textContent = (self.address || '').slice(0, 28) + (self.address && self.address.length > 28 ? '…' : '');
+      document.getElementById('sidebar-ver').textContent = (self.build_name || '') + ' ' + (self.build_version || '');
+
+      const peers = await api('getPeers', {});
+      STATE.peers = peers.peers || [];
+      const sessions = await api('getSessions', {});
+      STATE.sessions = sessions.sessions || [];
+
+      const page = document.querySelector('section.page.active')?.id || '';
+      if (page === 'page-overview') renderOverview();
+      if (page === 'page-peers' && document.getElementById('peer-autorefresh')?.checked) renderPeers();
+      if (page === 'page-sessions' && document.getElementById('sess-autorefresh')?.checked) renderSessions();
+      if (page === 'page-tree') { const t = await api('getTree', {}); STATE.tree = t.tree || []; renderTree(); }
+      if (page === 'page-paths' && document.getElementById('paths-autorefresh')?.checked) {
+        const p = await api('getPaths', {}); STATE.paths = p.paths || []; renderPaths();
+      }
+      if (page === 'page-private') { await refreshPrivateNetworks(); }
+      if (page === 'page-multicast' && document.getElementById('mc-autorefresh')?.checked) {
+        const m = await api('getMulticastInterfaces', {}); STATE.multicastIfs = m.multicast_interfaces || []; renderMulticast();
+      }
+      if (page === 'page-settings') renderSettings();
+
+      updateBandwidthHistory();
+    } catch (e) {
+      console.error(e);
+      setReachable(false);
+    }
+  }
+
+  let lastRx = 0, lastTx = 0, lastTs = 0;
+  function updateBandwidthHistory() {
+    const peers = STATE.peers || [];
+    let rx = 0, tx = 0;
+    peers.forEach(p => { rx += Number(p.rate_recvd) || 0; tx += Number(p.rate_sent) || 0; });
+    const now = Date.now();
+    if (lastTs) {
+      STATE.bwHist.push({ t: now, rx, tx });
+      if (STATE.bwHist.length > 60) STATE.bwHist.shift();
+    }
+    lastTs = now; lastRx = rx; lastTx = tx;
+    if (STATE.chart && document.getElementById('page-overview')?.classList.contains('active')) {
+      STATE.chart.data.labels = STATE.bwHist.map((_, i) => '');
+      STATE.chart.data.datasets[0].data = STATE.bwHist.map(x => x.tx);
+      STATE.chart.data.datasets[1].data = STATE.bwHist.map(x => x.rx);
+      STATE.chart.update('none');
+    }
+  }
+
+  function renderOverview() {
+    const s = STATE.self || {};
+    document.getElementById('m-addr').textContent = s.address || '—';
+    const pk = s.key || '';
+    document.getElementById('m-key').textContent = pk ? pk.slice(0, 16) + '…' : '—';
+    const peers = STATE.peers || [];
+    const up = peers.filter(p => p.up).length;
+    document.getElementById('m-peers').textContent = String(up);
+    document.getElementById('m-sess').textContent = String((STATE.sessions || []).length);
+
+    const sorted = [...peers].sort((a,b) => (b.uptime||0) - (a.uptime||0)).slice(0,5);
+    const tb = document.getElementById('overview-peers-tb');
+    tb.innerHTML = sorted.map(p => `<tr>
+      <td><span class="dot ${p.up?'up':'down'}"></span></td>
+      <td>${esc(p.address||'')}</td>
+      <td>${esc(getProtocol(p.remote))}</td>
+      <td>${esc(formatLatency(p.latency))}</td>
+      <td>${esc(formatBytes(p.bytes_sent))}</td>
+      <td>${esc(formatBytes(p.bytes_recvd))}</td>
+    </tr>`).join('') || '<tr><td colspan="6" class="muted">No peers</td></tr>';
+  }
+
+  function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+  const peerCols = [
+    { id:'up', title:'Status', fn: p => p.up?1:0 },
+    { id:'inbound', title:'Direction', fn: p => p.inbound?1:0 },
+    { id:'address', title:'Address', fn: p => p.address||'' },
+    { id:'key', title:'Public Key', fn: p => p.key||'' },
+    { id:'remote', title:'Protocol', fn: p => getProtocol(p.remote) },
+    { id:'latency', title:'Latency', fn: p => { const x = p.latency; return typeof x === 'string' ? x : Number(x)||0; } },
+    { id:'uptime', title:'Uptime', fn: p => p.uptime||0 },
+    { id:'bytes_sent', title:'TX', fn: p => Number(p.bytes_sent)||0 },
+    { id:'bytes_recvd', title:'RX', fn: p => Number(p.bytes_recvd)||0 },
+    { id:'rate_sent', title:'TX/s', fn: p => Number(p.rate_sent)||0 },
+    { id:'rate_recvd', title:'RX/s', fn: p => Number(p.rate_recvd)||0 },
+    { id:'last_error', title:'Last Error', fn: p => p.last_error||'' },
+  ];
+
+  function renderPeers() {
+    const th = document.getElementById('peer-th');
+    if (!th.querySelector('th')) {
+      th.innerHTML = peerCols.map(c => `<th data-sort="${c.id}">${c.title}</th>`).join('') + '<th>Actions</th>';
+      th.querySelectorAll('th[data-sort]').forEach(el => {
+        el.addEventListener('click', () => {
+          const k = el.getAttribute('data-sort');
+          if (STATE.peerSort.key === k) STATE.peerSort.dir *= -1;
+          else { STATE.peerSort.key = k; STATE.peerSort.dir = -1; }
+          renderPeers();
+        });
+      });
+    }
+    let list = [...(STATE.peers||[])];
+    const q = (document.getElementById('peer-filter')?.value || '').toLowerCase();
+    if (q) list = list.filter(p => (p.address||'').toLowerCase().includes(q) || (p.key||'').toLowerCase().includes(q));
+    const col = peerCols.find(c => c.id === STATE.peerSort.key) || peerCols[6];
+    list.sort((a,b) => {
+      const va = col.fn(a), vb = col.fn(b);
+      if (typeof va === 'string' && typeof vb === 'string') return va.localeCompare(vb) * STATE.peerSort.dir;
+      const na = Number(va), nb = Number(vb);
+      return (na - nb) * STATE.peerSort.dir;
+    });
+
+    const tb = document.getElementById('peer-tb');
+    const uriEsc = (u) => escAttr(u || '');
+    tb.innerHTML = list.map((p, idx) => {
+      const ru = p.remote || '';
+      const pending = STATE.peerRemovePending && STATE.peerRemovePending === ru;
+      const actionCell = pending
+        ? `<td class="peer-actions"><span class="muted">Remove?</span> <button type="button" class="btn btn-sm btn-danger peer-rm-yes" data-uri="${uriEsc(ru)}">Yes</button> <button type="button" class="btn btn-sm peer-rm-no">No</button></td>`
+        : `<td><button type="button" class="btn btn-sm btn-danger btn-remove" data-uri="${uriEsc(ru)}">Remove</button></td>`;
+      return `<tr data-idx="${idx}">
+      <td><span class="dot ${p.up?'up':'down'}"></span></td>
+      <td><span class="badge ${p.inbound?'badge-in':'badge-out'}">${p.inbound?'inbound':'outbound'}</span></td>
+      <td>${esc(p.address||'')}</td>
+      <td><code>${esc((p.key||'').slice(0,12))}</code> <button type="button" class="btn btn-sm copy-mini" data-copy="${escAttr(p.key||'')}">⎘</button></td>
+      <td>${esc(getProtocol(p.remote))}</td>
+      <td>${esc(formatLatency(p.latency))}</td>
+      <td>${esc(formatUptime(p.uptime))}</td>
+      <td>${esc(formatBytes(p.bytes_sent))}</td>
+      <td>${esc(formatBytes(p.bytes_recvd))}</td>
+      <td>${esc(formatBytes(p.rate_sent))}/s</td>
+      <td>${esc(formatBytes(p.rate_recvd))}/s</td>
+      <td class="err">${esc(p.last_error||'')}</td>
+      ${actionCell}
+    </tr>`;
+    }).join('');
+    tb.querySelectorAll('.btn-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const uri = btn.getAttribute('data-uri');
+        if (!uri) return;
+        STATE.peerRemovePending = uri;
+        renderPeers();
+      });
+    });
+    tb.querySelectorAll('.peer-rm-no').forEach(btn => {
+      btn.addEventListener('click', () => { STATE.peerRemovePending = null; renderPeers(); });
+    });
+    tb.querySelectorAll('.peer-rm-yes').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const uri = btn.getAttribute('data-uri');
+        STATE.peerRemovePending = null;
+        api('removePeer', { uri, 'interface': '' }).then(() => poll()).catch(e => alert(e.message));
+      });
+    });
+    tb.querySelectorAll('.copy-mini').forEach(b => b.addEventListener('click', function() {
+      navigator.clipboard.writeText(this.getAttribute('data-copy'));
+      this.textContent = '✓';
+      setTimeout(() => { this.textContent = '⎘'; }, 1200);
+    }));
+  }
+  function escAttr(s) { return s.replace(/"/g, '&quot;'); }
+
+  function renderSessions() {
+    const ss = STATE.sessions || [];
+    document.getElementById('sess-count').textContent = String(ss.length);
+    document.getElementById('sess-empty').style.display = ss.length ? 'none' : 'block';
+    document.getElementById('sess-tb').innerHTML = ss.map(s => `<tr>
+      <td>${esc(s.address)}</td>
+      <td><code>${esc((s.key||'').slice(0,12))}</code></td>
+      <td>${esc(formatUptime(s.uptime))}</td>
+      <td>${esc(formatBytes(s.bytes_sent))}</td>
+      <td>${esc(formatBytes(s.bytes_recvd))}</td>
+    </tr>`).join('');
+  }
+
+  function renderTree() {
+    const tree = STATE.tree || [];
+    document.getElementById('tree-count').textContent = '(' + tree.length + ' nodes)';
+    const myKey = STATE.self?.key || '';
+    const tb = document.getElementById('tree-tb');
+    tb.innerHTML = tree.map(t => `<tr class="${t.key===myKey?'row-self':''}">
+      <td>${esc(t.address)}</td>
+      <td><code>${esc((t.key||'').slice(0,12))}…</code></td>
+      <td><code>${esc((t.parent||'').slice(0,12))}…</code></td>
+      <td>${t.sequence}</td>
+    </tr>`).join('');
+    const vis = document.getElementById('tree-vis');
+    if (tree.length > 30) {
+      vis.textContent = 'Tree is large (' + tree.length + ' nodes). Table view is recommended for clarity.';
+    } else {
+      vis.textContent = buildAsciiTree(tree, myKey);
+    }
+  }
+
+  function isZeroOrEmptyParent(p) {
+    if (p == null) return true;
+    const s = String(p).trim().toLowerCase().replace(/^0x/i, '');
+    if (s === '') return true;
+    if (s.length === 64 && /^[0-9a-f]{64}$/.test(s) && /^0+$/.test(s)) return true;
+    return false;
+  }
+  function buildAsciiTree(nodes, myKey) {
+    const byKey = {};
+    nodes.forEach(n => { byKey[n.key] = n; });
+    const children = {};
+    nodes.forEach(n => {
+      const p = n.parent || '';
+      if (!children[p]) children[p] = [];
+      children[p].push(n.key);
+    });
+    function walk(pk, depth) {
+      const node = byKey[pk];
+      if (!node) return '';
+      const mark = pk === myKey ? ' *' : '';
+      let s = '  '.repeat(depth) + (node.address || pk.slice(0,8)) + mark + '\n';
+      const ch = children[pk] || [];
+      ch.sort();
+      ch.forEach(c => { s += walk(c, depth+1); });
+      return s;
+    }
+    const roots = nodes.filter(n => isZeroOrEmptyParent(n.parent));
+    if (roots.length === 0) return nodes.map(n => n.address || n.key).join('\n');
+    return roots.map(r => walk(r.key, 0)).join('');
+  }
+
+  function renderPaths() {
+    const paths = STATE.paths || [];
+    document.getElementById('paths-tb').innerHTML = paths.length
+      ? paths.map(p => `<tr>
+          <td>${esc(p.address||'')}</td>
+          <td><code>${esc((p.key||'').slice(0,16))}…</code></td>
+          <td class="mono-sm">${esc(JSON.stringify(p.path||[]))}</td>
+          <td>${esc(String(p.sequence))}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="4" class="muted">No paths</td></tr>';
+  }
+
+  async function refreshPrivateNetworks() {
+    try {
+      const r = await api('listNetworks', {});
+      STATE.privateNetworks = r.networks || [];
+      renderPrivateList();
+    } catch (e) {
+      console.error(e);
+      document.getElementById('pn-list-tb').innerHTML = '<tr><td colspan="5" class="err">' + esc(e.message) + '</td></tr>';
+    }
+  }
+
+  function renderPrivateList() {
+    const list = STATE.privateNetworks || [];
+    const tb = document.getElementById('pn-list-tb');
+    const empty = document.getElementById('pn-list-empty');
+    empty.style.display = list.length ? 'none' : 'block';
+    tb.innerHTML = list.map(n => {
+      const leaveName = escAttr(n.name || '');
+      const pending = STATE.networkLeavePending === n.name;
+      const actions = pending
+        ? `<span class="muted">Leave?</span> <button type="button" class="btn btn-sm btn-danger pn-leave-yes" data-name="${leaveName}">Yes</button> <button type="button" class="btn btn-sm pn-leave-no">No</button>`
+        : `<button type="button" class="btn btn-sm btn-danger pn-leave" data-name="${leaveName}">Leave</button>`;
+      return `<tr>
+        <td>${esc(n.name||'')}</td>
+        <td>${n.is_owner ? '<span class="badge badge-in">owner</span>' : '<span class="muted">member</span>'}</td>
+        <td class="mono-sm">${esc((n.peers||[]).join(', ') || '—')}</td>
+        <td>${(n.allowed_keys||[]).length}</td>
+        <td>${actions}</td>
+      </tr>`;
+    }).join('');
+    tb.querySelectorAll('.pn-leave').forEach(b => b.addEventListener('click', () => {
+      STATE.networkLeavePending = b.getAttribute('data-name');
+      renderPrivateList();
+    }));
+    tb.querySelectorAll('.pn-leave-no').forEach(b => b.addEventListener('click', () => {
+      STATE.networkLeavePending = null;
+      renderPrivateList();
+    }));
+    tb.querySelectorAll('.pn-leave-yes').forEach(b => b.addEventListener('click', async () => {
+      const name = b.getAttribute('data-name');
+      try {
+        await api('leaveNetwork', { name });
+        STATE.networkLeavePending = null;
+        await refreshPrivateNetworks();
+      } catch (e) { alert(e.message); }
+    }));
+  }
+
+  function renderMulticast() {
+    const list = STATE.multicastIfs || [];
+    document.getElementById('mc-tb').innerHTML = list.length
+      ? list.map(m => `<tr>
+          <td>${esc(m.name||'')}</td>
+          <td class="mono-sm">${esc(m.address||'')}</td>
+          <td>${m.beacon ? 'Yes' : '—'}</td>
+          <td>${m.listen ? 'Yes' : '—'}</td>
+          <td>${m.password ? 'Yes' : '—'}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" class="muted">No multicast interfaces</td></tr>';
+  }
+
+  function renderSettings() {
+    const s = STATE.self || {};
+    document.getElementById('set-build').textContent = (s.build_name||'') + ' ' + (s.build_version||'');
+    document.getElementById('set-addr').textContent = s.address || '—';
+    document.getElementById('set-sub').textContent = s.subnet || '—';
+    document.getElementById('set-pkey').textContent = s.key || '—';
+    document.getElementById('set-admin').textContent = '(see node configuration file)';
+  }
+
+  function showPage(name) {
+    document.querySelectorAll('section.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+    const sec = document.getElementById('page-' + name);
+    if (sec) sec.classList.add('active');
+    const nav = document.querySelector('nav a[data-page="' + name + '"]');
+    if (nav) nav.classList.add('active');
+    if (name === 'overview') initChart();
+    if (name === 'paths') { api('getPaths', {}).then(p => { STATE.paths = p.paths || []; renderPaths(); }).catch(() => {}); }
+    if (name === 'multicast') { api('getMulticastInterfaces', {}).then(m => { STATE.multicastIfs = m.multicast_interfaces || []; renderMulticast(); }).catch(() => {}); }
+    poll();
+  }
+
+  function initChart() {
+    if (STATE.chart) return;
+    const ctx = document.getElementById('bw-chart');
+    if (!ctx || !window.Chart) return;
+    STATE.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: Array(60).fill(''),
+        datasets: [
+          { label: 'TX', data: [], borderColor: '#f59e0b', tension: 0.2, pointRadius: 0 },
+          { label: 'RX', data: [], borderColor: '#06b6d4', tension: 0.2, pointRadius: 0 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#8892a4' } } },
+        scales: {
+          x: { display: false },
+          y: {
+            grid: { color: 'rgba(255,255,255,.06)' },
+            ticks: { color: '#8892a4', callback: v => formatBytes(v) + '/s' }
+          }
+        }
+      }
+    });
+  }
+
+  document.querySelectorAll('nav a[data-page]').forEach(a => {
+    a.addEventListener('click', e => { e.preventDefault(); showPage(a.getAttribute('data-page')); });
+  });
+  document.querySelectorAll('a.nav-link').forEach(a => {
+    a.addEventListener('click', e => { e.preventDefault(); showPage(a.getAttribute('data-page')); });
+  });
+
+  document.getElementById('theme-toggle').addEventListener('change', e => {
+    document.body.classList.toggle('light-mode', e.target.checked);
+    localStorage.setItem('uqda_theme', e.target.checked ? 'light' : 'dark');
+  });
+  if (localStorage.getItem('uqda_theme') === 'light') {
+    document.body.classList.add('light-mode');
+    document.getElementById('theme-toggle').checked = true;
+  }
+
+  document.getElementById('btn-retry').addEventListener('click', () => poll());
+  document.getElementById('auth-save').addEventListener('click', () => {
+    const v = document.getElementById('auth-input').value;
+    sessionStorage.setItem('uqda_auth', v);
+    document.getElementById('modal-auth').classList.remove('show');
+    document.getElementById('auth-err').textContent = '';
+    poll();
+  });
+  document.getElementById('btn-add-peer').addEventListener('click', () => {
+    document.getElementById('modal-add').classList.add('show');
+    document.getElementById('add-err').textContent = '';
+  });
+  document.getElementById('add-cancel').addEventListener('click', () => document.getElementById('modal-add').classList.remove('show'));
+  document.getElementById('add-submit').addEventListener('click', async () => {
+    const uri = document.getElementById('add-uri').value.trim();
+    const sintf = document.getElementById('add-sintf').value.trim();
+    const ok = /^(tls|quic|ws|wss|tcp|socks):\/\//i.test(uri);
+    if (!ok) { document.getElementById('add-err').textContent = 'Invalid URI scheme'; return; }
+    try {
+      await api('addPeer', { uri, 'interface': sintf });
+      document.getElementById('modal-add').classList.remove('show');
+      poll();
+    } catch (e) {
+      document.getElementById('add-err').textContent = e.message;
+    }
+  });
+  document.getElementById('copy-key').addEventListener('click', function() {
+    const k = STATE.self?.key || '';
+    navigator.clipboard.writeText(k);
+    this.textContent = 'Copied!';
+    setTimeout(() => { this.textContent = 'Copy'; }, 1500);
+  });
+  document.getElementById('copy-pkey').addEventListener('click', function() {
+    navigator.clipboard.writeText(STATE.self?.key||'');
+    this.textContent = 'Copied!';
+    setTimeout(() => { this.textContent = 'Copy'; }, 1500);
+  });
+  document.getElementById('btn-test-auth').addEventListener('click', async () => {
+    const v = document.getElementById('set-token').value;
+    sessionStorage.setItem('uqda_auth', v);
+    try {
+      await api('getSelf', {});
+      document.getElementById('set-auth-msg').textContent = 'Connected.';
+    } catch (e) {
+      document.getElementById('set-auth-msg').textContent = e.message;
+    }
+  });
+
+  document.querySelectorAll('.tabs button[data-tree]').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      const v = b.getAttribute('data-tree');
+      document.getElementById('tree-table-view').style.display = v === 'table' ? 'block' : 'none';
+      document.getElementById('tree-vis-view').style.display = v === 'visual' ? 'block' : 'none';
+    });
+  });
+
+  let pollTimer = null;
+  function restartPollTimer() {
+    if (pollTimer) clearInterval(pollTimer);
+    const ms = parseInt(document.getElementById('set-interval')?.value || '5000', 10);
+    pollTimer = setInterval(() => {
+      if (document.getElementById('set-autorefresh')?.checked) poll();
+    }, ms);
+  }
+  document.getElementById('set-interval')?.addEventListener('change', restartPollTimer);
+  restartPollTimer();
+
+  document.getElementById('pn-create-btn')?.addEventListener('click', async () => {
+    document.getElementById('pn-create-err').textContent = '';
+    const name = document.getElementById('pn-create-name').value.trim();
+    const raw = document.getElementById('pn-create-peers').value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    const expiresHours = parseInt(document.getElementById('pn-create-exp').value, 10) || 24;
+    const admin = document.getElementById('pn-create-admin').value.trim();
+    if (!name) { document.getElementById('pn-create-err').textContent = 'Name required'; return; }
+    if (!raw.length) { document.getElementById('pn-create-err').textContent = 'At least one peer URI required'; return; }
+    try {
+      const res = await api('createNetwork', { name, peers: raw, expiresHours, admin: admin || undefined });
+      const out = document.getElementById('pn-create-out');
+      out.style.display = 'block';
+      out.textContent = (res.token || '') + (res.warning ? '\n\n' + res.warning : '');
+      await refreshPrivateNetworks();
+    } catch (e) {
+      document.getElementById('pn-create-err').textContent = e.message;
+    }
+  });
+
+  document.getElementById('pn-join-btn')?.addEventListener('click', async () => {
+    document.getElementById('pn-join-err').textContent = '';
+    document.getElementById('pn-join-msg').textContent = '';
+    const token = document.getElementById('pn-join-token').value.trim();
+    const ownerAdminAuth = document.getElementById('pn-join-auth').value;
+    if (!token) { document.getElementById('pn-join-err').textContent = 'Token required'; return; }
+    try {
+      const res = await api('joinNetwork', { token, ownerAdminAuth: ownerAdminAuth || undefined });
+      document.getElementById('pn-join-msg').textContent = [res.message, res.registered ? 'Owner notified (inviteRegister).' : ''].filter(Boolean).join(' ');
+      document.getElementById('pn-join-token').value = '';
+      await refreshPrivateNetworks();
+    } catch (e) {
+      document.getElementById('pn-join-err').textContent = e.message;
+    }
+  });
+
+  document.getElementById('pn-refresh-btn')?.addEventListener('click', () => refreshPrivateNetworks());
+
+  document.getElementById('pn-reg-btn')?.addEventListener('click', async () => {
+    document.getElementById('pn-reg-err').textContent = '';
+    document.getElementById('pn-reg-msg').textContent = '';
+    const token = document.getElementById('pn-reg-token').value.trim();
+    const guestKey = document.getElementById('pn-reg-guest').value.trim();
+    if (!token || !guestKey) { document.getElementById('pn-reg-err').textContent = 'Token and guest key required'; return; }
+    try {
+      await api('inviteRegister', { token, guestKey });
+      document.getElementById('pn-reg-msg').textContent = 'Guest key registered.';
+      await refreshPrivateNetworks();
+    } catch (e) {
+      document.getElementById('pn-reg-err').textContent = e.message;
+    }
+  });
+
+  showPage('overview');
+  initChart();
+  poll();
+})();
+</script>
+</body>
+</html>

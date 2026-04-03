@@ -1,0 +1,17 @@
+# https://golangci-lint.run/docs/configuration/file/
+version: "2"
+
+run:
+  build-tags:
+    - lint
+  issues-exit-code: 1
+
+linters:
+  default: standard
+  disable:
+    - gocyclo
+    # Note: golangci-lint v2 removed the standalone `typecheck` linter; use `go build` / `go test` / `go vet` in CI.
+  exclusions:
+    paths:
+      - ^contrib/
+      - ^misc/

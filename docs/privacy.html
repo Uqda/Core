@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Privacy Policy for Uqda Network - Learn about data collection, encryption, and privacy practices">
+    <meta name="keywords" content="Uqda, privacy policy, data protection, encryption, mesh network, privacy">
+    <title>Privacy Policy - Uqda Network</title>
+    <link rel="canonical" href="https://uqda.github.io/privacy.html">
+    <link rel="alternate" hreflang="ar" href="https://uqda.github.io/ar/privacy.html">
+    <link rel="stylesheet" href="style.css">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Privacy Policy - Uqda Network",
+        "description": "Privacy Policy for Uqda Network - Learn about data collection, encryption, and privacy practices",
+        "url": "https://uqda.github.io/privacy.html",
+        "inLanguage": "en",
+        "isPartOf": {
+            "@type": "WebSite",
+            "name": "Uqda Network",
+            "url": "https://uqda.github.io/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">UQDA NETWORK</a></h1>
+            <div class="subtitle">PRIVACY POLICY</div>
+        </div>
+
+        <div class="navbar">
+            <div class="navbar-links">
+                <a href="index.html" class="navbar-link">HOME</a>
+                <a href="about.html" class="navbar-link">ABOUT</a>
+                <a href="installation.html" class="navbar-link">INSTALL</a>
+                <a href="configuration.html" class="navbar-link">CONFIG</a>
+                <a href="admin.html" class="navbar-link">ADMIN</a>
+                <a href="faq.html" class="navbar-link">FAQ</a>
+                <a href="uqda_network_docs.html" class="navbar-link">DOCS</a>
+            </div>
+            <a href="ar/privacy.html" class="navbar-lang">العربية</a>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// PRIVACY POLICY</div>
+            <p>In order to release Uqda on certain platforms, we are obliged to release a Privacy Policy which discusses information usage within Uqda. This document was last updated on January 17, 2026.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// OVERVIEW</div>
+            <p>Uqda is a decentralised application with no central point of registration or communication. You <strong>do not</strong> need to register an account to use Uqda, nor do you need to supply any personal information to the application or to the developers.</p>
+            <p>Uqda deploys <strong>end-to-end encryption</strong> for all traffic crossing the network. This ensures that your traffic will not be readable or modifiable by third parties, including by any other node that is carrying traffic on your behalf. The integrity of this encryption is guaranteed only if you take suitable precautions to protect your private key, which is typically stored in your Uqda configuration file. You must not share it with anyone.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// NETWORK IDENTITY</div>
+            <p>Your identity on the Uqda Network is derived from your cryptographic keypair, which is generated and stored locally on your device. The public key is used to derive your network IPv6 address, which will be used whenever you send or receive any IP traffic across the Uqda Network.</p>
+            <p>You can discard your network IPv6 address/network identity and assume a new one at any time by discarding your keypair and generating a new one.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// NODE INFORMATION</div>
+            <p>Uqda supports publishing node information by means of the <code>NodeInfo</code> section in the configuration file. Node information can be queried by any remote node on the network, even if that remote node is not otherwise exchanging IP traffic with your node.</p>
+            <p>By default, the <code>NodeInfo</code> may also contain information about the version of Uqda being run as well as the operating system and processor architecture. You can choose not to publish this information by setting the <code>NodeInfoPrivacy</code> option in your configuration file. Otherwise, <code>NodeInfo</code> is entirely optional and you can leave it empty.</p>
+            <p>You are not obliged to share anything via node information. Any information entered into this section is publicly accessible and may be stored by network crawlers or by any other network user. You should therefore not publish any sensitive information in your <code>NodeInfo</code>.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// PEERINGS</div>
+            <p>When you establish a peering, your node's IPv6 address and public key are made visible to any peers to which you are directly connected. If peering over the Internet or another network, the remote peer may also be able to see your real IP address, and these may be logged by the remote node.</p>
+            <p>If you are concerned about the storage or collection of logging information on a public node, you should contact the operator of that node. If you are in any way concerned about the safety of a public node, or whether a given public node is administered in good faith, you should not attempt to connect to it.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// DATA COLLECTION</div>
+            <p>Uqda does not collect any personal data, analytics, or telemetry. All network operations are performed locally on your device. The Uqda development team does not have access to any information about your network usage, connections, or activities.</p>
+            <p>If you download Uqda from third-party platforms (such as app stores), those platforms may collect information according to their own privacy policies. Please refer to their respective privacy policies for more information.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// CONTACT</div>
+            <p>If you have any questions about this Privacy Policy, please contact us at <a href="mailto:uqda@proton.me">uqda@proton.me</a>.</p>
+        </div>
+    </div>
+</body>
+</html>
+

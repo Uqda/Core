@@ -1,0 +1,12 @@
+﻿[Unit]
+Description=Uqda default config generator
+ConditionPathExists=|!/etc/uqda/uqda.conf
+ConditionFileNotEmpty=|!/etc/uqda/uqda.conf
+Wants=local-fs.target
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/mkdir -p /etc/uqda
+ExecStart=/usr/bin/uqda -genconf > /etc/uqda/uqda.conf
+ExecStartPost=/usr/bin/chmod 0640 /etc/uqda/uqda.conf

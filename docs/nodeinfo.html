@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="NodeInfo configuration for Uqda Network - How to publish node information publicly">
+    <meta name="keywords" content="Uqda, nodeinfo, node information, configuration, mesh network">
+    <title>NodeInfo - Uqda Network</title>
+    <link rel="canonical" href="https://uqda.github.io/nodeinfo.html">
+    <link rel="alternate" hreflang="ar" href="https://uqda.github.io/ar/nodeinfo.html">
+    <link rel="stylesheet" href="style.css">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "NodeInfo - Uqda Network",
+        "description": "NodeInfo configuration for Uqda Network - How to publish node information publicly",
+        "url": "https://uqda.github.io/nodeinfo.html",
+        "inLanguage": "en",
+        "isPartOf": {
+            "@type": "WebSite",
+            "name": "Uqda Network",
+            "url": "https://uqda.github.io/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="index.html">UQDA NETWORK</a></h1>
+            <div class="subtitle">NODE INFORMATION</div>
+        </div>
+
+        <div class="navbar">
+            <div class="navbar-links">
+                <a href="index.html" class="navbar-link">HOME</a>
+                <a href="about.html" class="navbar-link">ABOUT</a>
+                <a href="installation.html" class="navbar-link">INSTALL</a>
+                <a href="configuration.html" class="navbar-link">CONFIG</a>
+                <a href="admin.html" class="navbar-link">ADMIN</a>
+                <a href="faq.html" class="navbar-link">FAQ</a>
+                <a href="uqda_network_docs.html" class="navbar-link">DOCS</a>
+            </div>
+            <a href="ar/nodeinfo.html" class="navbar-lang">العربية</a>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// NODEINFO</div>
+            <p>Uqda supports advertising a small amount of information publicly to the network. The entire stanza should not exceed 16KB. You should not publish any information that you do not want to be collected by network crawlers or deem to be private. NodeInfo can take any format, although this document outlines some common types for interoperability - please stick to these formats where possible.</p>
+            <p>If your configuration file is in HJSON format (as is standard), then you should specify your NodeInfo in HJSON format and it will be converted to JSON automatically by Uqda when requested. If your configuration file is in JSON format, then you should also specify your NodeInfo in JSON format.</p>
+            <p>The below examples are all in HJSON format.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// WELL-KNOWN TYPES</div>
+            
+            <h3 style="margin-top: 20px; margin-bottom: 10px;">Node Build Tags</h3>
+            <p>These options are automatically populated into NodeInfo therefore you do not need to configure them. These can be unshared by setting the <code>NodeInfoPrivacy</code> configuration setting to <code>true</code> or by configuring the below values to <code>null</code>.</p>
+            <div class="code-block">
+                <div class="code-line">NodeInfo:</div>
+                <div class="code-line">{</div>
+                <div class="code-line">  buildname: uqda</div>
+                <div class="code-line">  buildversion: 0.1.5</div>
+                <div class="code-line">  buildplatform: linux</div>
+                <div class="code-line">  buildarch: amd64</div>
+                <div class="code-line">}</div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 10px;">Node Name</h3>
+            <p>A friendly name for the node, which may be displayed on the maps or in GUI clients. This is often specified in fully-qualified domain name (FQDN) format, although this is not essential and free-flowing text can be used instead.</p>
+            <div class="code-block">
+                <div class="code-line">NodeInfo:</div>
+                <div class="code-line">{</div>
+                <div class="code-line">  name: my-node.example.com</div>
+                <div class="code-line">}</div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 10px;">Public Peering Details</h3>
+            <p>If you wish to advertise your node as a public node, then you can provide information about how other users can peer with it over other networks.</p>
+            <p>The first level of the <code>"public"</code> key should contain the network class, and then each network class should be a list of connection strings in Uqda configuration format.</p>
+            <div class="code-block">
+                <div class="code-line">NodeInfo:</div>
+                <div class="code-line">{</div>
+                <div class="code-line">  public:</div>
+                <div class="code-line">  {</div>
+                <div class="code-line">    internet: [</div>
+                <div class="code-line">      tcp://a.b.c.d:e</div>
+                <div class="code-line">      tcp://[a:b:c::d]:e</div>
+                <div class="code-line">    ]</div>
+                <div class="code-line">    tor: [</div>
+                <div class="code-line">      socks://localhost:a/b.c.d.e:f</div>
+                <div class="code-line">    ]</div>
+                <div class="code-line">  }</div>
+                <div class="code-line">}</div>
+            </div>
+            <p>Currently known classes are <code>"internet"</code>, <code>"tor"</code>, <code>"i2p"</code> and <code>"cjdns"</code>.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// PRIVACY CONSIDERATIONS</div>
+            <p>Remember that NodeInfo is publicly accessible and may be collected by network crawlers. Do not include any sensitive information such as:</p>
+            <ul>
+                <li>Personal identification information</li>
+                <li>Passwords or authentication tokens</li>
+                <li>Private keys or certificates</li>
+                <li>Internal network details</li>
+            </ul>
+            <p>To disable automatic build information sharing, set <code>NodeInfoPrivacy: true</code> in your configuration file.</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">// MORE INFORMATION</div>
+            <p>For more details about configuration options, see the <a href="configurationref.html">Configuration Reference</a>.</p>
+        </div>
+    </div>
+</body>
+</html>
+
