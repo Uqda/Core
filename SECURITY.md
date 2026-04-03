@@ -178,15 +178,17 @@ If you need anonymity, use **Tor** or **I2P** instead.
      `[Convert]::ToBase64String([IO.File]::ReadAllBytes('path\to\cert.pfx'))`  
      Paste the output string into the secret.
    - **`WINDOWS_CODESIGN_PASSWORD`** — password for that `.pfx`.
-3. **Tag a new release** so the workflow runs; Windows job logs should show “Authenticode signing completed” (or a warning if secrets are missing).
+3. **Tag a new release** (or run the Release workflow manually). On **`Uqda/Core`**, the Windows job **fails** if these secrets are missing — so **public releases do not ship unsigned MSIs** (the root fix for Smart App Control blocking unknown publishers).
 
-**If secrets are not set:** The script prints a workflow warning and leaves the MSI **unsigned** (same behavior as before). Forks and PRs from clones typically have no access to these secrets — expected.
+**Forks / other remotes:** The “require secrets” check only applies to `github.repository == Uqda/Core`. Forks can still build without signing (their own Actions), but end users should prefer **official** GitHub Releases for signed installers.
 
 **Protecting the key:** Prefer HSM or cloud signing for production; storing a `.pfx` in GitHub Secrets is a common CI pattern but protect the file and rotate if leaked. Do not commit `.pfx` to git.
 
 **macOS:** Broad distribution without Gatekeeper issues requires **Developer ID** signing plus **notarization** — separate from Windows; not automated in this workflow yet.
 
-**Users on locked-down PCs:** If an MSI is still blocked after signing, it is often **reputation** (new cert); EV helps. Organizational devices may still require IT approval.
+**Smart App Control (SAC) after signing:** A valid Authenticode signature is required; SAC can still show prompts for **new** publishers until Microsoft’s reputation systems catch up ([Smart App Control overview](https://learn.microsoft.com/windows/security/application-security/application-control/smart-app-control/)). An **EV** code-signing certificate often reduces this window. If a signed build is still blocked, options are: wait/retry, use a PC without SAC enforcement, or adjust **Windows Security → App & browser control** (only if you accept the risk). **Group Policy** blocks (e.g. “system administrator prevented installation”) need **IT** to allow the installer or the publisher.
+
+**Users on locked-down PCs:** Organizational devices may require IT approval even for signed apps.
 
 ---
 

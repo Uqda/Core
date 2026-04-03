@@ -77,6 +77,18 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "Building version: ${VERSION}"
       
+      # Root fix for Windows Smart App Control / SmartScreen: do not ship unsigned MSIs from the official repo.
+      - name: Require Authenticode secrets (Windows release)
+        if: |
+          matrix.platform == 'windows' &&
+          github.repository == 'Uqda/Core' &&
+          (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch') &&
+          secrets.WINDOWS_CODESIGN_PFX_BASE64 == ''
+        shell: bash
+        run: |
+          echo "::error::Windows installers must be Authenticode-signed or Smart App Control blocks them. Add repository secrets WINDOWS_CODESIGN_PFX_BASE64 and WINDOWS_CODESIGN_PASSWORD. See SECURITY.md."
+          exit 1
+      
       - name: Build Debian package
         if: matrix.platform == 'debian'
         env:
