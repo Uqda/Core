@@ -1,0 +1,111 @@
+name: Release
+
+# Create a GitHub Release with prebuilt binaries when you push a version tag.
+# Example: git tag -a v0.1.0 -m "Release 0.1.0" && git push origin v0.1.0
+
+on:
+  push:
+    tags:
+      - "v[0-9]*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  binaries:
+    name: Build (${{ matrix.goos }}, ${{ matrix.goarch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            ext: ""
+          - goos: linux
+            goarch: arm64
+            ext: ""
+          - goos: windows
+            goarch: amd64
+            ext: ".exe"
+          - goos: darwin
+            goarch: amd64
+            ext: ""
+          - goos: darwin
+            goarch: arm64
+            ext: ""
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.24.x"
+
+      - name: Version from tag
+        id: ver
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "bare=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build uqda and uqdactl
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: |
+          set -euf
+          mkdir -p dist
+          VER="${{ steps.ver.outputs.bare }}"
+          PKG="github.com/Uqda/Core/src/version"
+          LDFLAGS="-X ${PKG}.BuildName=uqda -X ${PKG}.BuildVersion=${VER} -s -w"
+          go build -trimpath -ldflags="${LDFLAGS}" -o "dist/uqda-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}" ./cmd/uqda
+          go build -trimpath -ldflags="${LDFLAGS}" -o "dist/uqdactl-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}" ./cmd/uqdactl
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bin-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/*
+
+  release:
+    name: Publish GitHub Release
+    needs: [binaries]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: bin-*
+          merge-multiple: true
+
+      - name: Flatten and checksum
+        run: |
+          set -euf
+          mkdir -p dist
+          find artifacts -type f \( -name 'uqda*' -o -name 'uqdactl*' \) -exec mv -t dist {} +
+          ( cd dist && sha256sum -b * > SHA256SUMS )
+          ls -la dist
+
+      - name: Create Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

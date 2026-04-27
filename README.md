@@ -11,6 +11,8 @@ See [https://github.com/Uqda/Core](https://github.com/Uqda/Core) for documentati
 
 See the [releases page](https://github.com/Uqda/Core/releases) for pre-built binaries.
 
+**Maintainers — automatic releases:** pushing a **semver tag** matching `v1.2.3` runs [`.github/workflows/release.yml`](.github/workflows/release.yml), which builds `uqda` / `uqdactl` for Linux (amd64, arm64), Windows (amd64), and macOS (amd64, arm64), attaches them plus `SHA256SUMS`, and publishes a GitHub Release with generated notes. Example: `git tag -a v0.1.0 -m "Uqda Core 0.1.0" && git push origin v0.1.0`.
+
 ## Documentation
 
 **Start here:** [Documentation hub — full project map](docs/README.md) (architecture, packages, features, links to every guide).

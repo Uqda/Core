@@ -74,6 +74,10 @@ These are **not** fully exercised by unit tests alone:
 
 Use [Installation guides](install-linux-manual.md) and the [README](../README.md#documentation) index for per-platform setup.
 
+## Automatic GitHub Releases
+
+Pushing a tag **`v*.*.*`** (e.g. `v0.2.0`) triggers **`.github/workflows/release.yml`**: cross-compiled **`uqda`** / **`uqdactl`** archives, **`SHA256SUMS`**, and a **GitHub Release** (via `softprops/action-gh-release`). Requires the default **`GITHUB_TOKEN`** permissions on the repository (**Settings → Actions → General** → workflow read/write as needed).
+
 ## Lint `//nolint` directives
 
 Use only **linters that exist in your golangci-lint version** in `//nolint:` comments; unknown names produce warnings (they do not fail the run unless configured to).
