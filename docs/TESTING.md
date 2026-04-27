@@ -74,6 +74,10 @@ These are **not** fully exercised by unit tests alone:
 
 Use [Installation guides](install-linux-manual.md) and the [README](../README.md#documentation) index for per-platform setup.
 
+## Docker / GHCR (`docker.yml`)
+
+If **`403 Forbidden`** appears when pushing to **`ghcr.io`**, ensure the image path is **all lowercase** (the workflow lowercases `github.repository`). Organization owners should also check **Settings → Actions → General** (workflow read/write) and **Packages** permissions so Actions can publish.
+
 ## Automatic GitHub Releases
 
 Pushing a tag **`v*.*.*`** (e.g. `v0.2.0`) triggers **`.github/workflows/release.yml`**: cross-compiled **`uqda`** / **`uqdactl`** archives, **`SHA256SUMS`**, and a **GitHub Release** (via `softprops/action-gh-release`). Requires the default **`GITHUB_TOKEN`** permissions on the repository (**Settings → Actions → General** → workflow read/write as needed).

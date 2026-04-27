@@ -1,3 +1,7 @@
+# Pushes multi-arch images to ghcr.io/<owner>/<repo> (all lowercase).
+# If push still returns 403: org → Settings → Actions → General → Workflow permissions
+# must allow read/write; org may also need Packages policy to let Actions publish.
+
 name: Docker Build
 
 on:
@@ -16,16 +20,23 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-docker:
     name: Build Docker Package
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      # GHCR rejects mixed-case paths (e.g. Uqda/Core → 403 on blob upload).
+      - name: GHCR image name (lowercase)
+        id: image
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -41,7 +52,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}
           tags: |
             type=ref,event=tag
             type=ref,event=branch
