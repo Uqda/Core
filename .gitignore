@@ -1,0 +1,9 @@
+# Local node config (contains PrivateKey); never commit
+/uqda.conf
+
+# Built binaries (./build)
+/uqda
+/uqdactl
+
+.DS_Store
+**/.DS_Store

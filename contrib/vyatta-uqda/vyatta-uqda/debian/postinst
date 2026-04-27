@@ -1,0 +1,19 @@
+#!/bin/sh
+
+sudo systemctl daemon-reload
+
+for f in /config/uqda.*.conf
+do
+  if [ "$f" == "/config/uqda.*.conf" ];
+  then
+    continue
+  fi
+
+  mkdir -p /var/backups
+  echo "Backing up configuration file to $f.`date +%Y%m%d`"
+  cp $f $f.`date +%Y%m%d`
+  echo "Normalising $f"
+  /usr/local/bin/uqda -useconffile $f.`date +%Y%m%d` -normaliseconf > $f
+done
+
+sg users -c "/opt/vyatta/sbin/vyatta-restart-uqda"

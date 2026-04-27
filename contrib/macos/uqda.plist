@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Disabled</key>
+    <false/>
+    <key>Label</key>
+    <string>uqda</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/usr/local/bin/uqda</string>
+      <string>-useconffile</string>
+      <string>/etc/uqda.conf</string>
+    </array>
+    <key>StandardOutPath</key>
+    <string>/tmp/uqda.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/uqda.stderr.log</string>
+    <key>KeepAlive</key>
+    <true/>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>

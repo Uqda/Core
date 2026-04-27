@@ -1,0 +1,15 @@
+# Last Modified: Sun Feb 24 15:02:29 2019
+abi <abi/3.0>,
+include <tunables/global>
+
+/usr/bin/uqdactl {
+  #include <abstractions/base>
+
+  /etc/uqda.conf rw,
+  /var/run/uqda.sock rw,
+
+  # For newer versions of Ubuntu
+  #include <abstractions/openssl>
+  # For older versions of Ubuntu
+  #include <abstractions/ssl_certs>
+}

@@ -1,0 +1,18 @@
+[Unit]
+Description=uqda
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Group=vyattacfg
+ProtectHome=true
+ProtectSystem=true
+SyslogIdentifier=uqda
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW
+ExecStart=/usr/local/bin/uqda -useconffile /config/uqda.%i.conf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target

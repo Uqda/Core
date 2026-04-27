@@ -1,0 +1,17 @@
+uqda (0.5.13-1) stable; urgency=medium
+
+  * Rebrand mesh stack to Uqda
+  * Integrated into Uqda/Core monorepo under contrib/vyatta-uqda/
+  * CLI: set interfaces uqda tun0
+  * Config path: /config/uqda.tun0.conf
+  * Binary paths: /usr/sbin/uqda and /usr/sbin/uqdactl
+  * Service: uqda@.service
+
+ -- Uqda Network   Mon, 24 Feb 2026 00:00:00 +0000
+
+uqda (0.1.0-1) UNRELEASED; urgency=low
+
+  * Initial packaging for Ubiquiti EdgeRouter / VyOS
+  * Early Vyatta integration (historical baseline)
+
+ -- Uqda Network   Mon, 24 Feb 2026 00:00:00 +0000
