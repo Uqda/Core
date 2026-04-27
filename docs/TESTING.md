@@ -76,7 +76,11 @@ Use [Installation guides](install-linux-manual.md) and the [README](../README.md
 
 ## Docker / GHCR (`docker.yml`)
 
-If **`403 Forbidden`** appears when pushing to **`ghcr.io`**, ensure the image path is **all lowercase** (the workflow lowercases `github.repository`). Organization owners should also check **Settings → Actions → General** (workflow read/write) and **Packages** permissions so Actions can publish.
+If **`403 Forbidden`** appears when pushing to **`ghcr.io`**:
+
+1. Image path must be **all lowercase** (the workflow lowercases `github.repository`).
+2. **Organization repos:** org **Settings → Actions → General → Workflow permissions** → **Read and write**; and **Packages** settings so Actions may publish.
+3. If it still fails, add a repository secret **`GHCR_PUSH_TOKEN`**: a **classic PAT** with scopes **`write:packages`** and **`read:packages`** (create from a user who may publish under `ghcr.io/<org>/...`). Optionally set **`GHCR_USERNAME`** to that user’s GitHub login if it differs from the actor. The workflow uses the PAT for `docker login` when the secret is present.
 
 ## Automatic GitHub Releases
 
