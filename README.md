@@ -13,6 +13,8 @@ See the [releases page](https://github.com/Uqda/Core/releases) for pre-built bin
 
 **Maintainers — automatic releases:** pushing a **semver tag** matching `v1.2.3` runs [`.github/workflows/release.yml`](.github/workflows/release.yml), which builds `uqda` / `uqdactl` for Linux (amd64, arm64), Windows (amd64), and macOS (amd64, arm64), attaches them plus `SHA256SUMS`, and publishes a GitHub Release with generated notes. Example: `git tag -a v0.1.0 -m "Uqda Core 0.1.0" && git push origin v0.1.0`.
 
+**Installers on the same release page:** [`.github/workflows/pkg.yml`](.github/workflows/pkg.yml) now also runs on `v*` tags and uploads `.deb` / `.pkg` / `.msi` (plus router packages and vendored sources) to the same GitHub Release, so users can install via one platform package without extra manual assembly.
+
 ## Documentation
 
 **Start here:** [Documentation hub — full project map](docs/README.md) (architecture, packages, features, links to every guide).

@@ -2,6 +2,11 @@ name: Packages
 
 on:
   workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -161,3 +166,35 @@ jobs:
           name: Router package (${{ matrix.pkgarch }})
           path: "contrib/vyatta-uqda/*.deb"
           if-no-files-found: error
+
+  publish-release-assets:
+    name: Publish package assets to Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - build-vendored-sources
+      - build-packages-debian
+      - build-packages-macos
+      - build-packages-windows
+      - build-packages-router
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect assets
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          find artifacts -type f \( -name '*.deb' -o -name '*.pkg' -o -name '*.msi' -o -name '*.tar.gz' \) -exec cp {} dist/ \;
+          ls -la dist
+          test -n "$(ls -1 dist/* 2>/dev/null || true)"
+
+      - name: Upload assets to existing GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          gh release upload "$TAG" dist/* --clobber
