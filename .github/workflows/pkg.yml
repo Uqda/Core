@@ -178,6 +178,10 @@ jobs:
       - build-packages-router
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
       - name: Download all package artifacts
         uses: actions/download-artifact@v4
         with:
@@ -197,4 +201,4 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
-          gh release upload "$TAG" dist/* --clobber
+          gh release upload "$TAG" dist/* --clobber --repo "${GITHUB_REPOSITORY}"
