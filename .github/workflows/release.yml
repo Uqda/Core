@@ -69,11 +69,27 @@ jobs:
           go build -trimpath -ldflags="${LDFLAGS}" -o "dist/uqda-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}" ./cmd/uqda
           go build -trimpath -ldflags="${LDFLAGS}" -o "dist/uqdactl-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}" ./cmd/uqdactl
 
+      - name: Create single-user bundle (contains both binaries)
+        run: |
+          set -euo pipefail
+          mkdir -p bundle
+          TAG="${{ steps.ver.outputs.tag }}"
+          BASE="uqda-${TAG}-${{ matrix.goos }}-${{ matrix.goarch }}"
+          mkdir -p "bundle/${BASE}"
+          cp "dist/uqda-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}" "bundle/${BASE}/"
+          cp "dist/uqdactl-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}" "bundle/${BASE}/"
+          cp README.md "bundle/${BASE}/README.md"
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            (cd bundle && zip -r "${BASE}.zip" "${BASE}")
+          else
+            tar -czf "bundle/${BASE}.tar.gz" -C bundle "${BASE}"
+          fi
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: bin-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: dist/*
+          path: bundle/*
 
   release:
     name: Publish GitHub Release
@@ -96,11 +112,11 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           # download-artifact may keep per-artifact subdirectories.
-          # Copy binaries regardless of nesting and fail clearly if none found.
-          find artifacts -type f \( -name 'uqda*' -o -name 'uqdactl*' \) -exec cp {} dist/ \;
+          # Copy per-platform bundles regardless of nesting and fail clearly if none found.
+          find artifacts -type f \( -name 'uqda-*.tar.gz' -o -name 'uqda-*.zip' \) -exec cp {} dist/ \;
           ls -la artifacts || true
           ls -la dist || true
-          test -n "$(ls -1 dist/uqda* dist/uqdactl* 2>/dev/null || true)"
+          test -n "$(ls -1 dist/uqda-* 2>/dev/null || true)"
           ( cd dist && sha256sum -b * > SHA256SUMS )
           ls -la dist
 
