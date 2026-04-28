@@ -93,9 +93,14 @@ jobs:
 
       - name: Flatten and checksum
         run: |
-          set -euf
+          set -euo pipefail
           mkdir -p dist
-          find artifacts -type f \( -name 'uqda*' -o -name 'uqdactl*' \) -exec mv -t dist {} +
+          # download-artifact may keep per-artifact subdirectories.
+          # Copy binaries regardless of nesting and fail clearly if none found.
+          find artifacts -type f \( -name 'uqda*' -o -name 'uqdactl*' \) -exec cp {} dist/ \;
+          ls -la artifacts || true
+          ls -la dist || true
+          test -n "$(ls -1 dist/uqda* dist/uqdactl* 2>/dev/null || true)"
           ( cd dist && sha256sum -b * > SHA256SUMS )
           ls -la dist
 
