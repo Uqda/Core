@@ -79,15 +79,11 @@ cat > /tmp/$PKGNAME/debian/postinst << EOF
 
 systemctl daemon-reload
 
-if ! getent group uqda 2>&1 > /dev/null; then
-  groupadd --system --force uqda
-fi
-
 if [ ! -d /etc/uqda ];
 then
     mkdir -p /etc/uqda
-    chown root:uqda /etc/uqda
-    chmod 750 /etc/uqda
+    chown root:root /etc/uqda
+    chmod 700 /etc/uqda
 fi
 
 if [ ! -f /etc/uqda/uqda.conf ];
@@ -104,14 +100,14 @@ then
   echo "Normalising and updating /etc/uqda/uqda.conf"
   /usr/bin/uqda -useconf -normaliseconf < /var/backups/uqda.conf.`date +%Y%m%d` > /etc/uqda/uqda.conf
 
-  chown root:uqda /etc/uqda/uqda.conf
-  chmod 640 /etc/uqda/uqda.conf
+  chown root:root /etc/uqda/uqda.conf
+  chmod 600 /etc/uqda/uqda.conf
 else
   echo "Generating initial configuration file /etc/uqda/uqda.conf"
   (umask 037 && /usr/bin/uqda -genconf > /etc/uqda/uqda.conf)
 
-  chown root:uqda /etc/uqda/uqda.conf
-  chmod 640 /etc/uqda/uqda.conf
+  chown root:root /etc/uqda/uqda.conf
+  chmod 600 /etc/uqda/uqda.conf
 fi
 
 systemctl enable uqda

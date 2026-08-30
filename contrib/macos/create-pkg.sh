@@ -57,6 +57,8 @@ then
 else
   (umask 037 && /usr/local/bin/uqda -genconf > /etc/uqda.conf)
 fi
+chown root:wheel /etc/uqda.conf
+chmod 0600 /etc/uqda.conf
 
 # Unload existing UQDA launchd service, if possible
 test -f /Library/LaunchDaemons/uqda.plist && (launchctl unload /Library/LaunchDaemons/uqda.plist || true)

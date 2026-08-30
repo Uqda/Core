@@ -6,7 +6,7 @@ After=network-online.target
 After=uqda-default-config.service
 
 [Service]
-Group=uqda
+Group=root
 ProtectHome=true
 ProtectSystem=strict
 NoNewPrivileges=true

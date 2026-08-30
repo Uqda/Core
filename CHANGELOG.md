@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Restricted the local administration socket to its owner with mode `0600`.
+- Required root privileges for `uqdactl` on Unix-like systems and an elevated
+  administrator token on Windows.
+- Changed installers and service definitions so node configuration and local
+  administration are no longer granted to an ordinary user or group.
+- Made installation fail if the service starts without a root-only
+  administration socket.
+
 ## v0.1.0-beta.5
 
 - Added explicit Fedora/Bazzite systemd-portable detection.

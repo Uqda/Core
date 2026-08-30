@@ -7,8 +7,8 @@ After=local-fs.target
 
 [Service]
 Type=oneshot
-Group=uqda
-UMask=037
+Group=root
+UMask=077
 StandardOutput=file:/etc/uqda.conf
 ExecStart=/usr/bin/uqda -genconf
-ExecStartPost=/usr/bin/chmod 0640 /etc/uqda.conf
+ExecStartPost=/usr/bin/chmod 0600 /etc/uqda.conf

@@ -93,6 +93,11 @@ $EDITOR uqda.conf
 sudo ./uqda -useconffile ./uqda.conf
 ```
 
+On Unix-like systems, administration is intentionally root-only. Run all
+`uqdactl` commands through `sudo`, for example `sudo uqdactl getSelf`. The
+local administration socket is created with mode `0600`; access is not granted
+to ordinary users or groups.
+
 New nodes remain compatible with existing protocol 0.5 peers. When both sides support the hardened handshake, they negotiate it automatically. To require the hardened handshake on a controlled link and reject legacy peers, append `?secure=required` to both the peer URI and listener URI.
 
 Use `-json` with `-genconf` if strict JSON is preferred over commented HJSON. Creating a TUN interface normally requires administrator privileges. On Linux, the binary may instead be granted the required capability:

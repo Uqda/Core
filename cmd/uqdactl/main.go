@@ -62,6 +62,10 @@ func run() int {
 		flag.Usage()
 		return 0
 	}
+	if err := requireAdministrator(); err != nil {
+		fmt.Fprintln(os.Stderr, "uqdactl:", err)
+		return 1
+	}
 
 	cmdLineEnv.setEndpoint(logger)
 
@@ -87,7 +91,8 @@ func run() int {
 		panic(err)
 	}
 
-	// config and socket are done, work without unprivileges
+	// Configuration and socket setup are complete; retain only the promises
+	// needed to exchange the administration request.
 	if err := protect.Pledge("stdio"); err != nil {
 		panic(err)
 	}

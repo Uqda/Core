@@ -149,9 +149,6 @@ say "asset=$ASSET method=$METHOD"
 
 [ "$(id -u)" -eq 0 ] || die "run this installer as root (for example: sudo sh install.sh)"
 need mktemp
-INSTALL_USER=${SUDO_USER:-root}
-case "$INSTALL_USER" in root|'') ADMIN_GROUP=uqda ;; *) ADMIN_GROUP=$(id -gn "$INSTALL_USER" 2>/dev/null || printf 'uqda') ;; esac
-case "$ADMIN_GROUP" in *[!A-Za-z0-9_.-]*) die "unsafe administration group name: $ADMIN_GROUP" ;; esac
 TMPDIR_UQDA=$(mktemp -d "$TEMP_BASE/uqda-install.XXXXXX")
 trap 'rm -rf "$TMPDIR_UQDA"' EXIT HUP INT TERM
 
@@ -201,11 +198,8 @@ install_portable_service() {
 				fi
 			fi
 			if command -v systemctl >/dev/null 2>&1; then
-				if [ "$ADMIN_GROUP" = uqda ] && ! getent group uqda >/dev/null 2>&1; then
-					groupadd --system uqda
-				fi
-				chgrp "$ADMIN_GROUP" "$CONFIG_FILE"
-				chmod 0640 "$CONFIG_FILE"
+				chown root:root "$CONFIG_FILE"
+				chmod 0600 "$CONFIG_FILE"
 				cat > /etc/systemd/system/uqda.service <<'EOF'
 [Unit]
 Description=UQDA encrypted IPv6 mesh
@@ -215,7 +209,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=root
-Group=__UQDA_ADMIN_GROUP__
+Group=root
 ExecStart=/usr/local/bin/uqda -useconffile __UQDA_CONFIG_FILE__
 Restart=on-failure
 RestartSec=5s
@@ -224,7 +218,6 @@ NoNewPrivileges=true
 [Install]
 WantedBy=multi-user.target
 EOF
-				sed -i "s/__UQDA_ADMIN_GROUP__/$ADMIN_GROUP/" /etc/systemd/system/uqda.service
 				sed -i "s|__UQDA_CONFIG_FILE__|$CONFIG_FILE|" /etc/systemd/system/uqda.service
 				systemctl daemon-reload
 				systemctl enable uqda.service
@@ -249,10 +242,7 @@ EOF
 case "$METHOD" in
 	deb)
 		need dpkg
-		dpkg -i "$TMPDIR_UQDA/$ASSET"
-		if [ "$INSTALL_USER" != root ] && getent group uqda >/dev/null 2>&1 && command -v usermod >/dev/null 2>&1; then
-			usermod -a -G uqda "$INSTALL_USER"
-		fi
+	dpkg -i "$TMPDIR_UQDA/$ASSET"
 		;;
 	pkg)
 		need installer
@@ -281,20 +271,20 @@ verify_linux_service() {
 	i=0
 	verified=0
 	while [ "$i" -lt 5 ]; do
-		if [ "$INSTALL_USER" != root ] && command -v runuser >/dev/null 2>&1; then
-			runuser -u "$INSTALL_USER" -- "$CTL" getSelf >/dev/null 2>&1 && verified=1 && break
-		else
-			"$CTL" getSelf >/dev/null 2>&1 && verified=1 && break
-		fi
+		"$CTL" getSelf >/dev/null 2>&1 && verified=1 && break
 		sleep 1
 		i=$((i + 1))
 	done
-	[ "$verified" -eq 1 ] || die "uqdactl cannot reach the service as $INSTALL_USER"
-	say "service and non-root administration check passed"
+	[ "$verified" -eq 1 ] || die "uqdactl cannot reach the service as root"
+	SOCKET_PATH=/var/run/uqda.sock
+	[ -S "$SOCKET_PATH" ] || die "administration socket was not created"
+	SOCKET_MODE=$(stat -c '%a' "$SOCKET_PATH" 2>/dev/null || stat -f '%Lp' "$SOCKET_PATH" 2>/dev/null || true)
+	[ "$SOCKET_MODE" = 600 ] || die "administration socket is not root-only (expected mode 600, got ${SOCKET_MODE:-unknown})"
+	say "service and root-only administration check passed"
 }
 
 verify_linux_service
 
 say "installation completed successfully"
 say "configuration was preserved if it already existed"
-say "manage this node with: uqdactl getSelf or uqdactl getPeers"
+say "manage this node with: sudo uqdactl getSelf or sudo uqdactl getPeers"

@@ -15,7 +15,7 @@
     <key>RunAtLoad</key>
     <true/>
     <key>GroupName</key>
-    <string>staff</string>
+    <string>wheel</string>
     <key>ProcessType</key>
     <string>Interactive</string>
     <key>StandardOutPath</key>

@@ -115,8 +115,9 @@ func New(c *core.Core, log core.Logger, opts ...SetupOption) (*AdminSocket, erro
 			if err == nil {
 				abstract := u.Path != "" && u.Path[0] == '@'
 				if !abstract {
-					if err := os.Chmod(u.Path, 0660); err != nil {
-						a.log.Warnln("WARNING:", u.Path, "may have unsafe permissions!")
+					if err := secureUnixSocket(u.Path); err != nil {
+						_ = a.listener.Close()
+						return nil, fmt.Errorf("failed to secure admin socket %s: %w", u.Path, err)
 					}
 				}
 			}
@@ -153,6 +154,10 @@ func New(c *core.Core, log core.Logger, opts ...SetupOption) (*AdminSocket, erro
 	a.done = make(chan struct{})
 	go a.listen()
 	return a, a.core.SetAdmin(a)
+}
+
+func secureUnixSocket(path string) error {
+	return os.Chmod(path, 0600)
 }
 
 func (a *AdminSocket) SetupAdminHandlers() {
