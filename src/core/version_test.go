@@ -228,6 +228,28 @@ func TestVersionDecodeRejectsTrailingBytes(t *testing.T) {
 	}
 }
 
+func TestVersionDecodeRejectsMissingPublicKey(t *testing.T) {
+	// A message containing only a signature used to reach ed25519.Verify with
+	// a zero-length public key and panic. It must now be rejected safely.
+	body := make([]byte, ed25519.SignatureSize)
+	msg := append([]byte{'m', 'e', 't', 'a', 0, 0}, body...)
+	binary.BigEndian.PutUint16(msg[4:6], uint16(len(body)))
+
+	var decoded version_metadata
+	if err := decoded.decode(bytes.NewReader(msg), nil); err != ErrHandshakeInvalidLength {
+		t.Fatalf("expected %q, got %v", ErrHandshakeInvalidLength, err)
+	}
+}
+
+func TestDecodeConfirmationRejectsInvalidPublicKey(t *testing.T) {
+	local := &version_metadata{wire: []byte("local")}
+	remote := &version_metadata{wire: []byte("remote")}
+	confirmation := append([]byte("conf"), make([]byte, ed25519.SignatureSize)...)
+	if err := decodeConfirmation(bytes.NewReader(confirmation), nil, nil, local, remote); err != ErrHandshakeInvalidConfirmation {
+		t.Fatalf("expected %q, got %v", ErrHandshakeInvalidConfirmation, err)
+	}
+}
+
 func malformedVersionHandshake(t *testing.T, op uint16, field []byte, password []byte) []byte {
 	t.Helper()
 

@@ -213,6 +213,12 @@ func (m *version_metadata) decode(r io.Reader, password []byte) error {
 	if len(bs) != 0 {
 		return ErrHandshakeInvalidLength
 	}
+	// A hostile peer can omit the public-key field. ed25519.Verify panics
+	// unless the key is exactly ed25519.PublicKeySize bytes, so reject the
+	// malformed handshake before attempting authentication.
+	if len(m.publicKey) != ed25519.PublicKeySize {
+		return ErrHandshakeInvalidLength
+	}
 
 	legacyHash, err := legacyHandshakeHash(password, m.publicKey)
 	if err != nil {
@@ -297,6 +303,9 @@ func encodeConfirmation(privateKey ed25519.PrivateKey, password []byte, local, r
 }
 
 func decodeConfirmation(r io.Reader, publicKey ed25519.PublicKey, password []byte, local, remote *version_metadata) error {
+	if len(publicKey) != ed25519.PublicKeySize {
+		return ErrHandshakeInvalidConfirmation
+	}
 	bs := make([]byte, confirmationSize)
 	if _, err := io.ReadFull(r, bs); err != nil {
 		return err

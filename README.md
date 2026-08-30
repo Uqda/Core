@@ -51,6 +51,31 @@ The build produces:
 - `uqda` — the network daemon;
 - `uqdactl` — the local administration client.
 
+## Verified one-command installation
+
+The release installer detects the operating system and CPU, selects the native
+package where available, verifies it against the release `SHA256SUMS`, and then
+uses the platform package manager. Review the script before running it:
+
+```bash
+curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.2/install.sh
+sudo sh install.sh
+```
+
+To update through the same verified path while preserving the existing
+configuration:
+
+```bash
+curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.2/updater.sh
+sudo sh updater.sh
+```
+
+Supported release paths are systemd-based Debian/Ubuntu, macOS, EdgeOS 2.x,
+VyOS 1.3, and the listed portable Linux/FreeBSD/OpenBSD targets. Windows users
+should download the matching `.msi` asset from the release. OpenWrt is not yet
+included in the one-command installer and remains an explicitly unvalidated
+target for this beta.
+
 ## Run
 
 For a temporary node using automatically generated settings:
@@ -129,6 +154,7 @@ gofmt -w .
 go vet ./...
 go test ./...
 go build ./...
+sh tests/install_test.sh
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes. Report suspected vulnerabilities privately as described in [SECURITY.md](SECURITY.md).

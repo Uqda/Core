@@ -6,7 +6,7 @@ on:
       tag:
         description: SemVer prerelease tag
         required: true
-        default: v0.1.0-beta.1
+        default: v0.1.0-beta.2
   push:
     branches: [main]
     paths:
@@ -20,9 +20,26 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  UQDA_VERSION: ${{ inputs.tag || 'v0.1.0-beta.1' }}
+  UQDA_VERSION: ${{ inputs.tag || 'v0.1.0-beta.2' }}
 
 jobs:
+  quality-gate:
+    name: Release quality gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Unit and handshake tests
+        run: |
+          go test ./...
+          go test ./src/core -run=^$ -fuzz=FuzzVersionDecode -fuzztime=15s
+      - name: Installer platform matrix
+        run: sh tests/install_test.sh
+      - name: Shell syntax
+        run: sh -n install.sh updater.sh tests/install_test.sh
+
   portable:
     name: Portable (${{ matrix.os }}, ${{ matrix.arch }})
     runs-on: ubuntu-latest
@@ -60,7 +77,7 @@ jobs:
           ./build
           archive="uqda-${UQDA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
           mkdir "$archive"
-          cp uqda uqdactl README.md README_AR.md LICENSE NOTICE.md "$archive/"
+          cp uqda uqdactl install.sh updater.sh VERSION README.md README_AR.md LICENSE NOTICE.md "$archive/"
           tar -czf "$archive.tar.gz" "$archive"
       - uses: actions/upload-artifact@v4
         with:
@@ -180,7 +197,7 @@ jobs:
         run: |
           sh contrib/msi/build-msi.sh "${{ matrix.arch }}"
           test "$(sh contrib/msi/msversion.sh)" = "0.1.0"
-          test -s uqda-0.1.0-beta.1-${{ matrix.arch }}.msi
+          test -s "uqda-${UQDA_VERSION#v}-${{ matrix.arch }}.msi"
       - uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.arch }}
@@ -210,9 +227,27 @@ jobs:
           path: "uqda-*-vendored-source.tar.gz"
           if-no-files-found: error
 
+  release-tools:
+    name: Release installation tools
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Test installer scripts
+        run: |
+          sh -n install.sh updater.sh tests/install_test.sh
+          sh tests/install_test.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-tools
+          path: |
+            install.sh
+            updater.sh
+            VERSION
+          if-no-files-found: error
+
   publish:
     name: Publish prerelease
-    needs: [portable, debian, router, macos, windows, vendored-source]
+    needs: [quality-gate, portable, debian, router, macos, windows, vendored-source, release-tools]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -227,7 +262,7 @@ jobs:
         run: |
           cd release-assets
           find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
-          test "$(find . -maxdepth 1 -type f | wc -l)" -ge 28
+          test "$(find . -maxdepth 1 -type f | wc -l)" -ge 31
           cat SHA256SUMS
       - name: Publish GitHub prerelease
         env:
@@ -240,6 +275,6 @@ jobs:
           gh release create "$UQDA_VERSION" release-assets/* \
             --target "$GITHUB_SHA" \
             --title "UQDA Core $UQDA_VERSION" \
-            --notes-file RELEASE_NOTES_v0.1.0-beta.1.md \
+            --notes-file RELEASE_NOTES_v0.1.0-beta.2.md \
             --prerelease \
             --latest=false

@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.0-beta.2
+
+- Fixed a malformed-handshake panic discovered by fuzz testing by validating
+  Ed25519 public-key lengths before signature verification.
+- Added checksum-verified `install.sh` and `updater.sh` release tools with
+  native package selection for Linux, macOS, EdgeOS, and VyOS.
+- Added a release quality gate and an installer platform-selection test matrix.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
