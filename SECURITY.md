@@ -17,3 +17,5 @@ The maintainers will acknowledge the report, investigate it, and coordinate disc
 ## Supported versions
 
 Security fixes are made on the current `main` branch and included in the next release. Users should run the latest available release.
+
+Protocol 0.6 introduces transcript-bound handshake confirmations and is not wire-compatible with older nodes. Upgrade every peer in a private overlay together; do not mix protocol 0.5 and 0.6 nodes.
