@@ -250,6 +250,7 @@ jobs:
 
   publish:
     name: Publish prerelease
+    if: github.event_name == 'workflow_dispatch'
     needs: [quality-gate, portable, debian, router, macos, windows, vendored-source, release-tools]
     runs-on: ubuntu-latest
     steps:
