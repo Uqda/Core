@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="contrib/logo/uqda-logo.svg" alt="Uqda logo" width="180">
+  <img src="contrib/logo/uqda-logo.svg" alt="Uqda logo" width="420">
 
 # Uqda Core 🌐
 
