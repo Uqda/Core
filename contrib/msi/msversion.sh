@@ -5,7 +5,10 @@ TAG=$(git describe --abbrev=0 --tags --match="v[0-9]*\.[0-9]*\.[0-9]*" 2>/dev/nu
 
 # Did getting the tag succeed?
 if [ $? != 0 ] || [ -z "$TAG" ]; then
-  printf -- "unknown"
+  # MSI requires a numeric dotted version even before the first release tag.
+  # Keep the build component inside WiX's accepted 0..65534 range.
+  COUNT=$(git rev-list --count HEAD 2>/dev/null || printf '0')
+  printf '0.0.%d' "$((COUNT % 65535))"
   exit 0
 fi
 
