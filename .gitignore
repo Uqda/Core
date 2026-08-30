@@ -1,0 +1,22 @@
+# Build outputs
+/uqda
+/uqdactl
+*.exe
+*.deb
+*.msi
+*.pkg
+*.tar.gz
+
+# Local configuration and secrets
+uqda.conf
+*.key
+
+# Go tooling
+/vendor/
+coverage.out
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
