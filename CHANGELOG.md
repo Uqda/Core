@@ -1,9 +1,16 @@
 # Changelog
 
+## v0.1.0-beta.4
+
+- Moved per-release notes out of the repository root.
+- Removed the manually maintained `VERSION` file.
+- Made both installer and updater discover the newest published GitHub release
+  automatically, while retaining `UQDA_VERSION` for explicit pinning.
+
 ## v0.1.0-beta.3
 
-- Made `updater.sh` follow the repository release channel through the validated
-  `VERSION` file instead of reinstalling a hard-coded release.
+- Made `updater.sh` follow the repository release channel instead of
+  reinstalling a hard-coded release.
 
 ## v0.1.0-beta.2
 

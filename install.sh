@@ -1,13 +1,15 @@
 #!/bin/sh
 
 # UQDA Core verified installer for Linux, macOS, FreeBSD, OpenBSD,
-# EdgeOS and VyOS. Override the release with UQDA_VERSION=vX.Y.Z.
+# EdgeOS and VyOS. It discovers the newest published GitHub release unless
+# UQDA_VERSION=vX.Y.Z selects a specific one.
 
 set -eu
 
 REPOSITORY=${UQDA_REPOSITORY:-Uqda/Core}
-VERSION=${UQDA_VERSION:-v0.1.0-beta.3}
-BASE_URL=${UQDA_RELEASE_BASE_URL:-https://github.com/$REPOSITORY/releases/download/$VERSION}
+VERSION=${UQDA_VERSION:-}
+TEMP_BASE=${TMPDIR:-/tmp}
+[ -d "$TEMP_BASE" ] || TEMP_BASE=.
 DRY_RUN=0
 START_SERVICE=1
 
@@ -20,7 +22,7 @@ usage() {
 Usage: install.sh [--version vX.Y.Z] [--dry-run] [--no-start]
 
 Environment overrides:
-  UQDA_VERSION           Release tag (default: v0.1.0-beta.3)
+  UQDA_VERSION           Install one specific release tag
   UQDA_TEST_OS           Override detected OS for tests
   UQDA_TEST_ARCH         Override detected CPU for tests
   UQDA_TEST_PLATFORM     systemd, portable, edgeos2x, or vyos13
@@ -39,6 +41,24 @@ while [ "$#" -gt 0 ]; do
 	esac
 done
 
+if [ -z "$VERSION" ]; then
+	RELEASES_FILE=${UQDA_RELEASES_FILE:-}
+	if [ -z "$RELEASES_FILE" ]; then
+		TMP_RELEASES=$(mktemp "$TEMP_BASE/uqda-releases.XXXXXX")
+		trap 'rm -f "$TMP_RELEASES"' EXIT HUP INT TERM
+		if command -v curl >/dev/null 2>&1; then
+			curl --fail --location --proto '=https' --tlsv1.2 --retry 3 \
+				--output "$TMP_RELEASES" "https://api.github.com/repos/$REPOSITORY/releases?per_page=20"
+		elif command -v wget >/dev/null 2>&1; then
+			wget --https-only --tries=3 --output-document="$TMP_RELEASES" \
+				"https://api.github.com/repos/$REPOSITORY/releases?per_page=20"
+		else
+			die "curl or wget is required to discover the latest release"
+		fi
+		RELEASES_FILE=$TMP_RELEASES
+	fi
+	VERSION=$(sed -n 's/^[[:space:]]*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' "$RELEASES_FILE" | sed -n '1p')
+fi
 case "$VERSION" in
 	v[0-9]*.[0-9]*.[0-9]*) ;;
 	*) die "invalid release tag: $VERSION" ;;
@@ -116,7 +136,7 @@ say "asset=$ASSET method=$METHOD"
 
 [ "$(id -u)" -eq 0 ] || die "run this installer as root (for example: sudo sh install.sh)"
 need mktemp
-TMPDIR_UQDA=$(mktemp -d "${TMPDIR:-/tmp}/uqda-install.XXXXXX")
+TMPDIR_UQDA=$(mktemp -d "$TEMP_BASE/uqda-install.XXXXXX")
 trap 'rm -rf "$TMPDIR_UQDA"' EXIT HUP INT TERM
 
 download() {

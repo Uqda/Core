@@ -58,7 +58,7 @@ package where available, verifies it against the release `SHA256SUMS`, and then
 uses the platform package manager. Review the script before running it:
 
 ```bash
-curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.3/install.sh
+curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.4/install.sh
 sudo sh install.sh
 ```
 
@@ -66,7 +66,7 @@ To update through the same verified path while preserving the existing
 configuration:
 
 ```bash
-curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.3/updater.sh
+curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.4/updater.sh
 sudo sh updater.sh
 ```
 
