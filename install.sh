@@ -25,7 +25,7 @@ Environment overrides:
   UQDA_VERSION           Install one specific release tag
   UQDA_TEST_OS           Override detected OS for tests
   UQDA_TEST_ARCH         Override detected CPU for tests
-  UQDA_TEST_PLATFORM     systemd, portable, edgeos2x, or vyos13
+  UQDA_TEST_PLATFORM     systemd-deb, systemd-portable, portable, edgeos2x, or vyos13
   UQDA_RELEASE_BASE_URL  Alternate release URL (for mirrors/tests)
 EOF
 }
@@ -96,8 +96,12 @@ if [ -z "$PLATFORM" ]; then
 		else
 			PLATFORM=edgeos2x
 		fi
-	elif [ "$OS" = linux ] && command -v dpkg >/dev/null 2>&1 && command -v systemctl >/dev/null 2>&1; then
-		PLATFORM=systemd
+	elif [ "$OS" = linux ] && command -v systemctl >/dev/null 2>&1; then
+		if command -v dpkg >/dev/null 2>&1; then
+			PLATFORM=systemd-deb
+		else
+			PLATFORM=systemd-portable
+		fi
 	else
 		PLATFORM=portable
 	fi
@@ -109,10 +113,19 @@ case "$PLATFORM" in
 		ASSET="uqda-$PLATFORM-${VERSION#v}-$DEB_ARCH.deb"
 		METHOD=deb
 		;;
-	systemd)
+	systemd-deb)
 		[ "$OS" = linux ] || die "systemd package is only valid on Linux"
 		ASSET="uqda-${VERSION#v}-$DEB_ARCH.deb"
 		METHOD=deb
+		;;
+	systemd-portable)
+		[ "$OS" = linux ] || die "systemd portable install is only valid on Linux"
+		case "$ARCH" in
+			amd64|i386|arm64|armv7|mipsel|mips64) ;;
+			*) die "no portable systemd release for $ARCH" ;;
+		esac
+		ASSET="uqda-$VERSION-linux-$ARCH.tar.gz"
+		METHOD=tar
 		;;
 	portable)
 		case "$OS:$ARCH" in
@@ -136,6 +149,9 @@ say "asset=$ASSET method=$METHOD"
 
 [ "$(id -u)" -eq 0 ] || die "run this installer as root (for example: sudo sh install.sh)"
 need mktemp
+INSTALL_USER=${SUDO_USER:-root}
+case "$INSTALL_USER" in root|'') ADMIN_GROUP=uqda ;; *) ADMIN_GROUP=$(id -gn "$INSTALL_USER" 2>/dev/null || printf 'uqda') ;; esac
+case "$ADMIN_GROUP" in *[!A-Za-z0-9_.-]*) die "unsafe administration group name: $ADMIN_GROUP" ;; esac
 TMPDIR_UQDA=$(mktemp -d "$TEMP_BASE/uqda-install.XXXXXX")
 trap 'rm -rf "$TMPDIR_UQDA"' EXIT HUP INT TERM
 
@@ -175,8 +191,21 @@ install_portable_service() {
 	case "$OS" in
 		linux)
 			mkdir -p /etc/uqda
-			[ -f /etc/uqda/uqda.conf ] || (umask 037; /usr/local/bin/uqda -genconf > /etc/uqda/uqda.conf)
+			if [ -f /etc/uqda.conf ] && [ ! -L /etc/uqda.conf ]; then
+				CONFIG_FILE=/etc/uqda.conf
+			else
+				CONFIG_FILE=/etc/uqda/uqda.conf
+				[ -f "$CONFIG_FILE" ] || (umask 037; /usr/local/bin/uqda -genconf > "$CONFIG_FILE")
+				if [ ! -e /etc/uqda.conf ] && [ ! -L /etc/uqda.conf ]; then
+					ln -s "$CONFIG_FILE" /etc/uqda.conf
+				fi
+			fi
 			if command -v systemctl >/dev/null 2>&1; then
+				if [ "$ADMIN_GROUP" = uqda ] && ! getent group uqda >/dev/null 2>&1; then
+					groupadd --system uqda
+				fi
+				chgrp "$ADMIN_GROUP" "$CONFIG_FILE"
+				chmod 0640 "$CONFIG_FILE"
 				cat > /etc/systemd/system/uqda.service <<'EOF'
 [Unit]
 Description=UQDA encrypted IPv6 mesh
@@ -185,7 +214,9 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/uqda -useconffile /etc/uqda/uqda.conf
+User=root
+Group=__UQDA_ADMIN_GROUP__
+ExecStart=/usr/local/bin/uqda -useconffile __UQDA_CONFIG_FILE__
 Restart=on-failure
 RestartSec=5s
 NoNewPrivileges=true
@@ -193,6 +224,8 @@ NoNewPrivileges=true
 [Install]
 WantedBy=multi-user.target
 EOF
+				sed -i "s/__UQDA_ADMIN_GROUP__/$ADMIN_GROUP/" /etc/systemd/system/uqda.service
+				sed -i "s|__UQDA_CONFIG_FILE__|$CONFIG_FILE|" /etc/systemd/system/uqda.service
 				systemctl daemon-reload
 				systemctl enable uqda.service
 				[ "$START_SERVICE" -eq 0 ] || systemctl restart uqda.service
@@ -217,6 +250,9 @@ case "$METHOD" in
 	deb)
 		need dpkg
 		dpkg -i "$TMPDIR_UQDA/$ASSET"
+		if [ "$INSTALL_USER" != root ] && getent group uqda >/dev/null 2>&1 && command -v usermod >/dev/null 2>&1; then
+			usermod -a -G uqda "$INSTALL_USER"
+		fi
 		;;
 	pkg)
 		need installer
@@ -232,5 +268,33 @@ case "$METHOD" in
 		;;
 esac
 
+verify_linux_service() {
+	[ "$OS" = linux ] || return 0
+	command -v systemctl >/dev/null 2>&1 || return 0
+	[ "$START_SERVICE" -eq 1 ] || return 0
+	if ! systemctl is-active --quiet uqda.service; then
+		systemctl status --no-pager uqda.service || true
+		die "uqda.service did not start"
+	fi
+	CTL=$(command -v uqdactl || true)
+	[ -n "$CTL" ] || die "uqdactl was not installed into PATH"
+	i=0
+	verified=0
+	while [ "$i" -lt 5 ]; do
+		if [ "$INSTALL_USER" != root ] && command -v runuser >/dev/null 2>&1; then
+			runuser -u "$INSTALL_USER" -- "$CTL" getSelf >/dev/null 2>&1 && verified=1 && break
+		else
+			"$CTL" getSelf >/dev/null 2>&1 && verified=1 && break
+		fi
+		sleep 1
+		i=$((i + 1))
+	done
+	[ "$verified" -eq 1 ] || die "uqdactl cannot reach the service as $INSTALL_USER"
+	say "service and non-root administration check passed"
+}
+
+verify_linux_service
+
 say "installation completed successfully"
 say "configuration was preserved if it already existed"
+say "manage this node with: uqdactl getSelf or uqdactl getPeers"

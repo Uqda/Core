@@ -58,7 +58,7 @@ package where available, verifies it against the release `SHA256SUMS`, and then
 uses the platform package manager. Review the script before running it:
 
 ```bash
-curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.4/install.sh
+curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.5/install.sh
 sudo sh install.sh
 ```
 
@@ -66,12 +66,13 @@ To update through the same verified path while preserving the existing
 configuration:
 
 ```bash
-curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.4/updater.sh
+curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.5/updater.sh
 sudo sh updater.sh
 ```
 
-Supported release paths are systemd-based Debian/Ubuntu, macOS, EdgeOS 2.x,
-VyOS 1.3, and the listed portable Linux/FreeBSD/OpenBSD targets. Windows users
+Supported release paths are systemd-based Debian/Ubuntu, Fedora and immutable
+Fedora derivatives such as Bazzite, macOS, EdgeOS 2.x, VyOS 1.3, and the listed
+portable Linux/FreeBSD/OpenBSD targets. Windows users
 should download the matching `.msi` asset from the release. OpenWrt is not yet
 included in the one-command installer and remains an explicitly unvalidated
 target for this beta.

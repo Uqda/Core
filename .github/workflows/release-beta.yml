@@ -6,7 +6,7 @@ on:
       tag:
         description: SemVer prerelease tag
         required: true
-        default: v0.1.0-beta.4
+        default: v0.1.0-beta.5
   push:
     branches: [main]
     paths:
@@ -24,7 +24,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  UQDA_VERSION: ${{ inputs.tag || 'v0.1.0-beta.4' }}
+  UQDA_VERSION: ${{ inputs.tag || 'v0.1.0-beta.5' }}
 
 jobs:
   quality-gate:
@@ -278,6 +278,6 @@ jobs:
           gh release create "$UQDA_VERSION" release-assets/* \
             --target "$GITHUB_SHA" \
             --title "UQDA Core $UQDA_VERSION" \
-            --notes-file .github/releases/v0.1.0-beta.4.md \
+            --notes-file .github/releases/v0.1.0-beta.5.md \
             --prerelease \
             --latest=false

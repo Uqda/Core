@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.0-beta.5
+
+- Added explicit Fedora/Bazzite systemd-portable detection.
+- Aligned the portable Linux configuration path with `uqdactl`.
+- Runs the service with an administration group that permits the installing
+  desktop user to use `uqdactl` without `sudo`.
+- Added post-install service and non-root administration health checks.
+- Runs the macOS launch daemon with the local `staff` group for socket access.
+
 ## v0.1.0-beta.4
 
 - Moved per-release notes out of the repository root.

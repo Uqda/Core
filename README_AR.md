@@ -59,7 +59,7 @@ cd Core
 </div>
 
 ```bash
-curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.4/install.sh
+curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.5/install.sh
 sudo sh install.sh
 ```
 
@@ -70,14 +70,15 @@ sudo sh install.sh
 </div>
 
 ```bash
-curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.4/updater.sh
+curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.5/updater.sh
 sudo sh updater.sh
 ```
 
 <div dir="rtl" align="right">
 
-تشمل مسارات الإصدار المدعومة أنظمة ديبيان وأوبونتو المعتمدة على مدير الخدمات
-سيستم دي (systemd)، وماك أو إس (macOS)، وإيدج أو إس 2 (EdgeOS 2.x)، وفاي أو إس
+تشمل مسارات الإصدار المدعومة أنظمة ديبيان وأوبونتو وفيدورا، وأنظمة فيدورا
+الثابتة مثل بازايت (Bazzite)، والمعتمدة على مدير الخدمات سيستم دي (systemd)،
+إضافة إلى ماك أو إس (macOS)، وإيدج أو إس 2 (EdgeOS 2.x)، وفاي أو إس
 1.3 (VyOS 1.3)، إضافة إلى الأنظمة المحمولة المدرجة من لينكس وفري بي إس دي
 وأوبن بي إس دي. أما مستخدمو ويندوز فعليهم تنزيل ملف التثبيت المناسب بامتداد
 `.msi` من صفحة الإصدار. لا يشمل برنامج التثبيت بأمر واحد نظام أوبن دبليو آر تي
