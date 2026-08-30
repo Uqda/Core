@@ -89,6 +89,26 @@ docker run --rm -it \
 
 The container creates its configuration inside the persistent `uqda-config` volume on first start.
 
+## EdgeOS and VyOS
+
+Integrated router packages are produced by the Packages workflow for
+EdgeRouter X (`mipsel`), EdgeRouter Lite (`mips`), and VyOS (`amd64`/`i386`).
+After installing the matching `.deb`, create an interface through the native
+router CLI:
+
+```text
+configure
+set interfaces uqda tun0
+set interfaces uqda tun0 description UQDA
+commit
+save
+```
+
+Each interface has its own `/config/uqda.tunN.conf`, administration socket,
+and `uqda@tunN.service`. Advanced peer settings can be edited in that config,
+then applied with `restart uqda tun0`. See [`contrib/vyatta`](contrib/vyatta)
+for supported targets and local build commands.
+
 ## Repository layout
 
 | Path | Purpose |

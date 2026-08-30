@@ -1,0 +1,2 @@
+run: sudo -u root -g users /opt/vyatta/sbin/vyatta-restart-uqda $3
+help: Restart the specified uqda interface

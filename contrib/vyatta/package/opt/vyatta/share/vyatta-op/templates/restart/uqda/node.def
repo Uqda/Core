@@ -1,0 +1,2 @@
+help: Restart the specified uqda interface
+allowed: ls /config/uqda.*.conf | cut -d. -f2

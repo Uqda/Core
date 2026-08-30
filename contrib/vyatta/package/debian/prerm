@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -eu
+
+if command -v systemctl >/dev/null 2>&1; then
+    for config in /config/uqda.tun[0-9]*.conf; do
+        [ -f "$config" ] || continue
+        interface=${config#/config/uqda.}
+        interface=${interface%.conf}
+        systemctl disable --now "uqda@$interface.service" || true
+    done
+fi
+
+exit 0

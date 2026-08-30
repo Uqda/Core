@@ -10,3 +10,8 @@ The UQDA codebase retains substantial architectural concepts and implementation 
 UQDA is maintained under its own name and repository. It is not the official Yggdrasil distribution, and no endorsement or affiliation with the Yggdrasil maintainers is implied.
 
 The repository's license is provided in [LICENSE](LICENSE). Copyright and license notices belonging to upstream and third-party contributors remain applicable to their respective work.
+
+The EdgeOS/VyOS integration under `contrib/vyatta` is adapted from
+[`neilalexander/vyatta-yggdrasil`](https://github.com/neilalexander/vyatta-yggdrasil),
+Copyright (C) Neil Alexander T., and is distributed under GPL-3.0. Its original
+license and detailed copyright notice are retained in that directory.

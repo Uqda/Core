@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# vyatta-uqda - A uqda package for Ubiquiti EdgeOS, VyOS and other
+# Vyatta-based systems.
+# Copyright (C) 2018 Neil Alexander T.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+set -eu
+
+if [ -n "${1:-}" ]; then
+    if ! printf '%s\n' "$1" | grep -Eq '^tun[0-9]+$'; then
+        echo "usage: $0 [tunN]" >&2
+        exit 2
+    fi
+    echo "Restarting UQDA interface $1..."
+    systemctl restart "uqda@$1.service"
+else
+    for config in /config/uqda.tun[0-9]*.conf; do
+        [ -f "$config" ] || continue
+        interface=${config#/config/uqda.}
+        interface=${interface%.conf}
+        echo "Restarting UQDA interface $interface..."
+        systemctl restart "uqda@$interface.service"
+    done
+fi

@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -eu
+
+systemctl daemon-reload || true
+
+for config in /config/uqda.tun[0-9]*.conf; do
+    [ -f "$config" ] || continue
+    backup="/var/backups/$(basename "$config").$(date +%Y%m%d%H%M%S)"
+    mkdir -p /var/backups
+    cp -p "$config" "$backup"
+    temporary="${config}.tmp.$$"
+    if /usr/local/bin/uqda -useconffile "$backup" -normaliseconf > "$temporary"; then
+        chmod 0600 "$temporary"
+        mv "$temporary" "$config"
+    else
+        rm -f "$temporary"
+        echo "Warning: could not normalise $config; preserved existing configuration" >&2
+    fi
+done
+
+/opt/vyatta/sbin/vyatta-check-uqda
+
+exit 0

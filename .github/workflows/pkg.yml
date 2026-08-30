@@ -138,25 +138,25 @@ jobs:
           path: "*.msi"
           if-no-files-found: error
 
-  build-router-binaries:
+  build-router-packages:
     strategy:
       fail-fast: false
       matrix:
         include:
           - target: edgerouter-x
-            goarch: mipsle
-            gomips: softfloat
+            pkgarch: mipsel
+            pkgtarget: edgeos2x
           - target: edgerouter-lite
-            goarch: mips64
-            gomips: ""
+            pkgarch: mips
+            pkgtarget: edgeos2x
           - target: vyos-amd64
-            goarch: amd64
-            gomips: ""
+            pkgarch: amd64
+            pkgtarget: vyos13
           - target: vyos-i386
-            goarch: "386"
-            gomips: ""
+            pkgarch: i386
+            pkgtarget: vyos13
 
-    name: Router binaries (${{ matrix.target }})
+    name: Router package (${{ matrix.target }})
 
     runs-on: ubuntu-latest
     steps:
@@ -169,21 +169,15 @@ jobs:
         with:
           go-version: "stable"
 
-      - name: Cross-compile binaries
+      - name: Build integrated router package
         env:
-          GOOS: linux
-          GOARCH: ${{ matrix.goarch }}
-          GOMIPS: ${{ matrix.gomips }}
-          CGO_ENABLED: 0
-        run: |
-          ./build
-          mkdir -p "uqda-${{ matrix.target }}"
-          mv uqda uqdactl "uqda-${{ matrix.target }}/"
-          tar -czf "uqda-${{ matrix.target }}.tar.gz" "uqda-${{ matrix.target }}"
+          PKGARCH: ${{ matrix.pkgarch }}
+          PKGTARGET: ${{ matrix.pkgtarget }}
+        run: sh contrib/vyatta/generate.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Router binaries (${{ matrix.target }})
-          path: "uqda-${{ matrix.target }}.tar.gz"
+          name: Router package (${{ matrix.target }})
+          path: "uqda-${{ matrix.pkgtarget }}-*.deb"
           if-no-files-found: error

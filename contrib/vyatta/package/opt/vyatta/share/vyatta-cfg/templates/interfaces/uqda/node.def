@@ -1,0 +1,15 @@
+tag:
+type: txt
+help: Interface name for uqda process
+val_help: txt; Interface name (i.e. tun0)
+
+priority: 998
+
+create: /opt/vyatta/sbin/vyatta-uqda-createconf $VAR(@);
+        sudo systemctl enable uqda@$VAR(@);
+        sudo systemctl start uqda@$VAR(@)
+delete: sudo systemctl stop uqda@$VAR(@);
+        sudo systemctl disable uqda@$VAR(@)
+
+syntax:expression: pattern $VAR(@) "^tun[0-9]+$" \
+         ; "Interface name must be (tun0-tun99)"
