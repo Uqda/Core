@@ -80,6 +80,76 @@ func TestVersionRoundtrip(t *testing.T) {
 	}
 }
 
+func TestVersionSignatureCoversAllMetadata(t *testing.T) {
+	pk, sk, err := ed25519.GenerateKey(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	metadata := &version_metadata{
+		majorVer:  ProtocolVersionMajor,
+		minorVer:  ProtocolVersionMinor,
+		publicKey: pk,
+		priority:  7,
+	}
+	encoded, err := metadata.encode(sk, []byte("shared secret"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The priority is the byte immediately before the nonce TLV. Changing it
+	// must invalidate the signature rather than silently changing routing input.
+	for i := 6; i+5 < len(encoded)-ed25519.SignatureSize; {
+		op := binary.BigEndian.Uint16(encoded[i : i+2])
+		fieldLen := int(binary.BigEndian.Uint16(encoded[i+2 : i+4]))
+		if op == metaPriority {
+			encoded[i+4] ^= 0xff
+			break
+		}
+		i += 4 + fieldLen
+	}
+	var decoded version_metadata
+	if err := decoded.decode(bytes.NewReader(encoded), []byte("shared secret")); err != ErrHandshakeInvalidSignature {
+		t.Fatalf("tampered metadata returned %v, want %v", err, ErrHandshakeInvalidSignature)
+	}
+}
+
+func TestConfirmationBindsBothHellos(t *testing.T) {
+	pk1, sk1, err := ed25519.GenerateKey(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pk2, sk2, err := ed25519.GenerateKey(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	password := []byte("shared secret")
+	local := &version_metadata{majorVer: ProtocolVersionMajor, minorVer: ProtocolVersionMinor, publicKey: pk1}
+	remote := &version_metadata{majorVer: ProtocolVersionMajor, minorVer: ProtocolVersionMinor, publicKey: pk2}
+	if _, err = local.encode(sk1, password); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = remote.encode(sk2, password); err != nil {
+		t.Fatal(err)
+	}
+	confirmation, err := encodeConfirmation(sk1, password, local, remote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = decodeConfirmation(bytes.NewReader(confirmation), pk1, password, remote, local); err != nil {
+		t.Fatalf("valid confirmation rejected: %v", err)
+	}
+
+	// A fresh hello changes the transcript, so a captured confirmation cannot
+	// be replayed into the new connection.
+	freshRemote := &version_metadata{majorVer: ProtocolVersionMajor, minorVer: ProtocolVersionMinor, publicKey: pk2}
+	if _, err = freshRemote.encode(sk2, password); err != nil {
+		t.Fatal(err)
+	}
+	if err = decodeConfirmation(bytes.NewReader(confirmation), pk1, password, freshRemote, local); err != ErrHandshakeInvalidConfirmation {
+		t.Fatalf("replayed confirmation returned %v, want %v", err, ErrHandshakeInvalidConfirmation)
+	}
+}
+
 func TestVersionDecodeRejectsMalformedFieldLengths(t *testing.T) {
 	password := []byte("pw")
 	for _, tt := range []struct {
@@ -153,4 +223,15 @@ func malformedVersionHandshake(t *testing.T, op uint16, field []byte, password [
 	msg := append([]byte{'m', 'e', 't', 'a', 0, 0}, body...)
 	binary.BigEndian.PutUint16(msg[4:6], uint16(len(body)))
 	return msg
+}
+
+func FuzzVersionDecode(f *testing.F) {
+	f.Add([]byte("meta\x00\x00"), []byte(""))
+	f.Add([]byte("not a handshake"), []byte("secret"))
+	f.Fuzz(func(t *testing.T, message, password []byte) {
+		// The parser must reject malformed or unauthenticated input without
+		// panicking, allocating unbounded memory, or reading beyond the message.
+		var decoded version_metadata
+		_ = decoded.decode(bytes.NewReader(message), password)
+	})
 }

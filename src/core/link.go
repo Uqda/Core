@@ -625,10 +625,10 @@ func (l *links) dialerFor(u *url.URL) (linkProtocol, error) {
 }
 
 func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, success func(), local bool) error {
-	meta := version_getBaseMetadata()
-	meta.publicKey = l.core.public
-	meta.priority = options.priority
-	metaBytes, err := meta.encode(l.core.secret, options.password)
+	localMeta := version_getBaseMetadata()
+	localMeta.publicKey = l.core.public
+	localMeta.priority = options.priority
+	metaBytes, err := localMeta.encode(l.core.secret, options.password)
 	if err != nil {
 		return fmt.Errorf("failed to generate handshake: %w", err)
 	}
@@ -642,30 +642,49 @@ func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, s
 	case n != len(metaBytes):
 		return fmt.Errorf("incomplete handshake send")
 	}
-	meta = version_metadata{}
+	remoteMeta := version_metadata{}
 	base := version_getBaseMetadata()
-	if err := meta.decode(conn, options.password); err != nil {
+	if err := remoteMeta.decode(conn, options.password); err != nil {
 		_ = conn.Close()
 		return err
 	}
-	if !meta.check() {
+	if !remoteMeta.check() {
 		return fmt.Errorf("remote node incompatible version (local %s, remote %s)",
 			fmt.Sprintf("%d.%d", base.majorVer, base.minorVer),
-			fmt.Sprintf("%d.%d", meta.majorVer, meta.minorVer),
+			fmt.Sprintf("%d.%d", remoteMeta.majorVer, remoteMeta.minorVer),
 		)
+	}
+	// Check that the node isn't trying to connect to itself.
+	if remoteMeta.publicKey.Equal(l.core.public) {
+		return ErrLinkToSelf
+	}
+
+	// Bind both independently generated nonces, identities and all negotiated
+	// metadata into a second signed flight. A captured hello or confirmation
+	// cannot be replayed into another connection because the other side's fresh
+	// nonce changes the transcript.
+	confirmation, err := encodeConfirmation(l.core.secret, options.password, &localMeta, &remoteMeta)
+	if err != nil {
+		return fmt.Errorf("failed to generate handshake confirmation: %w", err)
+	}
+	if n, err = conn.Write(confirmation); err != nil {
+		return fmt.Errorf("write handshake confirmation: %w", err)
+	} else if n != len(confirmation) {
+		return fmt.Errorf("incomplete handshake confirmation send")
+	}
+	if err = decodeConfirmation(conn, remoteMeta.publicKey, options.password, &localMeta, &remoteMeta); err != nil {
+		return fmt.Errorf("verify handshake confirmation: %w", err)
+	}
+	if err = verifyTLSPeerIdentity(conn, remoteMeta.publicKey); err != nil {
+		return fmt.Errorf("verify transport identity: %w", err)
 	}
 	if err = conn.SetDeadline(time.Time{}); err != nil {
 		return fmt.Errorf("failed to clear handshake deadline: %w", err)
 	}
-	// Check that the node isn't trying to connect to itself.
-	if meta.publicKey.Equal(l.core.public) {
-		return ErrLinkToSelf
-	}
-	// Check if the remote side matches the keys we expected. This is a bit of a weak
-	// check - in future versions we really should check a signature or something like that.
+	// Check that the authenticated remote identity matches one of the configured pins.
 	if pinned := options.pinnedEd25519Keys; len(pinned) > 0 {
 		var key keyArray
-		copy(key[:], meta.publicKey)
+		copy(key[:], remoteMeta.publicKey)
 		if _, allowed := pinned[key]; !allowed {
 			return fmt.Errorf("node public key that does not match pinned keys")
 		}
@@ -678,13 +697,13 @@ func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, s
 		})
 		isallowed := len(allowed) == 0
 		for k := range allowed {
-			if bytes.Equal(k[:], meta.publicKey) {
+			if bytes.Equal(k[:], remoteMeta.publicKey) {
 				isallowed = true
 				break
 			}
 		}
 		if linkType == linkTypeIncoming && !isallowed {
-			return fmt.Errorf("node public key %q is not in AllowedPublicKeys", hex.EncodeToString(meta.publicKey))
+			return fmt.Errorf("node public key %q is not in AllowedPublicKeys", hex.EncodeToString(remoteMeta.publicKey))
 		}
 	}
 
@@ -692,12 +711,12 @@ func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, s
 	if linkType == linkTypeIncoming {
 		dir = "inbound"
 	}
-	remoteAddr := net.IP(address.AddrForKey(meta.publicKey)[:]).String()
+	remoteAddr := net.IP(address.AddrForKey(remoteMeta.publicKey)[:]).String()
 	remoteStr := fmt.Sprintf("%s@%s", remoteAddr, conn.RemoteAddr())
 	localStr := conn.LocalAddr()
 	priority := options.priority
-	if meta.priority > priority {
-		priority = meta.priority
+	if remoteMeta.priority > priority {
+		priority = remoteMeta.priority
 	}
 	l.core.log.Infof("Connected %s: %s, source %s",
 		dir, remoteStr, localStr)
@@ -705,7 +724,7 @@ func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, s
 		success()
 	}
 
-	err = l.core.HandleConn(meta.publicKey, conn, priority)
+	err = l.core.HandleConn(remoteMeta.publicKey, conn, priority)
 	switch err {
 	case io.EOF, net.ErrClosed, nil:
 		l.core.log.Infof("Disconnected %s: %s, source %s",

@@ -45,6 +45,30 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
 
+  vulnerability-scan:
+    name: Dependency vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+      - name: Scan reachable dependencies
+        uses: golang/govulncheck-action@v1.1.0
+        with:
+          go-package: ./...
+
+  handshake-fuzz-smoke:
+    name: Handshake fuzz smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+      - name: Fuzz handshake parser
+        run: go test ./src/core -run=^$ -fuzz=FuzzVersionDecode -fuzztime=15s
+
   build-linux:
     strategy:
       fail-fast: false
@@ -145,7 +169,7 @@ jobs:
 
   tests-ok:
     name: All tests passed
-    needs: [lint, codeql, build-linux, build-windows, build-macos, build-freebsd]
+    needs: [lint, codeql, vulnerability-scan, handshake-fuzz-smoke, build-linux, build-windows, build-macos, build-freebsd]
     runs-on: ubuntu-latest
     if: ${{ !cancelled() }}
     steps:
