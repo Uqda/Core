@@ -1,5 +1,9 @@
 <div dir="rtl" align="right">
 
+<div align="center">
+  <img src="contrib/logo/uqda-logo.png" alt="UQDA" width="720">
+</div>
+
 # نواة UQDA
 
 **شبكة IPv6 متراكبة، مشفّرة وذاتية التنظيم**

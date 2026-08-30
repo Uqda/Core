@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="contrib/logo/uqda-logo.png" alt="UQDA" width="720">
+
 # UQDA Core
 
 **An encrypted, self-organizing IPv6 overlay network**
