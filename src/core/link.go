@@ -74,6 +74,7 @@ type linkOptions struct {
 	priority          uint8
 	tlsSNI            string
 	password          []byte
+	requireSecure     bool
 	maxBackoff        time.Duration
 }
 
@@ -151,6 +152,7 @@ const ErrLinkNotConfigured = linkError("peer is not configured")
 const ErrLinkPriorityInvalid = linkError("priority value is invalid")
 const ErrLinkPinnedKeyInvalid = linkError("pinned public key is invalid")
 const ErrLinkPasswordInvalid = linkError("invalid password supplied")
+const ErrLinkSecurityInvalid = linkError("invalid secure handshake policy")
 const ErrLinkUnrecognisedSchema = linkError("link schema unknown")
 const ErrLinkMaxBackoffInvalid = linkError("max backoff duration invalid")
 const ErrLinkSNINotSupported = linkError("SNI not supported on this link type")
@@ -203,6 +205,16 @@ func (l *links) add(u *url.URL, sintf string, linkType linkType) error {
 				return
 			}
 			options.password = []byte(p)
+		}
+		if p := u.Query().Get("secure"); p != "" {
+			switch p {
+			case "required":
+				options.requireSecure = true
+			case "opportunistic":
+			default:
+				retErr = ErrLinkSecurityInvalid
+				return
+			}
 		}
 		if p := u.Query().Get("maxbackoff"); p != "" {
 			d, err := time.ParseDuration(p)
@@ -495,6 +507,15 @@ func (l *links) listen(u *url.URL, sintf string, local bool) (*Listener, error) 
 		}
 		options.password = []byte(p)
 	}
+	if p := u.Query().Get("secure"); p != "" {
+		switch p {
+		case "required":
+			options.requireSecure = true
+		case "opportunistic":
+		default:
+			return nil, ErrLinkSecurityInvalid
+		}
+	}
 
 	phony.Block(l, func() {
 		l._listeners[li] = cancel
@@ -663,17 +684,21 @@ func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, s
 	// metadata into a second signed flight. A captured hello or confirmation
 	// cannot be replayed into another connection because the other side's fresh
 	// nonce changes the transcript.
-	confirmation, err := encodeConfirmation(l.core.secret, options.password, &localMeta, &remoteMeta)
-	if err != nil {
-		return fmt.Errorf("failed to generate handshake confirmation: %w", err)
-	}
-	if n, err = conn.Write(confirmation); err != nil {
-		return fmt.Errorf("write handshake confirmation: %w", err)
-	} else if n != len(confirmation) {
-		return fmt.Errorf("incomplete handshake confirmation send")
-	}
-	if err = decodeConfirmation(conn, remoteMeta.publicKey, options.password, &localMeta, &remoteMeta); err != nil {
-		return fmt.Errorf("verify handshake confirmation: %w", err)
+	if remoteMeta.supportsHandshakeConfirmation() {
+		confirmation, err := encodeConfirmation(l.core.secret, options.password, &localMeta, &remoteMeta)
+		if err != nil {
+			return fmt.Errorf("failed to generate handshake confirmation: %w", err)
+		}
+		if n, err = conn.Write(confirmation); err != nil {
+			return fmt.Errorf("write handshake confirmation: %w", err)
+		} else if n != len(confirmation) {
+			return fmt.Errorf("incomplete handshake confirmation send")
+		}
+		if err = decodeConfirmation(conn, remoteMeta.publicKey, options.password, &localMeta, &remoteMeta); err != nil {
+			return fmt.Errorf("verify handshake confirmation: %w", err)
+		}
+	} else if options.requireSecure {
+		return fmt.Errorf("peer does not support transcript-bound handshakes")
 	}
 	if err = verifyTLSPeerIdentity(conn, remoteMeta.publicKey); err != nil {
 		return fmt.Errorf("verify transport identity: %w", err)

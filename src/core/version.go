@@ -18,17 +18,19 @@ import (
 // It must always begin with the 4 bytes "meta" and a wire formatted uint64 major version number.
 // The current version also includes a minor version number, and the box/sig/link keys that need to be exchanged to open a connection.
 type version_metadata struct {
-	majorVer  uint16
-	minorVer  uint16
-	publicKey ed25519.PublicKey
-	priority  uint8
-	nonce     [32]byte
-	wire      []byte
+	majorVer           uint16
+	minorVer           uint16
+	publicKey          ed25519.PublicKey
+	priority           uint8
+	nonce              [32]byte
+	capabilities       uint32
+	transcriptSignature []byte
+	wire               []byte
 }
 
 const (
 	ProtocolVersionMajor uint16 = 0
-	ProtocolVersionMinor uint16 = 6
+	ProtocolVersionMinor uint16 = 5
 )
 
 // Once a major/minor version is released, it is not safe to change any of these
@@ -39,7 +41,11 @@ const (
 	metaPublicKey                  // [32]byte
 	metaPriority                   // uint8
 	metaNonce                      // [32]byte
+	metaCapabilities               // uint32
+	metaTranscriptSignature        // [64]byte
 )
+
+const capabilityHandshakeConfirmation uint32 = 1 << iota
 
 type handshakeError string
 
@@ -95,11 +101,27 @@ func (m *version_metadata) encode(privateKey ed25519.PrivateKey, password []byte
 	bs = binary.BigEndian.AppendUint16(bs, uint16(len(m.nonce)))
 	bs = append(bs, m.nonce[:]...)
 
+	m.capabilities = capabilityHandshakeConfirmation
+	bs = binary.BigEndian.AppendUint16(bs, metaCapabilities)
+	bs = binary.BigEndian.AppendUint16(bs, 4)
+	bs = binary.BigEndian.AppendUint32(bs, m.capabilities)
+
+	// New nodes authenticate the complete extension transcript. Legacy 0.5
+	// nodes ignore this TLV and validate the final legacy signature below.
 	hash, err := handshakeHash(password, bs[6:])
 	if err != nil {
 		return nil, err
 	}
-	bs = append(bs, ed25519.Sign(privateKey, hash)...)
+	m.transcriptSignature = ed25519.Sign(privateKey, hash)
+	bs = binary.BigEndian.AppendUint16(bs, metaTranscriptSignature)
+	bs = binary.BigEndian.AppendUint16(bs, uint16(len(m.transcriptSignature)))
+	bs = append(bs, m.transcriptSignature...)
+
+	legacyHash, err := legacyHandshakeHash(password, m.publicKey)
+	if err != nil {
+		return nil, err
+	}
+	bs = append(bs, ed25519.Sign(privateKey, legacyHash)...)
 
 	binary.BigEndian.PutUint16(bs[4:6], uint16(len(bs)-6))
 	m.wire = append(m.wire[:0], bs...)
@@ -128,9 +150,13 @@ func (m *version_metadata) decode(r io.Reader, password []byte) error {
 	m.wire = append(m.wire, bs...)
 	sig := bs[len(bs)-ed25519.SignatureSize:]
 	bs = bs[:len(bs)-ed25519.SignatureSize]
-	signedFields := append([]byte(nil), bs...)
+	allFields := append([]byte(nil), bs...)
+	var signedFields []byte
 
-	for len(bs) >= 4 {
+	for offset := 0; len(bs) >= 4; {
+		if signedFields != nil {
+			return ErrHandshakeInvalidLength
+		}
 		op := binary.BigEndian.Uint16(bs[:2])
 		oplen := int(binary.BigEndian.Uint16(bs[2:4]))
 		if bs = bs[4:]; len(bs) < oplen {
@@ -167,21 +193,58 @@ func (m *version_metadata) decode(r io.Reader, password []byte) error {
 				return ErrHandshakeInvalidLength
 			}
 			copy(m.nonce[:], field)
+
+		case metaCapabilities:
+			if len(field) != 4 {
+				return ErrHandshakeInvalidLength
+			}
+			m.capabilities = binary.BigEndian.Uint32(field)
+
+		case metaTranscriptSignature:
+			if len(field) != ed25519.SignatureSize || signedFields != nil {
+				return ErrHandshakeInvalidLength
+			}
+			m.transcriptSignature = append(m.transcriptSignature[:0], field...)
+			signedFields = append([]byte(nil), allFields[:offset]...)
 		}
 		bs = bs[oplen:]
+		offset += 4 + oplen
 	}
 	if len(bs) != 0 {
 		return ErrHandshakeInvalidLength
 	}
 
-	hash, err := handshakeHash(password, signedFields)
+	legacyHash, err := legacyHandshakeHash(password, m.publicKey)
 	if err != nil {
 		return ErrHandshakeInvalidPassword
 	}
-	if !ed25519.Verify(m.publicKey, hash, sig) {
+	if !ed25519.Verify(m.publicKey, legacyHash, sig) {
 		return ErrHandshakeInvalidSignature
 	}
+	if m.supportsHandshakeConfirmation() {
+		if signedFields == nil || len(m.transcriptSignature) != ed25519.SignatureSize {
+			return ErrHandshakeInvalidSignature
+		}
+		hash, err := handshakeHash(password, signedFields)
+		if err != nil {
+			return ErrHandshakeInvalidPassword
+		}
+		if !ed25519.Verify(m.publicKey, hash, m.transcriptSignature) {
+			return ErrHandshakeInvalidSignature
+		}
+	}
 	return nil
+}
+
+func legacyHandshakeHash(password []byte, publicKey ed25519.PublicKey) ([]byte, error) {
+	hasher, err := blake2b.New512(password)
+	if err != nil {
+		return nil, err
+	}
+	if _, err = hasher.Write(publicKey); err != nil {
+		return nil, err
+	}
+	return hasher.Sum(nil), nil
 }
 
 func handshakeHash(password, payload []byte) ([]byte, error) {
@@ -251,6 +314,10 @@ func decodeConfirmation(r io.Reader, publicKey ed25519.PublicKey, password []byt
 	return nil
 }
 
+func (m *version_metadata) supportsHandshakeConfirmation() bool {
+	return m.capabilities&capabilityHandshakeConfirmation != 0
+}
+
 // Checks that the "meta" bytes and the version numbers are the expected values.
 func (m *version_metadata) check() bool {
 	switch {
@@ -260,7 +327,7 @@ func (m *version_metadata) check() bool {
 		return false
 	case len(m.publicKey) != ed25519.PublicKeySize:
 		return false
-	case bytes.Equal(m.nonce[:], make([]byte, len(m.nonce))):
+	case m.supportsHandshakeConfirmation() && bytes.Equal(m.nonce[:], make([]byte, len(m.nonce))):
 		return false
 	default:
 		return true

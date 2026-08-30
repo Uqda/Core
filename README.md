@@ -2,6 +2,8 @@
 
 <img src="contrib/logo/uqda-logo.png" alt="UQDA" width="720">
 
+# UQDA Core
+
 **An encrypted, self-organizing IPv6 overlay network**
 
 [![CI](https://github.com/Uqda/Core/actions/workflows/ci.yml/badge.svg)](https://github.com/Uqda/Core/actions/workflows/ci.yml)
@@ -64,6 +66,8 @@ For a persistent configuration:
 $EDITOR uqda.conf
 sudo ./uqda -useconffile ./uqda.conf
 ```
+
+New nodes remain compatible with existing protocol 0.5 peers. When both sides support the hardened handshake, they negotiate it automatically. To require the hardened handshake on a controlled link and reject legacy peers, append `?secure=required` to both the peer URI and listener URI.
 
 Use `-json` with `-genconf` if strict JSON is preferred over commented HJSON. Creating a TUN interface normally requires administrator privileges. On Linux, the binary may instead be granted the required capability:
 

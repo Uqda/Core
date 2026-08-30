@@ -150,6 +150,37 @@ func TestConfirmationBindsBothHellos(t *testing.T) {
 	}
 }
 
+func TestHandshakeCompatibilityWithLegacy05(t *testing.T) {
+	pk, sk, err := ed25519.GenerateKey(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	password := []byte("shared secret")
+
+	newMetadata := &version_metadata{
+		majorVer:  ProtocolVersionMajor,
+		minorVer:  ProtocolVersionMinor,
+		publicKey: pk,
+		priority:  3,
+	}
+	newWire, err := newMetadata.encode(sk, password)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = decodeLegacy05ForTest(newWire, password); err != nil {
+		t.Fatalf("legacy 0.5 decoder rejected extended hello: %v", err)
+	}
+
+	legacyWire := encodeLegacy05ForTest(t, sk, pk, password, 4)
+	var decoded version_metadata
+	if err = decoded.decode(bytes.NewReader(legacyWire), password); err != nil {
+		t.Fatalf("new decoder rejected legacy 0.5 hello: %v", err)
+	}
+	if decoded.supportsHandshakeConfirmation() {
+		t.Fatal("legacy hello unexpectedly advertised secure confirmation")
+	}
+}
+
 func TestVersionDecodeRejectsMalformedFieldLengths(t *testing.T) {
 	password := []byte("pw")
 	for _, tt := range []struct {
@@ -223,6 +254,86 @@ func malformedVersionHandshake(t *testing.T, op uint16, field []byte, password [
 	msg := append([]byte{'m', 'e', 't', 'a', 0, 0}, body...)
 	binary.BigEndian.PutUint16(msg[4:6], uint16(len(body)))
 	return msg
+}
+
+func encodeLegacy05ForTest(t *testing.T, privateKey ed25519.PrivateKey, publicKey ed25519.PublicKey, password []byte, priority uint8) []byte {
+	t.Helper()
+	body := make([]byte, 0, 128)
+	body = binary.BigEndian.AppendUint16(body, metaVersionMajor)
+	body = binary.BigEndian.AppendUint16(body, 2)
+	body = binary.BigEndian.AppendUint16(body, ProtocolVersionMajor)
+	body = binary.BigEndian.AppendUint16(body, metaVersionMinor)
+	body = binary.BigEndian.AppendUint16(body, 2)
+	body = binary.BigEndian.AppendUint16(body, ProtocolVersionMinor)
+	body = binary.BigEndian.AppendUint16(body, metaPublicKey)
+	body = binary.BigEndian.AppendUint16(body, ed25519.PublicKeySize)
+	body = append(body, publicKey...)
+	body = binary.BigEndian.AppendUint16(body, metaPriority)
+	body = binary.BigEndian.AppendUint16(body, 1)
+	body = append(body, priority)
+	hash, err := legacyHandshakeHash(password, publicKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body = append(body, ed25519.Sign(privateKey, hash)...)
+	message := append([]byte{'m', 'e', 't', 'a', 0, 0}, body...)
+	binary.BigEndian.PutUint16(message[4:6], uint16(len(body)))
+	return message
+}
+
+// decodeLegacy05ForTest mirrors the deployed 0.5 parser: unknown TLVs are
+// ignored and the final signature authenticates the public key and link secret.
+func decodeLegacy05ForTest(message, password []byte) error {
+	if len(message) < 6+ed25519.SignatureSize || !bytes.Equal(message[:4], []byte("meta")) {
+		return ErrHandshakeInvalidLength
+	}
+	bodyLen := int(binary.BigEndian.Uint16(message[4:6]))
+	if bodyLen != len(message)-6 {
+		return ErrHandshakeInvalidLength
+	}
+	body := message[6:]
+	sig := body[len(body)-ed25519.SignatureSize:]
+	fields := body[:len(body)-ed25519.SignatureSize]
+	var publicKey ed25519.PublicKey
+	var major, minor uint16
+	for len(fields) >= 4 {
+		op := binary.BigEndian.Uint16(fields[:2])
+		fieldLen := int(binary.BigEndian.Uint16(fields[2:4]))
+		fields = fields[4:]
+		if len(fields) < fieldLen {
+			return ErrHandshakeInvalidLength
+		}
+		field := fields[:fieldLen]
+		switch op {
+		case metaVersionMajor:
+			if len(field) != 2 {
+				return ErrHandshakeInvalidLength
+			}
+			major = binary.BigEndian.Uint16(field)
+		case metaVersionMinor:
+			if len(field) != 2 {
+				return ErrHandshakeInvalidLength
+			}
+			minor = binary.BigEndian.Uint16(field)
+		case metaPublicKey:
+			if len(field) != ed25519.PublicKeySize {
+				return ErrHandshakeInvalidLength
+			}
+			publicKey = append(publicKey[:0], field...)
+		}
+		fields = fields[fieldLen:]
+	}
+	if len(fields) != 0 || major != ProtocolVersionMajor || minor != ProtocolVersionMinor {
+		return ErrHandshakeInvalidLength
+	}
+	hash, err := legacyHandshakeHash(password, publicKey)
+	if err != nil {
+		return err
+	}
+	if !ed25519.Verify(publicKey, hash, sig) {
+		return ErrHandshakeInvalidSignature
+	}
+	return nil
 }
 
 func FuzzVersionDecode(f *testing.F) {

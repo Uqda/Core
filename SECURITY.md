@@ -18,4 +18,4 @@ The maintainers will acknowledge the report, investigate it, and coordinate disc
 
 Security fixes are made on the current `main` branch and included in the next release. Users should run the latest available release.
 
-Protocol 0.6 introduces transcript-bound handshake confirmations and is not wire-compatible with older nodes. Upgrade every peer in a private overlay together; do not mix protocol 0.5 and 0.6 nodes.
+New nodes remain compatible with protocol 0.5 peers. Secure transcript confirmation is negotiated automatically when both sides support it. For sensitive or controlled overlays, append `?secure=required` to both peering and listener URIs to reject legacy handshakes and prevent downgrade.
