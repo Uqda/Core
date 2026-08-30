@@ -1,43 +1,40 @@
 <div align="center">
-  <img src="contrib/logo/uqda-logo.svg" alt="Uqda logo" width="420">
 
-# Uqda Core 🌐
+# UQDA Core
 
-**A fully encrypted, self-organizing IPv6 mesh network.**  
-No center. No owner. No single point of failure.
+**An encrypted, self-organizing IPv6 overlay network**
 
 [![CI](https://github.com/Uqda/Core/actions/workflows/ci.yml/badge.svg)](https://github.com/Uqda/Core/actions/workflows/ci.yml)
 [![Go version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Uqda/Core)](https://goreportcard.com/report/github.com/Uqda/Core)
 [![License](https://img.shields.io/badge/License-LGPLv3-blue.svg)](LICENSE)
 
-[Documentation](https://uqda.github.io/) · [Installation](https://uqda.github.io/installation.html) · [Configuration](https://uqda.github.io/configuration.html) · [Changelog](CHANGELOG.md)
+**English** · [العربية](README_AR.md)
+
 </div>
 
-> **Uqda** (Arabic: **عُقَد**, “nodes” or “knots”) creates a private IPv6 overlay that can operate across IPv4 or IPv6 transports.
+> **Uqda** (Arabic: **عُقَد**, “nodes” or “knots”) is an experimental userspace router for creating encrypted IPv6 networks over existing IPv4 or IPv6 links.
 
-## Why Uqda?
+## Project status
 
-- **End-to-end encrypted** — traffic between nodes is protected cryptographically.
-- **Self-organizing** — nodes discover routes without a central coordinator.
-- **IPv6-native** — existing IPv6-capable applications can communicate over the mesh.
-- **Cross-platform** — Linux, macOS, Windows, FreeBSD, OpenBSD, OpenWrt, EdgeRouter, and VyOS.
-- **Transport-flexible** — connect peers across TCP, TLS, QUIC, WebSocket, SOCKS, and Unix sockets.
+UQDA is experimental software. It has not been independently security-audited and should not be treated as an anonymity system. Use an IPv6 firewall and avoid exposing services that should not be reachable by other network participants.
+
+## Features
+
+- End-to-end encrypted traffic between UQDA nodes.
+- Self-organizing multi-hop routing without a central routing authority.
+- Cryptographically derived IPv6 addresses tied to node identities.
+- Peering over TCP, TLS, QUIC, WebSocket, secure WebSocket, SOCKS, and Unix sockets.
+- Optional local multicast discovery.
+- TUN integration for ordinary IPv6-capable applications.
+- Code and integrations for Linux, macOS, Windows, FreeBSD, OpenBSD, OpenWrt, EdgeRouter, and VyOS.
+- Local administration through `uqdactl`.
 
 ## How it works
 
-Each node creates a virtual network interface and receives a stable IPv6 address derived from its cryptographic identity. Peering links join nodes into an encrypted overlay; routing adapts automatically as links appear or disappear.
+Each node generates a cryptographic identity and derives its IPv6 address from the public key. The daemon creates a virtual TUN interface, establishes configured or locally discovered peerings, and forwards encrypted IPv6 packets across the available mesh paths. Peer links may themselves run over either IPv4 or IPv6 networks.
 
-```mermaid
-flowchart LR
-  A["Node A<br>IPv6 application"] <--> B["Encrypted Uqda mesh"]
-  B <--> C["Node B<br>IPv6 application"]
-  B <--> D["Node C<br>IPv6 application"]
-```
-
-## Quick start
-
-### Build from source
+## Build
 
 Requirements: [Go 1.25 or newer](https://go.dev/dl/) and Git.
 
@@ -47,29 +44,20 @@ cd Core
 ./build
 ```
 
-The build creates two executables in the repository root:
+The build produces:
 
-- `uqda` — the mesh node daemon
-- `uqdactl` — the local administration client
+- `uqda` — the network daemon;
+- `uqdactl` — the local administration client.
 
-### Start a node
+## Run
 
-For a quick local test, start with automatically generated keys and defaults:
+For a temporary node using automatically generated settings:
 
 ```bash
 sudo ./uqda -autoconf
 ```
 
-Creating a TUN interface normally requires administrator privileges. On Linux, you may grant only the required network capability instead of running the process as root:
-
-```bash
-sudo setcap CAP_NET_ADMIN=+eip ./uqda
-./uqda -autoconf
-```
-
-### Use a persistent configuration
-
-Generate a documented HJSON configuration, review it, then start the node:
+For a persistent configuration:
 
 ```bash
 ./uqda -genconf > uqda.conf
@@ -77,11 +65,14 @@ $EDITOR uqda.conf
 sudo ./uqda -useconffile ./uqda.conf
 ```
 
-For machine-readable output, add `-json` when generating the configuration.
+Use `-json` with `-genconf` if strict JSON is preferred over commented HJSON. Creating a TUN interface normally requires administrator privileges. On Linux, the binary may instead be granted the required capability:
 
-### Run with Docker
+```bash
+sudo setcap CAP_NET_ADMIN=+eip ./uqda
+./uqda -useconffile ./uqda.conf
+```
 
-Build the image locally and give the container access to the TUN device:
+## Docker
 
 ```bash
 docker build -t uqda-core -f contrib/docker/Dockerfile .
@@ -92,7 +83,7 @@ docker run --rm -it \
   uqda-core
 ```
 
-The container generates a persistent configuration in the `uqda-config` volume on first start.
+The container creates its configuration inside the persistent `uqda-config` volume on first start.
 
 ## Repository layout
 
@@ -100,33 +91,28 @@ The container generates a persistent configuration in the `uqda-config` volume o
 | --- | --- |
 | `cmd/uqda` | Node daemon entry point |
 | `cmd/uqdactl` | Administration CLI |
-| `src/core` | Mesh protocol, sessions, and transports |
-| `src/config` | Configuration loading and defaults |
-| `src/tun` | Platform-specific TUN integration |
+| `src/core` | Sessions, routing integration, and peer transports |
+| `src/config` | Configuration and platform defaults |
+| `src/tun` | Platform-specific virtual network interfaces |
 | `src/admin` | Local administration API |
-| `contrib/` | Docker, service, packaging, and platform integrations |
-| `.github/workflows/` | CI, container, and package automation |
+| `contrib/` | Containers, service files, packages, and platform integrations |
+| `.github/workflows/` | Continuous integration and packaging automation |
 
 ## Development
 
 ```bash
-go test ./...
+gofmt -w .
 go vet ./...
+go test ./...
 go build ./...
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Every change is checked on Linux, Windows, macOS, FreeBSD, and OpenBSD by GitHub Actions.
-
-## Security
-
-Please do not disclose security vulnerabilities in a public issue. Follow the private reporting guidance in [SECURITY.md](SECURITY.md).
-
-## Community and support
-
-- Use [GitHub Issues](https://github.com/Uqda/Core/issues) for reproducible bugs and feature requests.
-- Join `#uqda` on [Libera.Chat](https://libera.chat/) for community discussion.
-- Read the [FAQ](https://uqda.github.io/faq.html) for common setup and networking questions.
+See [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes. Report suspected vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-Uqda Core is distributed under the GNU Lesser General Public License v3 with the additional exception described in [LICENSE](LICENSE).
+UQDA Core is distributed under the GNU Lesser General Public License v3 with the additional exception included in [LICENSE](LICENSE). Third-party components remain subject to their respective licenses.
+
+## Acknowledgements and upstream origin
+
+**UQDA Core is based on and derived from the open-source [Yggdrasil Network](https://github.com/yggdrasil-network/yggdrasil-go) codebase.** UQDA retains substantial concepts and implementation lineage from Yggdrasil while being developed under its own name and repository. Yggdrasil is an independent upstream project; this repository must not imply endorsement by or official affiliation with its maintainers. See [NOTICE.md](NOTICE.md) for attribution details.
