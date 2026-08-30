@@ -2,6 +2,13 @@ name: Packages
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/pkg.yml"
+      - "contrib/**"
+      - "build"
+      - "go.mod"
+      - "go.sum"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -131,39 +138,52 @@ jobs:
           path: "*.msi"
           if-no-files-found: error
 
-  build-packages-router:
+  build-router-binaries:
     strategy:
       fail-fast: false
       matrix:
-        pkgarch: ["edgerouter-x", "edgerouter-lite", "vyos-amd64", "vyos-i386"]
+        include:
+          - target: edgerouter-x
+            goarch: mipsle
+            gomips: softfloat
+          - target: edgerouter-lite
+            goarch: mips64
+            gomips: ""
+          - target: vyos-amd64
+            goarch: amd64
+            gomips: ""
+          - target: vyos-i386
+            goarch: "386"
+            gomips: ""
 
-    name: Package (Router, ${{ matrix.pkgarch }})
+    name: Router binaries (${{ matrix.target }})
 
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          path: uqda
-
-      - uses: actions/checkout@v6
-        with:
-          repository: neilalexander/vyatta-uqda
-          path: vyatta-uqda
 
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
           go-version: "stable"
 
-      - name: Build package
+      - name: Cross-compile binaries
         env:
-          BUILDDIR_UQDA: /home/runner/work/core/core/uqda
-        run: cd /home/runner/work/core/core/vyatta-uqda && ./build-${{ matrix.pkgarch }}
+          GOOS: linux
+          GOARCH: ${{ matrix.goarch }}
+          GOMIPS: ${{ matrix.gomips }}
+          CGO_ENABLED: 0
+        run: |
+          ./build
+          mkdir -p "uqda-${{ matrix.target }}"
+          mv uqda uqdactl "uqda-${{ matrix.target }}/"
+          tar -czf "uqda-${{ matrix.target }}.tar.gz" "uqda-${{ matrix.target }}"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Router package (${{ matrix.pkgarch }})
-          path: "/home/runner/work/core/core/vyatta-uqda/*.deb"
+          name: Router binaries (${{ matrix.target }})
+          path: "uqda-${{ matrix.target }}.tar.gz"
           if-no-files-found: error
