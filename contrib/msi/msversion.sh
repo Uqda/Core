@@ -1,49 +1,35 @@
 #!/bin/sh
 
-# Get the last tag
-TAG=$(git describe --abbrev=0 --tags --match="v[0-9]*\.[0-9]*\.[0-9]*" 2>/dev/null)
+set -eu
 
-# Did getting the tag succeed?
-if [ $? != 0 ] || [ -z "$TAG" ]; then
-  # MSI requires a numeric dotted version even before the first release tag.
-  # Keep the build component inside WiX's accepted 0..65534 range.
+TAG=${UQDA_VERSION:-}
+if [ -z "$TAG" ]; then
+  TAG=$(git describe --abbrev=0 --tags --match="v[0-9]*\.[0-9]*\.[0-9]*" 2>/dev/null || true)
+fi
+
+if [ -z "$TAG" ]; then
+  # MSI ProductVersion must contain only numeric components.
   COUNT=$(git rev-list --count HEAD 2>/dev/null || printf '0')
   printf '0.0.%d' "$((COUNT % 65535))"
   exit 0
 fi
 
-# Get the current branch
-BRANCH=$(git symbolic-ref -q HEAD --short 2>/dev/null)
+# WiX cannot encode SemVer prerelease labels in ProductVersion. Keep the
+# numeric core in MSI metadata; the full beta version remains in the filename.
+NUMERIC=$(printf '%s\n' "${TAG#v}" | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+printf '%s\n' "$NUMERIC" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || {
+  echo "Invalid release version: $TAG" >&2
+  exit 1
+}
 
-# Did getting the branch succeed?
-if [ $? != 0 ] || [ -z "$BRANCH" ]; then
-  BRANCH="master"
-fi
+IFS=. read -r MAJOR MINOR PATCH <<EOF
+$NUMERIC
+EOF
+for component in "$MAJOR" "$MINOR" "$PATCH"; do
+  [ "$component" -le 65534 ] || {
+    echo "MSI version component is too large: $component" >&2
+    exit 1
+  }
+done
 
-# Split out into major, minor and patch numbers
-MAJOR=$(echo $TAG | cut -c 2- | cut -d "." -f 1)
-MINOR=$(echo $TAG | cut -c 2- | cut -d "." -f 2)
-PATCH=$(echo $TAG | cut -c 2- | cut -d "." -f 3 | awk -F"rc" '{print $1}')
-
-# Output in the desired format
-if [ $((PATCH)) -eq 0 ]; then
-  printf '%s%d.%d' "$PREPEND" "$((MAJOR))" "$((MINOR))"
-else
-  printf '%s%d.%d.%d' "$PREPEND" "$((MAJOR))" "$((MINOR))" "$((PATCH))"
-fi
-
-# Add the build tag on non-master branches
-if [ "$BRANCH" != "master" ]; then
-  BUILD=$(git rev-list --count $TAG..HEAD 2>/dev/null)
-
-  # Did getting the count of commits since the tag succeed?
-  if [ $? != 0 ] || [ -z "$BUILD" ]; then
-    printf -- "-unknown"
-    exit 0
-  fi
-
-  # Is the build greater than zero?
-  if [ $((BUILD)) -gt 0 ]; then
-      printf -- "-%04d" "$((BUILD))"
-  fi
-fi
+printf '%d.%d.%d' "$MAJOR" "$MINOR" "$PATCH"

@@ -134,11 +134,11 @@ cp uqdactl /tmp/$PKGNAME/usr/bin/
 cp contrib/systemd/uqda-default-config.service.debian /tmp/$PKGNAME/lib/systemd/system/uqda-default-config.service
 cp contrib/systemd/uqda.service.debian /tmp/$PKGNAME/lib/systemd/system/uqda.service
 
-tar --no-xattrs -czvf /tmp/$PKGNAME/data.tar.gz -C /tmp/$PKGNAME/ \
+tar --no-xattrs --owner=0 --group=0 -czvf /tmp/$PKGNAME/data.tar.gz -C /tmp/$PKGNAME/ \
   usr/bin/uqda usr/bin/uqdactl \
   lib/systemd/system/uqda.service \
   lib/systemd/system/uqda-default-config.service
-tar --no-xattrs -czvf /tmp/$PKGNAME/control.tar.gz -C /tmp/$PKGNAME/debian .
+tar --no-xattrs --owner=0 --group=0 -czvf /tmp/$PKGNAME/control.tar.gz -C /tmp/$PKGNAME/debian .
 echo 2.0 > /tmp/$PKGNAME/debian-binary
 
 ar -r $PKGFILE \

@@ -28,6 +28,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.1.0-beta.1] - 2026-08-30
+
+First UQDA beta release. This is experimental software and is not recommended
+for protecting high-value or safety-critical traffic.
+
+### Added
+
+* Native installers and packages for Windows, macOS, Debian-family systems,
+  EdgeOS and VyOS, plus portable archives for Linux, FreeBSD and OpenBSD.
+* Integrated EdgeRouter/VyOS configuration commands and per-interface services.
+* Arabic and English project documentation and official UQDA branding.
+
 ### Security
 
 * New peers advertise a backward-compatible secure-handshake capability while retaining the 0.5 wire version understood by existing nodes.
@@ -998,3 +1010,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 * UDP peering, this may be added again if/when a better implementation appears.
 * Per peer bandwidth estimation, as this has been replaced with an early local backpressure implementation.
 
+## [0.1.0] - 2018-02-01
+
+### Added
+
+* Adopt semantic versioning.
+
+### Changed
+
+* Wire format changes (backwards incompatible).
+* Many other undocumented changes leading up to this release and before the next one.
+
+## [0.0.1] - 2017-12-28
+
+### Added
+
+* First commit.
+* Initial public release.

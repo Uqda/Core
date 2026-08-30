@@ -68,6 +68,12 @@ jobs:
           PKGARCH: ${{ matrix.pkgarch }}
         run: sh contrib/deb/generate.sh
 
+      - name: Inspect package
+        run: |
+          package=$(find . -maxdepth 1 -name 'uqda-*.deb' -print -quit)
+          dpkg-deb --info "$package"
+          dpkg-deb --contents "$package" | grep -E 'usr/bin/(uqda|uqdactl)$'
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -98,6 +104,12 @@ jobs:
         env:
           PKGARCH: ${{ matrix.pkgarch }}
         run: sh contrib/macos/create-pkg.sh
+
+      - name: Inspect package
+        run: |
+          package=$(find . -maxdepth 1 -name 'uqda-*.pkg' -print -quit)
+          pkgutil --expand "$package" expanded.pkg
+          test -s expanded.pkg/base.pkg/Payload
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -130,6 +142,10 @@ jobs:
 
       - name: Build package
         run: sh contrib/msi/build-msi.sh ${{ matrix.pkgarch }}
+
+      - name: Inspect package
+        shell: bash
+        run: test -n "$(find . -maxdepth 1 -name 'uqda-*.msi' -size +1M -print -quit)"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -174,6 +190,14 @@ jobs:
           PKGARCH: ${{ matrix.pkgarch }}
           PKGTARGET: ${{ matrix.pkgtarget }}
         run: sh contrib/vyatta/generate.sh
+
+      - name: Inspect package
+        run: |
+          package=$(find . -maxdepth 1 -name 'uqda-*.deb' -print -quit)
+          test "$(dpkg-deb -f "$package" Architecture)" = "${{ matrix.pkgarch }}"
+          dpkg-deb --contents "$package" | grep 'usr/lib/systemd/system/uqda@.service'
+          dpkg-deb --contents "$package" | grep 'templates/interfaces/uqda/node.def'
+          dpkg-deb --contents "$package" | head -1 | grep '^drwxr-xr-x'
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

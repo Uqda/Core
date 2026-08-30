@@ -1,6 +1,11 @@
 #!/bin/sh
 
 # Get the current branch name
+if [ -n "${UQDA_VERSION:-}" ]; then
+  printf "uqda"
+  exit 0
+fi
+
 BRANCH="$GITHUB_REF_NAME"
 if [ -z "$BRANCH" ]; then
   BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)

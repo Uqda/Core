@@ -1,0 +1,245 @@
+name: Beta Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: SemVer prerelease tag
+        required: true
+        default: v0.1.0-beta.1
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/release-beta.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: beta-release
+  cancel-in-progress: false
+
+env:
+  UQDA_VERSION: ${{ inputs.tag || 'v0.1.0-beta.1' }}
+
+jobs:
+  portable:
+    name: Portable (${{ matrix.os }}, ${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: linux, arch: amd64, goarch: amd64 }
+          - { os: linux, arch: i386, goarch: "386" }
+          - { os: linux, arch: arm64, goarch: arm64 }
+          - { os: linux, arch: armv7, goarch: arm, goarm: "7" }
+          - { os: linux, arch: mipsel, goarch: mipsle, gomips: softfloat }
+          - { os: linux, arch: mips64, goarch: mips64 }
+          - { os: freebsd, arch: amd64, goarch: amd64 }
+          - { os: freebsd, arch: arm64, goarch: arm64 }
+          - { os: openbsd, arch: amd64, goarch: amd64 }
+          - { os: openbsd, arch: arm64, goarch: arm64 }
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Validate release version
+        run: test "$(sh contrib/semver/version.sh)" = "$UQDA_VERSION"
+      - name: Build portable archive
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+          GOMIPS: ${{ matrix.gomips }}
+          CGO_ENABLED: "0"
+        run: |
+          ./build
+          archive="uqda-${UQDA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
+          mkdir "$archive"
+          cp uqda uqdactl README.md README_AR.md LICENSE NOTICE.md "$archive/"
+          tar -czf "$archive.tar.gz" "$archive"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portable-${{ matrix.os }}-${{ matrix.arch }}
+          path: "uqda-*.tar.gz"
+          if-no-files-found: error
+
+  debian:
+    name: Debian (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, i386, mips, mipsel, armhf, armel, arm64]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Build and inspect package
+        env:
+          PKGARCH: ${{ matrix.arch }}
+        run: |
+          sh contrib/deb/generate.sh
+          package=$(find . -maxdepth 1 -name 'uqda-*.deb' -print -quit)
+          dpkg-deb --info "$package"
+          dpkg-deb --contents "$package" | grep -E 'usr/bin/(uqda|uqdactl)$'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: debian-${{ matrix.arch }}
+          path: "uqda-*.deb"
+          if-no-files-found: error
+
+  router:
+    name: Router (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: edgerouter-x, arch: mipsel, package: edgeos2x }
+          - { target: edgerouter-lite, arch: mips, package: edgeos2x }
+          - { target: vyos-amd64, arch: amd64, package: vyos13 }
+          - { target: vyos-i386, arch: i386, package: vyos13 }
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Build and inspect package
+        env:
+          PKGARCH: ${{ matrix.arch }}
+          PKGTARGET: ${{ matrix.package }}
+        run: |
+          sh contrib/vyatta/generate.sh
+          package=$(find . -maxdepth 1 -name 'uqda-*.deb' -print -quit)
+          test "$(dpkg-deb -f "$package" Architecture)" = "${{ matrix.arch }}"
+          dpkg-deb --contents "$package" | grep 'usr/lib/systemd/system/uqda@.service'
+          dpkg-deb --contents "$package" | grep 'templates/interfaces/uqda/node.def'
+          dpkg-deb --contents "$package" | head -1 | grep '^drwxr-xr-x'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: router-${{ matrix.target }}
+          path: "uqda-*.deb"
+          if-no-files-found: error
+
+  macos:
+    name: macOS (${{ matrix.arch }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Build and inspect installer
+        env:
+          PKGARCH: ${{ matrix.arch }}
+        run: |
+          sh contrib/macos/create-pkg.sh
+          package=$(find . -maxdepth 1 -name 'uqda-*.pkg' -print -quit)
+          pkgutil --expand "$package" expanded.pkg
+          grep "version=\"${UQDA_VERSION#v}\"" expanded.pkg/Distribution
+          test -s expanded.pkg/base.pkg/Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: "uqda-*.pkg"
+          if-no-files-found: error
+
+  windows:
+    name: Windows (${{ matrix.arch }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86, arm64]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-dotnet@v4
+      - name: Build and inspect installer
+        shell: bash
+        run: |
+          sh contrib/msi/build-msi.sh "${{ matrix.arch }}"
+          test "$(sh contrib/msi/msversion.sh)" = "0.1.0"
+          test -s uqda-0.1.0-beta.1-${{ matrix.arch }}.msi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}
+          path: "uqda-*.msi"
+          if-no-files-found: error
+
+  vendored-source:
+    name: Vendored source
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Create vendored source archive
+        run: |
+          go mod vendor
+          archive="uqda-${UQDA_VERSION}-vendored-source"
+          mkdir "$archive"
+          tar --exclude-vcs --exclude="$archive" -cf - . | tar -xf - -C "$archive"
+          tar -czf "$archive.tar.gz" "$archive"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vendored-source
+          path: "uqda-*-vendored-source.tar.gz"
+          if-no-files-found: error
+
+  publish:
+    name: Publish prerelease
+    needs: [portable, debian, router, macos, windows, vendored-source]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate tag
+        run: |
+          printf '%s\n' "$UQDA_VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z.-]+$'
+      - uses: actions/download-artifact@v5
+        with:
+          path: release-assets
+          merge-multiple: true
+      - name: Generate checksums and inventory
+        run: |
+          cd release-assets
+          find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+          test "$(find . -maxdepth 1 -type f | wc -l)" -ge 28
+          cat SHA256SUMS
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$UQDA_VERSION" >/dev/null 2>&1; then
+            echo "Release $UQDA_VERSION already exists; refusing to overwrite it."
+            exit 1
+          fi
+          gh release create "$UQDA_VERSION" release-assets/* \
+            --target "$GITHUB_SHA" \
+            --title "UQDA Core $UQDA_VERSION" \
+            --notes-file RELEASE_NOTES_v0.1.0-beta.1.md \
+            --prerelease \
+            --latest=false

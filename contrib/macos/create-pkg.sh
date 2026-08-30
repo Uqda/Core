@@ -119,7 +119,7 @@ cat > pkgbuild/flat/Distribution << EOF
     <choice id="choice1" title="base">
         <pkg-ref id="io.github.uqda.pkg"/>
     </choice>
-    <pkg-ref id="io.github.uqda.pkg" installKBytes="${PAYLOADSIZE}" version="${VERSION}" auth="Root">#base.pkg</pkg-ref>
+    <pkg-ref id="io.github.uqda.pkg" installKBytes="${PAYLOADSIZE}" version="${PKGVERSION}" auth="Root">#base.pkg</pkg-ref>
 </installer-script>
 EOF
 

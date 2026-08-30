@@ -26,6 +26,7 @@ PKGNAME="uqda-$PKGTARGET"
 PKGFILE="$ROOT/$PKGNAME-$PKGVERSION-$PKGARCH.deb"
 STAGE=$(mktemp -d "${TMPDIR:-/tmp}/uqda-vyatta.XXXXXX")
 trap 'rm -rf "$STAGE"' EXIT HUP INT TERM
+chmod 0755 "$STAGE"
 
 GOOS=linux GOARCH="$GOARCH" GOMIPS="$GOMIPS" CGO_ENABLED=0 ./build
 

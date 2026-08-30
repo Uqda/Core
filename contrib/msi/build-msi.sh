@@ -38,6 +38,7 @@ EOF
 # Work out metadata for the package info
 PKGNAME=$(sh contrib/semver/name.sh)
 PKGVERSION=$(sh contrib/msi/msversion.sh --bare)
+PKGSEMVER=$(sh contrib/semver/version.sh --bare)
 PKGVERSIONMS=$(echo $PKGVERSION | tr - .)
 ([ "${PKGARCH}" == "x64" ] || [ "${PKGARCH}" == "arm64" ]) && \
   PKGGUID="77757838-1a23-40a5-a720-c3b43e0260cc" PKGINSTFOLDER="ProgramFiles64Folder" || \
@@ -65,7 +66,7 @@ else
   exit 1
 fi
 
-if [ $PKGNAME != "master" ]; then
+if [ "$PKGNAME" != "uqda" ]; then
   PKGDISPLAYNAME="UQDA Network (${PKGNAME} branch)"
 else
   PKGDISPLAYNAME="UQDA Network"
@@ -195,4 +196,4 @@ EOF
 CANDLEFLAGS="-nologo"
 LIGHTFLAGS="-nologo -spdb -sice:ICE71 -sice:ICE61"
 candle $CANDLEFLAGS -out ${PKGNAME}-${PKGVERSION}-${PKGARCH}.wixobj -arch ${PKGARCH} wix.xml && \
-light $LIGHTFLAGS -ext WixUtilExtension.dll -out ${PKGNAME}-${PKGVERSION}-${PKGARCH}.msi ${PKGNAME}-${PKGVERSION}-${PKGARCH}.wixobj
+light $LIGHTFLAGS -ext WixUtilExtension.dll -out ${PKGNAME}-${PKGSEMVER}-${PKGARCH}.msi ${PKGNAME}-${PKGVERSION}-${PKGARCH}.wixobj
