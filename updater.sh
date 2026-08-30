@@ -6,11 +6,10 @@
 set -eu
 
 REPOSITORY=${UQDA_REPOSITORY:-Uqda/Core}
-VERSION=${UQDA_VERSION:-v0.1.0-beta.2}
+VERSION=${UQDA_VERSION:-}
 case "${1:-}" in
 	--version) [ "$#" -ge 2 ] || { echo "--version needs a value" >&2; exit 1; }; VERSION=$2; shift 2 ;;
 esac
-BASE_URL=${UQDA_RELEASE_BASE_URL:-https://github.com/$REPOSITORY/releases/download/$VERSION}
 TMPDIR_UQDA=$(mktemp -d "${TMPDIR:-/tmp}/uqda-update.XXXXXX")
 trap 'rm -rf "$TMPDIR_UQDA"' EXIT HUP INT TERM
 
@@ -23,6 +22,16 @@ fetch() {
 		echo "curl or wget is required" >&2; exit 1
 	fi
 }
+
+if [ -z "$VERSION" ]; then
+	fetch "https://raw.githubusercontent.com/$REPOSITORY/main/VERSION" "$TMPDIR_UQDA/VERSION"
+	VERSION=$(sed -n '1p' "$TMPDIR_UQDA/VERSION" | tr -d '\r\n')
+fi
+case "$VERSION" in
+	v[0-9]*.[0-9]*.[0-9]*) ;;
+	*) echo "invalid release tag: $VERSION" >&2; exit 1 ;;
+esac
+BASE_URL=${UQDA_RELEASE_BASE_URL:-https://github.com/$REPOSITORY/releases/download/$VERSION}
 
 fetch "$BASE_URL/SHA256SUMS" "$TMPDIR_UQDA/SHA256SUMS"
 fetch "$BASE_URL/install.sh" "$TMPDIR_UQDA/install.sh"

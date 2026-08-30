@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.0-beta.3
+
+- Made `updater.sh` follow the repository release channel through the validated
+  `VERSION` file instead of reinstalling a hard-coded release.
+
 ## v0.1.0-beta.2
 
 - Fixed a malformed-handshake panic discovered by fuzz testing by validating

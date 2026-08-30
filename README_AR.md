@@ -59,7 +59,7 @@ cd Core
 </div>
 
 ```bash
-curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.2/install.sh
+curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.3/install.sh
 sudo sh install.sh
 ```
 
@@ -70,7 +70,7 @@ sudo sh install.sh
 </div>
 
 ```bash
-curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.2/updater.sh
+curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.3/updater.sh
 sudo sh updater.sh
 ```
 

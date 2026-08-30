@@ -6,7 +6,7 @@
 set -eu
 
 REPOSITORY=${UQDA_REPOSITORY:-Uqda/Core}
-VERSION=${UQDA_VERSION:-v0.1.0-beta.2}
+VERSION=${UQDA_VERSION:-v0.1.0-beta.3}
 BASE_URL=${UQDA_RELEASE_BASE_URL:-https://github.com/$REPOSITORY/releases/download/$VERSION}
 DRY_RUN=0
 START_SERVICE=1
@@ -20,7 +20,7 @@ usage() {
 Usage: install.sh [--version vX.Y.Z] [--dry-run] [--no-start]
 
 Environment overrides:
-  UQDA_VERSION           Release tag (default: v0.1.0-beta.2)
+  UQDA_VERSION           Release tag (default: v0.1.0-beta.3)
   UQDA_TEST_OS           Override detected OS for tests
   UQDA_TEST_ARCH         Override detected CPU for tests
   UQDA_TEST_PLATFORM     systemd, portable, edgeos2x, or vyos13
