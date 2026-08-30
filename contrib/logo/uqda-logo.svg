@@ -1,18 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="260" viewBox="0 0 1000 260" role="img" aria-labelledby="title description">
-  <title id="title">UQDA</title>
-  <desc id="description">White geometric UQDA wordmark on a transparent background.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-labelledby="title description">
+  <title id="title">uqda</title>
+  <desc id="description">White lowercase uqda wordmark, constructed on a hexagonal grid, with a transparent background.</desc>
 
-  <!-- U: open top, chamfered base -->
-  <path fill="#fff" d="M25 20h55v145l40 35 40-35V20h55v172l-95 58-95-58z"/>
+  <!--
+    Original UQDA lettering. Every terminal and counter follows the same
+    30/60-degree modular grid. The artwork contains no font and no background.
+  -->
+  <g fill="#fff">
+    <!-- u -->
+    <path d="M18 96 78 61l58 34v157l55 32 55-32V95l59-34 59 35v190l-173 100L18 286z"/>
 
-  <!-- Q: octagonal bowl and a directional tail -->
-  <path fill="#fff" fill-rule="evenodd" d="M285 20h105l65 55v105l-65 60H285l-65-60V75zm25 52-35 30v52l35 34h55l35-34v-52l-35-30z"/>
-  <path fill="#fff" d="m365 155 105 85h-78l-72-60z"/>
+    <!-- q: hexagonal bowl with a descending terminal -->
+    <path fill-rule="evenodd" d="M461 62 626 157v190l-165 95-165-95V157zm0 78-97 56v112l97 56 97-56V196z" transform="translate(45 -28) scale(.82)"/>
+    <path d="M517 270h68v139l-34 20-34-20z"/>
 
-  <!-- D: vertical spine with a faceted outer curve -->
-  <path fill="#fff" fill-rule="evenodd" d="M490 20h115l80 58v104l-80 58H490zm58 52v116h40l42-31v-54l-42-31z"/>
+    <!-- d: matching bowl with a tall vertical stem -->
+    <path fill-rule="evenodd" d="M764 62 929 157v190l-165 95-165-95V157zm0 78-97 56v112l97 56 97-56V196z" transform="translate(62 -28) scale(.82)"/>
+    <path d="M815 18h68v259h-68z"/>
+    <path d="m815 18 34-18 34 20v45l-34 20-34-20z"/>
 
-  <!-- A: two angular legs joined by a modular crossbar -->
-  <path fill="#fff" d="M715 240 795 20h65l115 220h-62l-24-49h-101l-17 49zm92-101h57l-35-72z" fill-rule="evenodd"/>
+    <!-- a: hexagonal counter, open lower-right terminal -->
+    <path fill-rule="evenodd" d="M1032 62 1197 157v190l-165 95-165-95V157zm0 78-97 56v112l97 56 97-56V196z" transform="translate(84 -28) scale(.82)"/>
+    <path d="M1121 268h68v122l-34 20-34-20z"/>
+    <path d="M1015 239h174v68h-174z"/>
+  </g>
 </svg>
