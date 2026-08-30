@@ -11,6 +11,10 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/release-beta.yml"
+      - ".github/releases/**"
+      - "install.sh"
+      - "updater.sh"
+      - "tests/install_test.sh"
 
 permissions:
   contents: write
