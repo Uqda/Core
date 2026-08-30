@@ -32,7 +32,7 @@ fi
 fixture=$(mktemp "$ROOT/uqda-releases.XXXXXX")
 trap 'rm -f "$fixture"' EXIT HUP INT TERM
 printf '%s\n' '[' '  {' '    "tag_name": "v9.8.7-beta.6",' '    "prerelease": true' '  }' ']' > "$fixture"
-resolved=$(UQDA_RELEASES_FILE=$fixture UQDA_RESOLVE_ONLY=1 sh "$ROOT/updater.sh")
+resolved=$(UQDA_VERSION= UQDA_RELEASES_FILE=$fixture UQDA_RESOLVE_ONLY=1 sh "$ROOT/updater.sh")
 [ "$resolved" = v9.8.7-beta.6 ] || { echo "automatic release discovery failed" >&2; exit 1; }
 
 echo "installer platform matrix passed"
