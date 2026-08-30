@@ -19,3 +19,5 @@ The maintainers will acknowledge the report, investigate it, and coordinate disc
 Security fixes are made on the current `main` branch and included in the next release. Users should run the latest available release.
 
 New nodes remain compatible with protocol 0.5 peers. Secure transcript confirmation is negotiated automatically when both sides support it. For sensitive or controlled overlays, append `?secure=required` to both peering and listener URIs to reject legacy handshakes and prevent downgrade.
+
+Example: `tls://peer.example:9001?secure=required`.
