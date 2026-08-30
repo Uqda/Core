@@ -36,4 +36,8 @@ printf '%s\n' '[' '  {' '    "tag_name": "v9.8.7-beta.6",' '    "prerelease": tr
 resolved=$(UQDA_VERSION= UQDA_RELEASES_FILE=$fixture UQDA_RESOLVE_ONLY=1 sh "$ROOT/updater.sh")
 [ "$resolved" = v9.8.7-beta.6 ] || { echo "automatic release discovery failed" >&2; exit 1; }
 
+grep -F 'chmod 0600 "$CONFIG_FILE"' "$ROOT/install.sh" >/dev/null
+grep -F 'systemd-deb) SOCKET_PATH=/var/run/uqda/uqda.sock' "$ROOT/install.sh" >/dev/null
+grep -F 'systemd-portable) SOCKET_PATH=/var/run/uqda.sock' "$ROOT/install.sh" >/dev/null
+
 echo "installer platform matrix passed"

@@ -82,9 +82,9 @@ systemctl daemon-reload
 if [ ! -d /etc/uqda ];
 then
     mkdir -p /etc/uqda
-    chown root:root /etc/uqda
-    chmod 700 /etc/uqda
 fi
+chown root:root /etc/uqda
+chmod 700 /etc/uqda
 
 if [ ! -f /etc/uqda/uqda.conf ];
 then

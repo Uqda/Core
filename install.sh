@@ -188,6 +188,8 @@ install_portable_service() {
 	case "$OS" in
 		linux)
 			mkdir -p /etc/uqda
+			chown root:root /etc/uqda
+			chmod 0700 /etc/uqda
 			if [ -f /etc/uqda.conf ] && [ ! -L /etc/uqda.conf ]; then
 				CONFIG_FILE=/etc/uqda.conf
 			else
@@ -276,7 +278,11 @@ verify_linux_service() {
 		i=$((i + 1))
 	done
 	[ "$verified" -eq 1 ] || die "uqdactl cannot reach the service as root"
-	SOCKET_PATH=/var/run/uqda.sock
+	case "$PLATFORM" in
+		systemd-deb) SOCKET_PATH=/var/run/uqda/uqda.sock ;;
+		systemd-portable) SOCKET_PATH=/var/run/uqda.sock ;;
+		*) return 0 ;;
+	esac
 	[ -S "$SOCKET_PATH" ] || die "administration socket was not created"
 	SOCKET_MODE=$(stat -c '%a' "$SOCKET_PATH" 2>/dev/null || stat -f '%Lp' "$SOCKET_PATH" 2>/dev/null || true)
 	[ "$SOCKET_MODE" = 600 ] || die "administration socket is not root-only (expected mode 600, got ${SOCKET_MODE:-unknown})"
