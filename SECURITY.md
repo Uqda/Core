@@ -21,3 +21,28 @@ Security fixes are made on the current `main` branch and included in the next re
 New nodes remain compatible with protocol 0.5 peers. Secure transcript confirmation is negotiated automatically when both sides support it. For sensitive or controlled overlays, append `?secure=required` to both peering and listener URIs to reject legacy handshakes and prevent downgrade.
 
 Example: `tls://peer.example:9001?secure=required`.
+
+## Release integrity and provenance
+
+New releases are designed to publish three independent integrity signals:
+
+- `SHA256SUMS`, containing the SHA-256 digest of every release asset;
+- `SHA256SUMS.sigstore.json`, a Sigstore bundle containing the keyless signature, signing certificate, and transparency-log proof for the checksum manifest; and
+- GitHub artifact attestations that bind the published artifact digests to the repository's release workflow.
+
+The checksum manifest is signed in GitHub Actions with a short-lived OIDC identity. Verification must require both the exact workflow identity and GitHub Actions OIDC issuer:
+
+```bash
+cosign verify-blob SHA256SUMS \
+  --bundle SHA256SUMS.sigstore.json \
+  --certificate-identity "https://github.com/Uqda/Core/.github/workflows/release-beta.yml@refs/heads/main" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+```
+
+After the manifest is authenticated, verify a downloaded asset against `SHA256SUMS` before installing it. Users with GitHub CLI can additionally verify build provenance for a downloaded artifact:
+
+```bash
+gh attestation verify ./uqda-RELEASE-ASSET -R Uqda/Core
+```
+
+The release workflow refuses to publish from any ref other than `refs/heads/main`. Repository branch protection is also part of this trust model: direct or insufficiently reviewed modification of `main` or the release workflow would weaken the value of workload-identity signing. Keep `main` protected, require CI before merge, and restrict who can modify release workflows.
