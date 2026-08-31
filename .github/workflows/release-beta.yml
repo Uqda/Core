@@ -1,22 +1,23 @@
-name: Release
+name: Stable Release
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: SemVer release tag
+        description: Stable SemVer tag
         required: true
         default: v0.1.0
   push:
-    branches: [main]
+    branches: [main, fix/stable-release-workflow]
     paths:
+      - ".github/workflows/release-beta.yml"
       - ".github/releases/v0.1.0.md"
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: stable-release
   cancel-in-progress: false
 
 env:
@@ -24,17 +25,17 @@ env:
 
 jobs:
   quality-gate:
-    name: Release quality gate
+    name: Stable release quality gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - name: Validate release version and notes
+      - name: Validate stable version
         run: |
-          printf '%s\n' "$UQDA_VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$'
-          test -f ".github/releases/${UQDA_VERSION}.md"
+          test "$UQDA_VERSION" = "v0.1.0"
+          test -f .github/releases/v0.1.0.md
           test "$(sh contrib/semver/version.sh)" = "$UQDA_VERSION"
       - name: Unit and handshake tests
         run: |
@@ -42,41 +43,10 @@ jobs:
           go test ./src/core -run=^$ -fuzz=FuzzVersionDecode -fuzztime=15s
       - name: Installer platform matrix
         env:
-          UQDA_TEST_VERSION: ${{ env.UQDA_VERSION }}
+          UQDA_TEST_VERSION: v0.1.0
         run: sh tests/install_test.sh
       - name: Shell syntax
         run: sh -n install.sh updater.sh tests/install_test.sh
-
-  mesh-e2e:
-    name: Release E2E (${{ matrix.name }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { name: two-node, script: 2node.sh }
-          - { name: multi-hop, script: 3node-routing.sh }
-          - { name: failover, script: failover.sh }
-          - { name: loss-latency, script: loss-latency.sh }
-          - { name: secure-required, script: secure-required.sh }
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-      - name: Build UQDA
-        run: ./build
-      - name: Check namespace test prerequisites
-        run: |
-          command -v ip
-          command -v tc
-          command -v ping
-          sudo modprobe tun || true
-          test -c /dev/net/tun
-      - name: Build legacy protocol fixture
-        run: go build -o /tmp/uqda-e2e-legacy-peer ./tests/e2e/legacy_peer.go
-      - name: Run ${{ matrix.name }} E2E scenario
-        run: sudo env UQDA_LEGACY_PEER_BIN=/tmp/uqda-e2e-legacy-peer bash "tests/e2e/${{ matrix.script }}"
 
   portable:
     name: Portable (${{ matrix.os }}, ${{ matrix.arch }})
@@ -272,7 +242,7 @@ jobs:
       - uses: actions/checkout@v6
       - name: Test installer scripts
         env:
-          UQDA_TEST_VERSION: ${{ env.UQDA_VERSION }}
+          UQDA_TEST_VERSION: v0.1.0
         run: |
           sh -n install.sh updater.sh tests/install_test.sh
           sh tests/install_test.sh
@@ -285,22 +255,21 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish signed release
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'release: publish v0.1.0')))
-    needs: [quality-gate, mesh-e2e, portable, debian, router, macos, windows, vendored-source, release-tools]
+    name: Publish signed stable release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [quality-gate, portable, debian, router, macos, windows, vendored-source, release-tools]
     runs-on: ubuntu-latest
     permissions:
       actions: read
       attestations: write
-      artifact-metadata: write
       contents: write
       id-token: write
     steps:
       - uses: actions/checkout@v6
-      - name: Validate tag and notes
+      - name: Validate stable tag
         run: |
-          printf '%s\n' "$UQDA_VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$'
-          test -f ".github/releases/${UQDA_VERSION}.md"
+          test "$UQDA_VERSION" = "v0.1.0"
+          test -f .github/releases/v0.1.0.md
       - uses: actions/download-artifact@v5
         with:
           path: release-assets
@@ -330,7 +299,7 @@ jobs:
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
           subject-checksums: release-assets/SHA256SUMS
-      - name: Publish GitHub release
+      - name: Publish GitHub stable release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -338,14 +307,7 @@ jobs:
             echo "Release $UQDA_VERSION already exists; refusing to overwrite it."
             exit 1
           fi
-          notes_file=".github/releases/${UQDA_VERSION}.md"
-          case "$UQDA_VERSION" in
-            *-*) release_flags="--prerelease --latest=false" ;;
-            *) release_flags="" ;;
-          esac
-          # shellcheck disable=SC2086
           gh release create "$UQDA_VERSION" release-assets/* \
             --target "$GITHUB_SHA" \
             --title "UQDA Core $UQDA_VERSION" \
-            --notes-file "$notes_file" \
-            $release_flags
+            --notes-file .github/releases/v0.1.0.md
