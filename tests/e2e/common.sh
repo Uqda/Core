@@ -54,15 +54,30 @@ socket_path() {
   printf '%s/%s.sock\n' "$E2E_TMP" "$1"
 }
 
+fixture_private_key() {
+  # Fixed test-only Ed25519 private keys make topology/routing behavior
+  # reproducible between CI runs. They are never used outside ephemeral tests.
+  case "$1" in
+    a) printf '%s\n' '958e239c091df868b98b9d38fe35d657e0b372c920bab72b9ec4394f508f1723b16962d00c9b7397fbbddb6f637ed3a634c0f2c99e5318c23d7128b49a6e1963' ;;
+    b) printf '%s\n' '6c32fc994e4a679dcc753a0145138724bc54d3879d12a1130c44694df6f273306d81990cd622cb587f40f0674b561a2ea67358736aa7dab63452cfe03ff33c36' ;;
+    c) printf '%s\n' '2bbd449a26c13ff8daee9d76ca448b6940b5a52a84d929d2aa27ce849e66e63fff5f9916cfc13754bf335e2085f82582e1e0478e09c7a1e0b139180b7b592c42' ;;
+    d) printf '%s\n' '4e64a0237edfd539d6dcc20b4405b3c238eb5ecae0bcd4de01cee8cd6c697f4168929f5e6e1a24e2fb4cfb4ac97357116577e7d8d7c009297e1dac53f35be94b' ;;
+    s) printf '%s\n' '176f944f0929486715f945ad6ff5c68eaf07b0d489ce17a9c251cc66bf126a18b00a32507adfe003b18e6acb1756f94e3021e212cdd791ac798357743a383a3e' ;;
+    *) fail "no deterministic E2E private key for node $1" ;;
+  esac
+}
+
 write_node_config() {
   local node=$1 listen=$2
   shift 2
   local cfg="$E2E_TMP/$node.conf"
-  local socket
+  local socket private_key
   socket=$(socket_path "$node")
+  private_key=$(fixture_private_key "$node")
 
   {
     echo '{'
+    printf '  PrivateKey: "%s"\n' "$private_key"
     printf '  AdminListen: "unix://%s"\n' "$socket"
     echo '  IfName: "uqda0"'
     echo '  IfMTU: 1280'
@@ -179,7 +194,7 @@ wait_for_ping() {
   local ns=$1 address=$2 timeout=${3:-25}
   local deadline=$((SECONDS + timeout))
   while (( SECONDS < deadline )); do
-    if ip netns exec "$ns" ping -6 -n -c 1 -W 1 "$address" >/dev/null 2>&1; then
+    if ip netns exec "$ns" ping -6 -n -I uqda0 -c 1 -W 1 "$address" >/dev/null 2>&1; then
       return 0
     fi
     sleep 0.25
@@ -202,6 +217,10 @@ dump_e2e_state() {
     ctl_json "$node" getSelf >&2 2>/dev/null || true
     echo "===== $node: getPeers =====" >&2
     ctl_json "$node" getPeers >&2 2>/dev/null || true
+    echo "===== $node: getPaths =====" >&2
+    ctl_json "$node" getPaths >&2 2>/dev/null || true
+    echo "===== $node: getTree =====" >&2
+    ctl_json "$node" getTree >&2 2>/dev/null || true
     echo "===== $node: log =====" >&2
     cat "${E2E_LOGS[$node]}" >&2 2>/dev/null || true
   done
