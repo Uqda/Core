@@ -10,7 +10,6 @@ E2E_TMP=${UQDA_E2E_TMP:-$(mktemp -d "${TMPDIR:-/tmp}/uqda-e2e.XXXXXX")}
 
 declare -a E2E_NAMESPACES=()
 declare -A E2E_PIDS=()
-declare -A E2E_SOCKETS=()
 declare -A E2E_LOGS=()
 
 fail() {
@@ -51,12 +50,16 @@ link_namespaces() {
   ip -n "$right_ns" link set "$right_if" up
 }
 
+socket_path() {
+  printf '%s/%s.sock\n' "$E2E_TMP" "$1"
+}
+
 write_node_config() {
   local node=$1 listen=$2
   shift 2
   local cfg="$E2E_TMP/$node.conf"
-  local socket="$E2E_TMP/$node.sock"
-  E2E_SOCKETS["$node"]=$socket
+  local socket
+  socket=$(socket_path "$node")
 
   {
     echo '{'
@@ -83,7 +86,8 @@ write_node_config() {
 
 start_node() {
   local ns=$1 node=$2 cfg=$3
-  local socket=${E2E_SOCKETS[$node]}
+  local socket
+  socket=$(socket_path "$node")
   local log="$E2E_TMP/$node.log"
   rm -f "$socket"
   E2E_LOGS["$node"]=$log
@@ -126,7 +130,9 @@ stop_node() {
 
 ctl_json() {
   local node=$1 command=$2
-  "$UQDACTL_BIN" -json -endpoint="unix://${E2E_SOCKETS[$node]}" "$command"
+  local socket
+  socket=$(socket_path "$node")
+  "$UQDACTL_BIN" -json -endpoint="unix://$socket" "$command"
 }
 
 node_address() {
