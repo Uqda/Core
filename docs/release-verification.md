@@ -17,7 +17,7 @@ The Sigstore signature is keyless. GitHub Actions obtains a short-lived OIDC ide
 Set the release tag and download the installer plus its verification metadata:
 
 ```bash
-TAG=v0.1.0-beta.7
+TAG=v0.1.0
 BASE="https://github.com/Uqda/Core/releases/download/$TAG"
 
 curl -fSLO "$BASE/SHA256SUMS"
@@ -49,7 +49,7 @@ On macOS, use `shasum -a 256` to compare the downloaded file with the digest in 
 GitHub CLI can independently verify the provenance attestation associated with a downloaded artifact:
 
 ```bash
-gh attestation verify ./uqda-v0.1.0-beta.7-linux-amd64.tar.gz -R Uqda/Core
+gh attestation verify ./uqda-v0.1.0-linux-amd64.tar.gz -R Uqda/Core
 ```
 
 This checks that GitHub has a valid signed attestation for the artifact digest and that it belongs to `Uqda/Core`.
