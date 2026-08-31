@@ -15,11 +15,11 @@
 
 </div>
 
-> **Uqda** (Arabic: **عُقَد**, “nodes” or “knots”) is an experimental userspace router for creating encrypted IPv6 networks over existing IPv4 or IPv6 links.
+> **Uqda** (Arabic: **عُقَد**, “nodes” or “knots”) is a userspace router for creating encrypted IPv6 networks over existing IPv4 or IPv6 links.
 
 ## Project status
 
-UQDA is experimental software. It has not been independently security-audited and should not be treated as an anonymity system. Use an IPv6 firewall and avoid exposing services that should not be reachable by other network participants.
+**v0.1.0 is the recommended stable UQDA release for supported platforms.** The project has not been independently security-audited and should not be treated as an anonymity system. Use an IPv6 firewall and avoid exposing services that should not be reachable by other network participants.
 
 ## Features
 
@@ -55,27 +55,31 @@ The build produces:
 
 The release installer detects the operating system and CPU, selects the native
 package where available, verifies it against the release `SHA256SUMS`, and then
-uses the platform package manager. Review the script before running it:
+uses the platform package manager. Stable releases also publish a Sigstore
+bundle for the checksum manifest and GitHub artifact attestations. Review the
+script before running it:
 
 ```bash
-curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.5/install.sh
+curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0/install.sh
 sudo sh install.sh
 ```
 
 To update through the same verified path while preserving the existing
-configuration:
+configuration and node identity:
 
 ```bash
-curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0-beta.5/updater.sh
+curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0/updater.sh
 sudo sh updater.sh
 ```
 
+For publisher-authenticated verification with Sigstore before installation, see
+[the release verification guide](docs/release-verification.md).
+
 Supported release paths are systemd-based Debian/Ubuntu, Fedora and immutable
 Fedora derivatives such as Bazzite, macOS, EdgeOS 2.x, VyOS 1.3, and the listed
-portable Linux/FreeBSD/OpenBSD targets. Windows users
-should download the matching `.msi` asset from the release. OpenWrt is not yet
-included in the one-command installer and remains an explicitly unvalidated
-target for this beta.
+portable Linux/FreeBSD/OpenBSD targets. Windows users should download the
+matching `.msi` asset from the release. OpenWrt is not yet included in the
+one-command installer and remains an explicitly unvalidated release target.
 
 ## Run
 
