@@ -17,7 +17,7 @@ on:
       - "tests/install_test.sh"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: beta-release
@@ -249,10 +249,15 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish prerelease
-    if: github.event_name == 'workflow_dispatch'
+    name: Publish signed prerelease
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     needs: [quality-gate, portable, debian, router, macos, windows, vendored-source, release-tools]
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      attestations: write
+      contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v6
       - name: Validate tag
@@ -268,6 +273,25 @@ jobs:
           find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
           test "$(find . -maxdepth 1 -type f | wc -l)" -ge 30
           cat SHA256SUMS
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0
+      - name: Sign checksum manifest with GitHub OIDC
+        run: |
+          cosign sign-blob --yes \
+            --bundle release-assets/SHA256SUMS.sigstore.json \
+            release-assets/SHA256SUMS
+          test -s release-assets/SHA256SUMS.sigstore.json
+      - name: Verify checksum publisher identity
+        run: |
+          identity="https://github.com/${GITHUB_REPOSITORY}/.github/workflows/release-beta.yml@refs/heads/main"
+          cosign verify-blob release-assets/SHA256SUMS \
+            --bundle release-assets/SHA256SUMS.sigstore.json \
+            --certificate-identity "$identity" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+      - name: Attest release artifacts
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-checksums: release-assets/SHA256SUMS
       - name: Publish GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}
