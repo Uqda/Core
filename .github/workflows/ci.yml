@@ -69,6 +69,38 @@ jobs:
       - name: Fuzz handshake parser
         run: go test ./src/core -run=^$ -fuzz=FuzzVersionDecode -fuzztime=15s
 
+  e2e-linux:
+    name: E2E mesh (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    needs: [lint]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: two-node, script: 2node.sh }
+          - { name: multi-hop, script: 3node-routing.sh }
+          - { name: failover, script: failover.sh }
+          - { name: loss-latency, script: loss-latency.sh }
+          - { name: secure-required, script: secure-required.sh }
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+      - name: Build UQDA
+        run: ./build
+      - name: Check namespace test prerequisites
+        run: |
+          command -v ip
+          command -v tc
+          command -v ping
+          sudo modprobe tun || true
+          test -c /dev/net/tun
+      - name: Build legacy protocol fixture
+        run: go build -o /tmp/uqda-e2e-legacy-peer ./tests/e2e/legacy_peer.go
+      - name: Run ${{ matrix.name }} E2E scenario
+        run: sudo env UQDA_LEGACY_PEER_BIN=/tmp/uqda-e2e-legacy-peer bash "tests/e2e/${{ matrix.script }}"
+
   build-linux:
     strategy:
       fail-fast: false
@@ -169,7 +201,7 @@ jobs:
 
   tests-ok:
     name: All tests passed
-    needs: [lint, codeql, vulnerability-scan, handshake-fuzz-smoke, build-linux, build-windows, build-macos, build-freebsd]
+    needs: [lint, codeql, vulnerability-scan, handshake-fuzz-smoke, e2e-linux, build-linux, build-windows, build-macos, build-freebsd]
     runs-on: ubuntu-latest
     if: ${{ !cancelled() }}
     steps:
