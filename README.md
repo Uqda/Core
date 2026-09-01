@@ -64,6 +64,26 @@ curl -fsSLO https://github.com/Uqda/Core/releases/latest/download/install.sh
 sudo sh install.sh
 ```
 
+### Homebrew on macOS
+
+The repository also provides a Homebrew Cask that invokes the same verified
+installer. It supports both Apple Silicon and Intel Macs:
+
+```bash
+brew tap uqda/core https://github.com/Uqda/Core
+brew install --cask uqda
+```
+
+To ask Homebrew to check and install the newest stable release:
+
+```bash
+brew upgrade --cask --greedy-latest uqda
+```
+
+The Cask intentionally delegates package selection and SHA-256 verification to
+the release installer, so the direct and Homebrew paths have the same platform
+detection and checksum protection.
+
 To update through the same verified path while preserving the existing
 configuration and node identity:
 
