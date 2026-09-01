@@ -47,17 +47,22 @@ jobs:
           UQDA_TEST_VERSION: ${{ env.UQDA_VERSION }}
         run: sh tests/install_test.sh
       - name: Shell syntax
-        run: sh -n install.sh updater.sh tests/install_test.sh contrib/gateway/uqda-gateway tests/gateway_test.sh
-      - name: Gateway safety tests
-        run: sh tests/gateway_test.sh
-      - name: Stage gateway helper
+        run: sh -n install.sh updater.sh tests/install_test.sh contrib/gateway/uqda-gateway contrib/performance/uqda-latency tests/gateway_test.sh tests/latency_test.sh
+      - name: Network helper tests
+        run: |
+          sh tests/gateway_test.sh
+          sh tests/latency_test.sh
+      - name: Stage network helpers
         run: |
           cp contrib/gateway/uqda-gateway uqda-gateway
-          chmod 0755 uqda-gateway
+          cp contrib/performance/uqda-latency uqda-latency
+          chmod 0755 uqda-gateway uqda-latency
       - uses: actions/upload-artifact@v4
         with:
-          name: gateway-helper
-          path: uqda-gateway
+          name: network-helpers
+          path: |
+            uqda-gateway
+            uqda-latency
           if-no-files-found: error
 
   portable:
