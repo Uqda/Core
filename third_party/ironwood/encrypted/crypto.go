@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/binary"
 
+	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/nacl/box"
 
 	"github.com/Arceliar/ironwood/encrypted/internal/e2c"
@@ -146,13 +146,21 @@ type groupAuth struct {
 	secret  [32]byte
 }
 
+var groupAuthSalt = []byte("ironwood/encrypted/group-auth/v2")
+
 func newGroupAuth(password string) groupAuth {
 	if password == "" {
 		return groupAuth{}
 	}
+	passwordBytes := []byte(password)
+	key := argon2.IDKey(passwordBytes, groupAuthSalt, 3, 64*1024, 4, 32)
+	var secret [32]byte
+	copy(secret[:], key)
+	clear(passwordBytes)
+	clear(key)
 	return groupAuth{
 		enabled: true,
-		secret:  sha256.Sum256(append([]byte("ironwood/encrypted\x00"), []byte(password)...)),
+		secret:  secret,
 	}
 }
 
