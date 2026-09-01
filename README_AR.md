@@ -66,6 +66,33 @@ sudo sh install.sh
 
 <div dir="rtl" align="right">
 
+### التثبيت بواسطة Homebrew على macOS
+
+يوفر المستودع أيضًا حزمة Homebrew Cask تشغّل برنامج التثبيت المتحقق منه نفسه،
+وتدعم أجهزة Apple Silicon وIntel:
+
+</div>
+
+```bash
+brew tap uqda/core https://github.com/Uqda/Core
+brew install --cask uqda
+```
+
+<div dir="rtl" align="right">
+
+ولجعل Homebrew يبحث عن أحدث إصدار مستقر ويثبّته:
+
+</div>
+
+```bash
+brew upgrade --cask --greedy-latest uqda
+```
+
+<div dir="rtl" align="right">
+
+يفوّض Homebrew اختيار حزمة المعالج والتحقق من SHA-256 إلى برنامج التثبيت؛
+لذلك تستخدم طريقة Homebrew والطريقة المباشرة الحماية نفسها.
+
 وللتحديث عبر المسار المتحقق منه نفسه مع الاحتفاظ بملف الإعداد وهوية العقدة الحالية:
 
 </div>
