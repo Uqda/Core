@@ -378,7 +378,7 @@ rollback() {
 case "$COMMAND" in
 	help|-h|--help) usage ;;
 	plan) detect_backend; plan ;;
-	apply) detect_backend; [ "$(id -u)" -eq 0 ] || die "apply must run as root"; [ -n "$WAN" ] || die "--wan is required"; [ -n "$LAN" ] || die "--lan is required"; [ "$PROFILE" != cafe ] || [ "$PUBLIC_ACK" -eq 1 ] || die "cafe profile requires --public acknowledgement"; case "$BACKEND" in networkmanager) apply_networkmanager ;; openwrt) apply_openwrt ;; *) die "unsupported backend: $BACKEND" ;; esac ;;
+	apply) detect_backend; [ "$PROFILE" != cafe ] || [ "$PUBLIC_ACK" -eq 1 ] || die "cafe profile requires --public acknowledgement"; [ "$(id -u)" -eq 0 ] || die "apply must run as root"; [ -n "$WAN" ] || die "--wan is required"; [ -n "$LAN" ] || die "--lan is required"; case "$BACKEND" in networkmanager) apply_networkmanager ;; openwrt) apply_openwrt ;; *) die "unsupported backend: $BACKEND" ;; esac ;;
 	status) detect_backend; status ;;
 	rollback) detect_backend; rollback ;;
 	*) usage; die "unknown command: $COMMAND" ;;
