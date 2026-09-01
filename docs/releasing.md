@@ -34,3 +34,11 @@ When Apple credentials are absent, the workflow publishes explicitly named
 verification still applies. If paid Apple credentials are added later, the
 same workflow automatically signs and notarizes the macOS binaries and
 installer. Never disable Gatekeeper globally.
+
+## Homebrew Cask
+
+`Casks/uqda.rb` uses `version :latest` and invokes the stable release's
+`install.sh`. The installer, rather than the Cask, selects the native macOS
+architecture and verifies the downloaded package against `SHA256SUMS`. A new
+stable release therefore becomes available through Homebrew without editing a
+version or checksum in the Cask. Keep the Cask syntax/style CI job green.
