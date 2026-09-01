@@ -175,6 +175,19 @@ jobs:
       - name: Unit tests
         run: go test -v ./...
 
+  homebrew-cask:
+    name: Homebrew Cask
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate Cask syntax and style
+        run: |
+          ruby -c Casks/uqda.rb
+          tap_dir="$(brew --repository)/Library/Taps/uqda/homebrew-core"
+          mkdir -p "$(dirname "$tap_dir")"
+          ln -s "$GITHUB_WORKSPACE" "$tap_dir"
+          brew style --cask uqda/core/uqda
+
   build-freebsd:
     strategy:
       fail-fast: false
@@ -203,7 +216,7 @@ jobs:
 
   tests-ok:
     name: All tests passed
-    needs: [lint, codeql, vulnerability-scan, handshake-fuzz-smoke, e2e-linux, build-linux, build-windows, build-macos, build-freebsd]
+    needs: [lint, codeql, vulnerability-scan, handshake-fuzz-smoke, e2e-linux, build-linux, build-windows, build-macos, homebrew-cask, build-freebsd]
     runs-on: ubuntu-latest
     if: ${{ !cancelled() }}
     steps:
