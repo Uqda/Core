@@ -15,6 +15,19 @@ OUT=$(sh "$TOOL" plan --backend openwrt)
 printf '%s\n' "$OUT" | grep -F 'WAN=REQUIRED; Wi-Fi/LAN=REQUIRED' >/dev/null
 printf '%s\n' "$OUT" | grep -F 'No changes made' >/dev/null
 
+OUT=$(sh "$TOOL" plan --backend networkmanager --profile cafe --wan eth0 --lan wlan0 --ssid Cafe-UQDA)
+printf '%s\n' "$OUT" | grep -F 'profile=cafe' >/dev/null
+printf '%s\n' "$OUT" | grep -F 'Isolate Wi-Fi clients' >/dev/null
+printf '%s\n' "$OUT" | grep -F 'requires --public' >/dev/null
+
+ERR_FILE=$ROOT/gateway-test.err
+if sh "$TOOL" apply --backend networkmanager --profile cafe --wan eth0 --lan wlan0 >"$ERR_FILE" 2>&1; then
+	echo 'cafe apply accepted without public acknowledgement' >&2
+	exit 1
+fi
+grep -F 'requires --public acknowledgement' "$ERR_FILE" >/dev/null
+rm -f "$ERR_FILE"
+
 if sh "$TOOL" plan --backend networkmanager --wan 'eth0;bad' --lan wlan0 >/dev/null 2>&1; then
 	echo 'unsafe interface name was accepted' >&2
 	exit 1
