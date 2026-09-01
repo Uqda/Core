@@ -224,7 +224,11 @@ EOF
 		nmcli connection delete "$NAME" >/dev/null
 	fi
 	nmcli device wifi hotspot ifname "$LAN" con-name "$NAME" ssid "$SSID" password "$PASSWORD" >/dev/null
+	# The hotspot helper activates immediately. Take it down until every security
+	# property and, for café mode, the host firewall are in place.
+	nmcli connection down "$NAME" >/dev/null 2>&1 || true
 	nmcli connection modify "$NAME" connection.autoconnect yes ipv4.method shared ipv6.method manual ipv6.addresses "$GATEWAY_ADDRESS" ipv6.never-default yes
+	nmcli connection modify "$NAME" wifi-sec.key-mgmt wpa-psk wifi-sec.proto rsn wifi-sec.pmf optional wifi-sec.wps-method disabled
 	if [ "$PROFILE" = cafe ]; then
 		nmcli connection modify "$NAME" 802-11-wireless.ap-isolation yes
 		write_cafe_nftables
