@@ -1,0 +1,242 @@
+#!/bin/sh
+# Configure one UQDA node as a small home gateway.
+# POSIX shell is intentional: the same entry point runs on Debian and OpenWrt.
+
+set -eu
+
+NAME=uqda-gateway
+STATE_DIR=${UQDA_GATEWAY_STATE_DIR:-/var/lib/uqda-gateway}
+UQDA_CONFIG=${UQDA_CONFIG:-/etc/uqda.conf}
+COMMAND=${1:-help}
+[ "$#" -eq 0 ] || shift
+
+BACKEND=auto
+WAN=
+LAN=
+SSID=UQDA
+COUNTRY=
+PASSWORD_FILE=
+APPLY=0
+
+say() { printf '%s\n' "[UQDA gateway] $*"; }
+die() { printf '%s\n' "[UQDA gateway] ERROR: $*" >&2; exit 1; }
+need() { command -v "$1" >/dev/null 2>&1 || die "required command not found: $1"; }
+
+usage() {
+	cat <<'EOF'
+Usage:
+  uqda-gateway plan     --wan IFACE --lan IFACE [options]
+  sudo uqda-gateway apply    --wan IFACE --lan IFACE [options]
+  sudo uqda-gateway status   [--backend auto|networkmanager|openwrt]
+  sudo uqda-gateway rollback [--backend auto|networkmanager|openwrt]
+
+Options:
+  --backend NAME       auto, networkmanager, or openwrt
+  --wan IFACE          Internet-facing Ethernet interface/network
+  --lan IFACE          AP-capable Wi-Fi interface (radio device on OpenWrt)
+  --ssid NAME          Wi-Fi name (default: UQDA)
+  --country CODE       Two-letter Wi-Fi regulatory country code
+  --password-file FILE File containing the Wi-Fi password (8-63 characters)
+  --config FILE        UQDA configuration (default: /etc/uqda.conf)
+
+Safety:
+  plan is read-only. apply requires explicit interfaces, root, and a password
+  file. Never pass a Wi-Fi password on the command line or commit it to Git.
+EOF
+}
+
+while [ "$#" -gt 0 ]; do
+	case "$1" in
+		--backend) [ "$#" -ge 2 ] || die "--backend needs a value"; BACKEND=$2; shift 2 ;;
+		--wan) [ "$#" -ge 2 ] || die "--wan needs a value"; WAN=$2; shift 2 ;;
+		--lan) [ "$#" -ge 2 ] || die "--lan needs a value"; LAN=$2; shift 2 ;;
+		--ssid) [ "$#" -ge 2 ] || die "--ssid needs a value"; SSID=$2; shift 2 ;;
+		--country) [ "$#" -ge 2 ] || die "--country needs a value"; COUNTRY=$2; shift 2 ;;
+		--password-file) [ "$#" -ge 2 ] || die "--password-file needs a value"; PASSWORD_FILE=$2; shift 2 ;;
+		--config) [ "$#" -ge 2 ] || die "--config needs a value"; UQDA_CONFIG=$2; shift 2 ;;
+		-h|--help) usage; exit 0 ;;
+		*) die "unknown option: $1" ;;
+	esac
+done
+
+detect_backend() {
+	[ "$BACKEND" = auto ] || return
+	if [ -r /etc/openwrt_release ] && command -v uci >/dev/null 2>&1; then
+		BACKEND=openwrt
+	elif command -v nmcli >/dev/null 2>&1; then
+		BACKEND=networkmanager
+	else
+		die "cannot detect a supported backend (need NetworkManager or OpenWrt UCI)"
+	fi
+}
+
+validate_name() {
+	case "$1" in *[!A-Za-z0-9_.:-]*|'') die "invalid interface/network name: $1" ;; esac
+}
+
+validate_country() {
+	[ -z "$COUNTRY" ] && return
+	case "$COUNTRY" in [A-Z][A-Z]) : ;; *) die "--country must be a two-letter uppercase code, for example DE" ;; esac
+}
+
+read_password() {
+	[ -n "$PASSWORD_FILE" ] || die "--password-file is required for apply"
+	[ -f "$PASSWORD_FILE" ] || die "password file does not exist: $PASSWORD_FILE"
+	PASSWORD=$(sed -n '1p' "$PASSWORD_FILE")
+	case ${#PASSWORD} in 8|9|[1-5][0-9]|6[0-3]) : ;; *) die "Wi-Fi password must be 8-63 characters" ;; esac
+}
+
+uqda_subnet() {
+	need uqda
+	[ -r "$UQDA_CONFIG" ] || die "cannot read UQDA configuration: $UQDA_CONFIG"
+	SUBNET=$(uqda -useconffile "$UQDA_CONFIG" -subnet 2>/dev/null) || die "could not derive UQDA subnet"
+	case "$SUBNET" in *::/64) : ;; *) die "unexpected UQDA subnet: $SUBNET" ;; esac
+	PREFIX=${SUBNET%/64}
+	GATEWAY_ADDRESS=${PREFIX%::}::1/64
+}
+
+plan() {
+	[ -n "$WAN" ] && validate_name "$WAN"
+	[ -n "$LAN" ] && validate_name "$LAN"
+	say "backend=$BACKEND"
+	say "WAN=${WAN:-REQUIRED}; Wi-Fi/LAN=${LAN:-REQUIRED}; SSID=$SSID"
+	say "1. Verify UQDA is installed, running, and owns a routed /64."
+	say "2. Create an isolated WPA2/WPA3 access point; share normal IPv4 Internet through $WAN."
+	say "3. Advertise the UQDA /64 to clients with IPv6 SLAAC and enable forwarding."
+	say "4. Keep the UQDA admin API on its local Unix socket; do not expose it on Wi-Fi."
+	say "5. Save owned configuration in $STATE_DIR so rollback is targeted."
+	[ -n "$WAN" ] && [ -n "$LAN" ] || say "No changes made. Re-run with explicit --wan and --lan values."
+}
+
+apply_networkmanager() {
+	need nmcli; need ip; need sysctl; need radvd
+	validate_name "$WAN"; validate_name "$LAN"
+	validate_country
+	ip link show dev "$WAN" >/dev/null 2>&1 || die "WAN interface not found: $WAN"
+	ip link show dev "$LAN" >/dev/null 2>&1 || die "Wi-Fi interface not found: $LAN"
+	[ "$WAN" != "$LAN" ] || die "WAN and LAN must be different interfaces"
+	uqda_subnet; read_password
+	mkdir -p "$STATE_DIR"
+	if [ ! -e "$STATE_DIR/owned" ]; then
+		[ ! -e /etc/radvd.conf ] || cp -p /etc/radvd.conf "$STATE_DIR/radvd.before"
+		[ ! -e /etc/sysctl.d/99-uqda-gateway.conf ] || cp -p /etc/sysctl.d/99-uqda-gateway.conf "$STATE_DIR/sysctl.before"
+	fi
+	install -m 600 /dev/null "$STATE_DIR/owned"
+	printf '%s\n' "$WAN" >"$STATE_DIR/wan"
+	printf '%s\n' "$LAN" >"$STATE_DIR/lan"
+	printf '%s\n' "$GATEWAY_ADDRESS" >"$STATE_DIR/address"
+	cat >"$STATE_DIR/radvd.conf" <<EOF
+interface $LAN {
+  AdvSendAdvert on;
+  AdvDefaultLifetime 0;
+  prefix $SUBNET { AdvOnLink on; AdvAutonomous on; };
+  route 0200::/7 { AdvRoutePreference high; };
+};
+EOF
+	install -m 644 "$STATE_DIR/radvd.conf" /etc/radvd.conf
+	cat >"$STATE_DIR/99-uqda-gateway.conf" <<'EOF'
+net.ipv4.ip_forward=1
+net.ipv6.conf.all.forwarding=1
+EOF
+	install -m 644 "$STATE_DIR/99-uqda-gateway.conf" /etc/sysctl.d/99-uqda-gateway.conf
+	sysctl --system >/dev/null
+	if nmcli -t -f NAME connection show | grep -Fx "$NAME" >/dev/null 2>&1; then
+		nmcli connection delete "$NAME" >/dev/null
+	fi
+	nmcli device wifi hotspot ifname "$LAN" con-name "$NAME" ssid "$SSID" password "$PASSWORD" >/dev/null
+	nmcli connection modify "$NAME" connection.autoconnect yes ipv4.method shared ipv6.method manual ipv6.addresses "$GATEWAY_ADDRESS" ipv6.never-default yes
+	if [ -n "$COUNTRY" ]; then
+		need iw
+		iw reg set "$COUNTRY"
+		nmcli radio wifi on >/dev/null
+	fi
+	nmcli connection up "$NAME" >/dev/null
+	if command -v systemctl >/dev/null 2>&1; then systemctl enable --now radvd >/dev/null; else radvd -C /etc/radvd.conf; fi
+	say "gateway applied; connect to Wi-Fi '$SSID'"
+}
+
+apply_openwrt() {
+	need uci; need ubus
+	validate_name "$WAN"; validate_name "$LAN"; validate_country; uqda_subnet; read_password
+	mkdir -p "$STATE_DIR"
+	uci export network >"$STATE_DIR/network.before"
+	uci export wireless >"$STATE_DIR/wireless.before"
+	uci export dhcp >"$STATE_DIR/dhcp.before"
+	uci export firewall >"$STATE_DIR/firewall.before"
+	uci -q delete network.uqda_lan || true
+	uci set network.uqda_lan=interface
+	uci set network.uqda_lan.proto=static
+	uci set network.uqda_lan.ipaddr=192.168.82.1
+	uci set network.uqda_lan.netmask=255.255.255.0
+	uci add_list network.uqda_lan.ip6addr="$GATEWAY_ADDRESS"
+	uci -q delete wireless.uqda_gateway || true
+	uci set wireless.uqda_gateway=wifi-iface
+	uci set wireless.uqda_gateway.device="$LAN"
+	uci set wireless.uqda_gateway.mode=ap
+	uci set wireless.uqda_gateway.network=uqda_lan
+	uci set wireless.uqda_gateway.ssid="$SSID"
+	uci set wireless.uqda_gateway.encryption=sae-mixed
+	uci set wireless.uqda_gateway.key="$PASSWORD"
+	[ -z "$COUNTRY" ] || uci set wireless."$LAN".country="$COUNTRY"
+	uci -q delete dhcp.uqda_lan || true
+	uci set dhcp.uqda_lan=dhcp
+	uci set dhcp.uqda_lan.interface=uqda_lan
+	uci set dhcp.uqda_lan.start=100
+	uci set dhcp.uqda_lan.limit=150
+	uci set dhcp.uqda_lan.leasetime=12h
+	uci set dhcp.uqda_lan.ra=server
+	uci set dhcp.uqda_lan.dhcpv6=server
+	uci -q delete firewall.uqda_lan || true
+	uci set firewall.uqda_lan=zone
+	uci set firewall.uqda_lan.name=uqda_lan
+	uci add_list firewall.uqda_lan.network=uqda_lan
+	uci set firewall.uqda_lan.input=ACCEPT
+	uci set firewall.uqda_lan.output=ACCEPT
+	uci set firewall.uqda_lan.forward=ACCEPT
+	uci -q delete firewall.uqda_to_wan || true
+	uci set firewall.uqda_to_wan=forwarding
+	uci set firewall.uqda_to_wan.src=uqda_lan
+	uci set firewall.uqda_to_wan.dest="$WAN"
+	uci commit network; uci commit wireless; uci commit dhcp; uci commit firewall
+	/etc/init.d/network reload; wifi reload; /etc/init.d/odhcpd restart; /etc/init.d/firewall restart
+	say "OpenWrt gateway applied; connect to Wi-Fi '$SSID'"
+}
+
+status() {
+	say "backend=$BACKEND"
+	if [ "$BACKEND" = networkmanager ]; then
+		nmcli -f NAME,TYPE,DEVICE connection show --active 2>/dev/null | grep -E "(^NAME|^$NAME[[:space:]])" || true
+		[ -r "$STATE_DIR/address" ] && say "UQDA LAN address=$(cat "$STATE_DIR/address")"
+	else
+		uci show network.uqda_lan 2>/dev/null || say "gateway is not configured"
+		uci show wireless.uqda_gateway 2>/dev/null | sed '/\.key=/s/=.*/=<redacted>/' || true
+	fi
+	uqdactl getSelf 2>/dev/null || say "run 'sudo uqdactl getSelf' to inspect the node"
+}
+
+rollback() {
+	[ "$(id -u)" -eq 0 ] || die "rollback must run as root"
+	if [ "$BACKEND" = networkmanager ]; then
+		nmcli connection delete "$NAME" >/dev/null 2>&1 || true
+		if [ -r "$STATE_DIR/sysctl.before" ]; then cp -p "$STATE_DIR/sysctl.before" /etc/sysctl.d/99-uqda-gateway.conf; else rm -f /etc/sysctl.d/99-uqda-gateway.conf; fi
+		if [ -r "$STATE_DIR/radvd.before" ]; then cp -p "$STATE_DIR/radvd.before" /etc/radvd.conf; else rm -f /etc/radvd.conf; fi
+		command -v systemctl >/dev/null 2>&1 && systemctl disable --now radvd >/dev/null 2>&1 || true
+	else
+		for section in network wireless dhcp firewall; do
+			[ -r "$STATE_DIR/$section.before" ] || continue
+			uci import "$section" <"$STATE_DIR/$section.before"; uci commit "$section"
+		done
+		/etc/init.d/network reload; wifi reload; /etc/init.d/odhcpd restart; /etc/init.d/firewall restart
+	fi
+	rm -f "$STATE_DIR/owned"
+	say "gateway-owned configuration rolled back"
+}
+
+case "$COMMAND" in
+	help|-h|--help) usage ;;
+	plan) detect_backend; plan ;;
+	apply) detect_backend; [ "$(id -u)" -eq 0 ] || die "apply must run as root"; [ -n "$WAN" ] || die "--wan is required"; [ -n "$LAN" ] || die "--lan is required"; case "$BACKEND" in networkmanager) apply_networkmanager ;; openwrt) apply_openwrt ;; *) die "unsupported backend: $BACKEND" ;; esac ;;
+	status) detect_backend; status ;;
+	rollback) detect_backend; rollback ;;
+	*) usage; die "unknown command: $COMMAND" ;;
+esac
