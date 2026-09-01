@@ -30,3 +30,6 @@ Add or update tests for behavior changes. Keep platform-specific code behind the
 - Keep generated binaries, local configurations, and editor files out of commits.
 
 By contributing, you agree that your work is licensed under the repository's license.
+
+Maintainers should follow [the stable release guide](docs/releasing.md) when a
+version is ready to publish.

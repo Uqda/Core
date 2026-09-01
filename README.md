@@ -19,7 +19,7 @@
 
 ## Project status
 
-**v0.1.1 is the recommended stable UQDA release for supported platforms.** The project has not been independently security-audited and should not be treated as an anonymity system. Use an IPv6 firewall and avoid exposing services that should not be reachable by other network participants.
+**The latest stable UQDA release is recommended for supported platforms.** The project has not been independently security-audited and should not be treated as an anonymity system. Use an IPv6 firewall and avoid exposing services that should not be reachable by other network participants.
 
 ## Features
 
@@ -60,7 +60,7 @@ bundle for the checksum manifest and GitHub artifact attestations. Review the
 script before running it:
 
 ```bash
-curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.1/install.sh
+curl -fsSLO https://github.com/Uqda/Core/releases/latest/download/install.sh
 sudo sh install.sh
 ```
 
@@ -68,7 +68,7 @@ To update through the same verified path while preserving the existing
 configuration and node identity:
 
 ```bash
-curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.1/updater.sh
+curl -fsSLO https://github.com/Uqda/Core/releases/latest/download/updater.sh
 sudo sh updater.sh
 ```
 
