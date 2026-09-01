@@ -27,6 +27,20 @@ test -f uqdactl || (echo "uqdactl binary not found"; exit 1)
 test -f contrib/macos/uqda.plist || (echo "contrib/macos/uqda.plist not found"; exit 1)
 test -f contrib/semver/version.sh || (echo "contrib/semver/version.sh not found"; exit 1)
 
+# Stable releases sign the Mach-O executables before packaging. Keep this
+# optional so contributors can still build local and CI smoke-test packages.
+if [ -n "${MACOS_APPLICATION_IDENTITY:-}" ] || [ -n "${MACOS_INSTALLER_IDENTITY:-}" ]; then
+  test -n "${MACOS_APPLICATION_IDENTITY:-}" || (echo "MACOS_APPLICATION_IDENTITY is required"; exit 1)
+  test -n "${MACOS_INSTALLER_IDENTITY:-}" || (echo "MACOS_INSTALLER_IDENTITY is required"; exit 1)
+  command -v codesign >/dev/null 2>&1 || (echo "codesign not found"; exit 1)
+  command -v productsign >/dev/null 2>&1 || (echo "productsign not found"; exit 1)
+
+  codesign --force --options runtime --timestamp --sign "$MACOS_APPLICATION_IDENTITY" uqda
+  codesign --force --options runtime --timestamp --sign "$MACOS_APPLICATION_IDENTITY" uqdactl
+  codesign --verify --strict --verbose=2 uqda
+  codesign --verify --strict --verbose=2 uqdactl
+fi
+
 # Delete the pkgbuild folder if it already exists
 test -d pkgbuild && rm -rf pkgbuild
 
@@ -125,5 +139,16 @@ cat > pkgbuild/flat/Distribution << EOF
 </installer-script>
 EOF
 
-# Finally pack the .pkg
-( cd pkgbuild/flat && xar --compression none -cf "../../${PKGNAME}-${PKGVERSION}-macos-${PKGARCH}.pkg" * )
+# Finally pack the .pkg and, for stable releases, sign it with the dedicated
+# Developer ID Installer identity.
+PACKAGE="${PKGNAME}-${PKGVERSION}-macos-${PKGARCH}.pkg"
+UNSIGNED_PACKAGE="${PKGNAME}-${PKGVERSION}-macos-${PKGARCH}-unsigned.pkg"
+( cd pkgbuild/flat && xar --compression none -cf "../../${UNSIGNED_PACKAGE}" * )
+
+if [ -n "${MACOS_INSTALLER_IDENTITY:-}" ]; then
+  productsign --sign "$MACOS_INSTALLER_IDENTITY" "$UNSIGNED_PACKAGE" "$PACKAGE"
+  rm "$UNSIGNED_PACKAGE"
+  pkgutil --check-signature "$PACKAGE"
+else
+  mv "$UNSIGNED_PACKAGE" "$PACKAGE"
+fi
