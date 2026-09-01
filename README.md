@@ -28,6 +28,8 @@ configuration, every supported installation path, operation, and development.
 Want one box to serve every phone and computer at home? Follow the
 [UQDA home gateway guide](docs/HOME_GATEWAY.md) for Raspberry Pi OS,
 Debian/Ubuntu appliances, and the experimental OpenWrt profile.
+For a public visitor hotspot, use the hardened
+[UQDA café gateway profile](docs/CAFE_GATEWAY.md).
 
 ## Features
 

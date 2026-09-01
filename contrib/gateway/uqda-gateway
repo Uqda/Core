@@ -11,11 +11,13 @@ COMMAND=${1:-help}
 [ "$#" -eq 0 ] || shift
 
 BACKEND=auto
+PROFILE=home
 WAN=
 LAN=
 SSID=UQDA
 COUNTRY=
 PASSWORD_FILE=
+PUBLIC_ACK=0
 APPLY=0
 
 say() { printf '%s\n' "[UQDA gateway] $*"; }
@@ -32,11 +34,13 @@ Usage:
 
 Options:
   --backend NAME       auto, networkmanager, or openwrt
+  --profile NAME       home (default) or cafe
   --wan IFACE          Internet-facing Ethernet interface/network
   --lan IFACE          AP-capable Wi-Fi interface (radio device on OpenWrt)
   --ssid NAME          Wi-Fi name (default: UQDA)
   --country CODE       Two-letter Wi-Fi regulatory country code
   --password-file FILE File containing the Wi-Fi password (8-63 characters)
+  --public             Acknowledge operation of an untrusted public network
   --config FILE        UQDA configuration (default: /etc/uqda.conf)
 
 Safety:
@@ -48,16 +52,20 @@ EOF
 while [ "$#" -gt 0 ]; do
 	case "$1" in
 		--backend) [ "$#" -ge 2 ] || die "--backend needs a value"; BACKEND=$2; shift 2 ;;
+		--profile) [ "$#" -ge 2 ] || die "--profile needs a value"; PROFILE=$2; shift 2 ;;
 		--wan) [ "$#" -ge 2 ] || die "--wan needs a value"; WAN=$2; shift 2 ;;
 		--lan) [ "$#" -ge 2 ] || die "--lan needs a value"; LAN=$2; shift 2 ;;
 		--ssid) [ "$#" -ge 2 ] || die "--ssid needs a value"; SSID=$2; shift 2 ;;
 		--country) [ "$#" -ge 2 ] || die "--country needs a value"; COUNTRY=$2; shift 2 ;;
 		--password-file) [ "$#" -ge 2 ] || die "--password-file needs a value"; PASSWORD_FILE=$2; shift 2 ;;
+		--public) PUBLIC_ACK=1; shift ;;
 		--config) [ "$#" -ge 2 ] || die "--config needs a value"; UQDA_CONFIG=$2; shift 2 ;;
 		-h|--help) usage; exit 0 ;;
 		*) die "unknown option: $1" ;;
 	esac
 done
+
+case "$PROFILE" in home|cafe) : ;; *) die "--profile must be home or cafe" ;; esac
 
 detect_backend() {
 	[ "$BACKEND" = auto ] || return 0
@@ -99,13 +107,76 @@ plan() {
 	[ -n "$WAN" ] && validate_name "$WAN"
 	[ -n "$LAN" ] && validate_name "$LAN"
 	say "backend=$BACKEND"
-	say "WAN=${WAN:-REQUIRED}; Wi-Fi/LAN=${LAN:-REQUIRED}; SSID=$SSID"
+	say "profile=$PROFILE; WAN=${WAN:-REQUIRED}; Wi-Fi/LAN=${LAN:-REQUIRED}; SSID=$SSID"
 	say "1. Verify UQDA is installed, running, and owns a routed /64."
 	say "2. Create an isolated WPA2/WPA3 access point; share normal IPv4 Internet through $WAN."
 	say "3. Advertise the UQDA /64 to clients with IPv6 SLAAC and enable forwarding."
 	say "4. Keep the UQDA admin API on its local Unix socket; do not expose it on Wi-Fi."
 	say "5. Save owned configuration in $STATE_DIR so rollback is targeted."
+	if [ "$PROFILE" = cafe ]; then
+		say "6. Isolate Wi-Fi clients, block access to the gateway and private upstream networks."
+		say "7. Permit only DHCP, DNS and essential IPv6 control traffic to the gateway."
+		say "Public operation requires --public during apply; review local law and acceptable-use policy."
+	fi
 	[ -n "$WAN" ] && [ -n "$LAN" ] || say "No changes made. Re-run with explicit --wan and --lan values."
+}
+
+write_cafe_nftables() {
+	need nft
+	NFT_BIN=$(command -v nft)
+	if command -v systemctl >/dev/null 2>&1 && [ -e /etc/systemd/system/uqda-gateway-firewall.service ] && [ ! -e "$STATE_DIR/firewall-service-owned" ]; then
+		die "refusing to replace an existing UQDA gateway firewall service"
+	fi
+	cat >"$STATE_DIR/cafe.nft" <<EOF
+table inet uqda_cafe {
+  chain input {
+    type filter hook input priority -20; policy accept;
+    iifname "$LAN" ct state established,related accept
+    iifname "$LAN" udp dport { 53, 67, 68, 546, 547 } accept
+    iifname "$LAN" tcp dport 53 accept
+    iifname "$LAN" meta l4proto ipv6-icmp icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem, nd-router-solicit, nd-neighbor-solicit, nd-neighbor-advert } accept
+    iifname "$LAN" drop
+  }
+  chain forward {
+    type filter hook forward priority -20; policy accept;
+    iifname "$LAN" oifname "$LAN" drop
+    iifname "$LAN" ip daddr { 10.0.0.0/8, 100.64.0.0/10, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16 } drop
+    iifname "$LAN" ip6 daddr { fc00::/7, fe80::/10 } drop
+  }
+}
+EOF
+	nft delete table inet uqda_cafe >/dev/null 2>&1 || true
+	nft -f "$STATE_DIR/cafe.nft"
+	if command -v systemctl >/dev/null 2>&1; then
+		cat >/etc/systemd/system/uqda-gateway-firewall.service <<EOF
+[Unit]
+Description=UQDA cafe gateway firewall
+After=NetworkManager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=$NFT_BIN -f $STATE_DIR/cafe.nft
+ExecStop=-$NFT_BIN delete table inet uqda_cafe
+
+[Install]
+WantedBy=multi-user.target
+EOF
+		: >"$STATE_DIR/firewall-service-owned"
+		systemctl daemon-reload
+		systemctl enable uqda-gateway-firewall.service >/dev/null
+	fi
+}
+
+remove_cafe_networkmanager() {
+	[ -e "$STATE_DIR/firewall-service-owned" ] || return 0
+	nft delete table inet uqda_cafe >/dev/null 2>&1 || true
+	if command -v systemctl >/dev/null 2>&1; then
+		systemctl disable uqda-gateway-firewall.service >/dev/null 2>&1 || true
+		rm -f /etc/systemd/system/uqda-gateway-firewall.service
+		systemctl daemon-reload
+	fi
+	rm -f "$STATE_DIR/firewall-service-owned" "$STATE_DIR/cafe.nft"
 }
 
 apply_networkmanager() {
@@ -153,7 +224,18 @@ EOF
 		nmcli connection delete "$NAME" >/dev/null
 	fi
 	nmcli device wifi hotspot ifname "$LAN" con-name "$NAME" ssid "$SSID" password "$PASSWORD" >/dev/null
+	# The hotspot helper activates immediately. Take it down until every security
+	# property and, for café mode, the host firewall are in place.
+	nmcli connection down "$NAME" >/dev/null 2>&1 || true
 	nmcli connection modify "$NAME" connection.autoconnect yes ipv4.method shared ipv6.method manual ipv6.addresses "$GATEWAY_ADDRESS" ipv6.never-default yes
+	nmcli connection modify "$NAME" wifi-sec.key-mgmt wpa-psk wifi-sec.proto rsn wifi-sec.pmf optional wifi-sec.wps-method disabled
+	if [ "$PROFILE" = cafe ]; then
+		nmcli connection modify "$NAME" 802-11-wireless.ap-isolation yes
+		write_cafe_nftables
+	else
+		remove_cafe_networkmanager
+	fi
+	printf '%s\n' "$PROFILE" >"$STATE_DIR/profile"
 	if [ -n "$COUNTRY" ]; then
 		need iw
 		iw reg set "$COUNTRY"
@@ -186,6 +268,8 @@ apply_openwrt() {
 	uci set wireless.uqda_gateway.ssid="$SSID"
 	uci set wireless.uqda_gateway.encryption=sae-mixed
 	uci set wireless.uqda_gateway.key="$PASSWORD"
+	uci -q delete wireless.uqda_gateway.isolate || true
+	[ "$PROFILE" != cafe ] || uci set wireless.uqda_gateway.isolate=1
 	[ -z "$COUNTRY" ] || uci set wireless."$LAN".country="$COUNTRY"
 	uci -q delete dhcp.uqda_lan || true
 	uci set dhcp.uqda_lan=dhcp
@@ -199,13 +283,58 @@ apply_openwrt() {
 	uci set firewall.uqda_lan=zone
 	uci set firewall.uqda_lan.name=uqda_lan
 	uci add_list firewall.uqda_lan.network=uqda_lan
-	uci set firewall.uqda_lan.input=ACCEPT
+	if [ "$PROFILE" = cafe ]; then uci set firewall.uqda_lan.input=REJECT; else uci set firewall.uqda_lan.input=ACCEPT; fi
 	uci set firewall.uqda_lan.output=ACCEPT
-	uci set firewall.uqda_lan.forward=ACCEPT
+	if [ "$PROFILE" = cafe ]; then uci set firewall.uqda_lan.forward=REJECT; else uci set firewall.uqda_lan.forward=ACCEPT; fi
 	uci -q delete firewall.uqda_to_wan || true
 	uci set firewall.uqda_to_wan=forwarding
 	uci set firewall.uqda_to_wan.src=uqda_lan
 	uci set firewall.uqda_to_wan.dest="$WAN"
+	for service in dns dhcp dhcpv6 icmpv6 private4 private6; do uci -q delete firewall."uqda_cafe_$service" || true; done
+	if [ "$PROFILE" = cafe ]; then
+		uci set firewall.uqda_cafe_dns=rule
+		uci set firewall.uqda_cafe_dns.name='UQDA-Cafe-DNS'
+		uci set firewall.uqda_cafe_dns.src=uqda_lan
+		uci set firewall.uqda_cafe_dns.proto='tcp udp'
+		uci set firewall.uqda_cafe_dns.dest_port=53
+		uci set firewall.uqda_cafe_dns.target=ACCEPT
+		uci set firewall.uqda_cafe_dhcp=rule
+		uci set firewall.uqda_cafe_dhcp.name='UQDA-Cafe-DHCP'
+		uci set firewall.uqda_cafe_dhcp.src=uqda_lan
+		uci set firewall.uqda_cafe_dhcp.proto=udp
+		uci set firewall.uqda_cafe_dhcp.dest_port=67
+		uci set firewall.uqda_cafe_dhcp.family=ipv4
+		uci set firewall.uqda_cafe_dhcp.target=ACCEPT
+		uci set firewall.uqda_cafe_dhcpv6=rule
+		uci set firewall.uqda_cafe_dhcpv6.name='UQDA-Cafe-DHCPv6'
+		uci set firewall.uqda_cafe_dhcpv6.src=uqda_lan
+		uci set firewall.uqda_cafe_dhcpv6.proto=udp
+		uci set firewall.uqda_cafe_dhcpv6.dest_port=547
+		uci set firewall.uqda_cafe_dhcpv6.family=ipv6
+		uci set firewall.uqda_cafe_dhcpv6.target=ACCEPT
+		uci set firewall.uqda_cafe_icmpv6=rule
+		uci set firewall.uqda_cafe_icmpv6.name='UQDA-Cafe-ICMPv6'
+		uci set firewall.uqda_cafe_icmpv6.src=uqda_lan
+		uci set firewall.uqda_cafe_icmpv6.proto=icmp
+		uci set firewall.uqda_cafe_icmpv6.family=ipv6
+		uci set firewall.uqda_cafe_icmpv6.target=ACCEPT
+		uci set firewall.uqda_cafe_private4=rule
+		uci set firewall.uqda_cafe_private4.name='UQDA-Cafe-Block-Private-IPv4'
+		uci set firewall.uqda_cafe_private4.src=uqda_lan
+		uci set firewall.uqda_cafe_private4.dest="$WAN"
+		uci set firewall.uqda_cafe_private4.family=ipv4
+		uci set firewall.uqda_cafe_private4.target=REJECT
+		for prefix in 10.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16; do uci add_list firewall.uqda_cafe_private4.dest_ip="$prefix"; done
+		uci set firewall.uqda_cafe_private6=rule
+		uci set firewall.uqda_cafe_private6.name='UQDA-Cafe-Block-Private-IPv6'
+		uci set firewall.uqda_cafe_private6.src=uqda_lan
+		uci set firewall.uqda_cafe_private6.dest="$WAN"
+		uci set firewall.uqda_cafe_private6.family=ipv6
+		uci set firewall.uqda_cafe_private6.target=REJECT
+		uci add_list firewall.uqda_cafe_private6.dest_ip='fc00::/7'
+		uci add_list firewall.uqda_cafe_private6.dest_ip='fe80::/10'
+	fi
+	printf '%s\n' "$PROFILE" >"$STATE_DIR/profile"
 	uci commit network; uci commit wireless; uci commit dhcp; uci commit firewall
 	/etc/init.d/network reload; wifi reload; /etc/init.d/odhcpd restart; /etc/init.d/firewall restart
 	say "OpenWrt gateway applied; connect to Wi-Fi '$SSID'"
@@ -213,6 +342,7 @@ apply_openwrt() {
 
 status() {
 	say "backend=$BACKEND"
+	[ ! -r "$STATE_DIR/profile" ] || say "profile=$(cat "$STATE_DIR/profile")"
 	if [ "$BACKEND" = networkmanager ]; then
 		nmcli -f NAME,TYPE,DEVICE connection show --active 2>/dev/null | grep -E "(^NAME|^$NAME[[:space:]])" || true
 		[ -r "$STATE_DIR/address" ] && say "UQDA LAN address=$(cat "$STATE_DIR/address")"
@@ -226,6 +356,7 @@ status() {
 rollback() {
 	[ "$(id -u)" -eq 0 ] || die "rollback must run as root"
 	if [ "$BACKEND" = networkmanager ]; then
+		remove_cafe_networkmanager
 		nmcli connection delete "$NAME" >/dev/null 2>&1 || true
 		if [ -r "$STATE_DIR/sysctl.before" ]; then cp -p "$STATE_DIR/sysctl.before" /etc/sysctl.d/99-uqda-gateway.conf; else rm -f /etc/sysctl.d/99-uqda-gateway.conf; fi
 		if [ -r "$STATE_DIR/radvd.before" ]; then cp -p "$STATE_DIR/radvd.before" /etc/radvd.conf; else rm -f /etc/radvd.conf; fi
@@ -240,14 +371,14 @@ rollback() {
 		done
 		/etc/init.d/network reload; wifi reload; /etc/init.d/odhcpd restart; /etc/init.d/firewall restart
 	fi
-	rm -f "$STATE_DIR/owned"
+	rm -f "$STATE_DIR/owned" "$STATE_DIR/firewall-service-owned" "$STATE_DIR/profile" "$STATE_DIR/cafe.nft"
 	say "gateway-owned configuration rolled back"
 }
 
 case "$COMMAND" in
 	help|-h|--help) usage ;;
 	plan) detect_backend; plan ;;
-	apply) detect_backend; [ "$(id -u)" -eq 0 ] || die "apply must run as root"; [ -n "$WAN" ] || die "--wan is required"; [ -n "$LAN" ] || die "--lan is required"; case "$BACKEND" in networkmanager) apply_networkmanager ;; openwrt) apply_openwrt ;; *) die "unsupported backend: $BACKEND" ;; esac ;;
+	apply) detect_backend; [ "$PROFILE" != cafe ] || [ "$PUBLIC_ACK" -eq 1 ] || die "cafe profile requires --public acknowledgement"; [ "$(id -u)" -eq 0 ] || die "apply must run as root"; [ -n "$WAN" ] || die "--wan is required"; [ -n "$LAN" ] || die "--lan is required"; case "$BACKEND" in networkmanager) apply_networkmanager ;; openwrt) apply_openwrt ;; *) die "unsupported backend: $BACKEND" ;; esac ;;
 	status) detect_backend; status ;;
 	rollback) detect_backend; rollback ;;
 	*) usage; die "unknown command: $COMMAND" ;;

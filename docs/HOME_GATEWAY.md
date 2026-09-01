@@ -5,6 +5,9 @@ shares it with phones, tablets, televisions, and computers over Wi-Fi. Client
 devices do not need the UQDA application. They receive an address from the
 node's routed UQDA `/64` using standard IPv6 Router Advertisements and SLAAC.
 
+For a public or commercial visitor network, use the hardened
+[UQDA café gateway profile](CAFE_GATEWAY.md) instead of the home profile.
+
 ## What it does
 
 - ordinary websites continue to use the normal ISP connection;
