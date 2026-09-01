@@ -183,7 +183,10 @@ jobs:
       - name: Validate Cask syntax and style
         run: |
           ruby -c Casks/uqda.rb
-          brew style --cask Casks/uqda.rb
+          tap_dir="$(brew --repository)/Library/Taps/uqda/homebrew-core"
+          mkdir -p "$(dirname "$tap_dir")"
+          ln -s "$GITHUB_WORKSPACE" "$tap_dir"
+          brew style --cask uqda/core/uqda
 
   build-freebsd:
     strategy:
