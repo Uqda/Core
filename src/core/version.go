@@ -18,14 +18,14 @@ import (
 // It must always begin with the 4 bytes "meta" and a wire formatted uint64 major version number.
 // The current version also includes a minor version number, and the box/sig/link keys that need to be exchanged to open a connection.
 type version_metadata struct {
-	majorVer           uint16
-	minorVer           uint16
-	publicKey          ed25519.PublicKey
-	priority           uint8
-	nonce              [32]byte
-	capabilities       uint32
+	majorVer            uint16
+	minorVer            uint16
+	publicKey           ed25519.PublicKey
+	priority            uint8
+	nonce               [32]byte
+	capabilities        uint32
 	transcriptSignature []byte
-	wire               []byte
+	wire                []byte
 }
 
 const (
@@ -36,13 +36,13 @@ const (
 // Once a major/minor version is released, it is not safe to change any of these
 // (including their ordering), it is only safe to add new ones.
 const (
-	metaVersionMajor uint16 = iota // uint16
-	metaVersionMinor               // uint16
-	metaPublicKey                  // [32]byte
-	metaPriority                   // uint8
-	metaNonce                      // [32]byte
-	metaCapabilities               // uint32
-	metaTranscriptSignature        // [64]byte
+	metaVersionMajor        uint16 = iota // uint16
+	metaVersionMinor                      // uint16
+	metaPublicKey                         // [32]byte
+	metaPriority                          // uint8
+	metaNonce                             // [32]byte
+	metaCapabilities                      // uint32
+	metaTranscriptSignature               // [64]byte
 )
 
 const capabilityHandshakeConfirmation uint32 = 1 << iota

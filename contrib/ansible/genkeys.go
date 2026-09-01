@@ -11,8 +11,8 @@ import (
 	"net"
 	"os"
 
-	"github.com/cheggaaa/pb/v3"
 	"github.com/Uqda/Core/src/address"
+	"github.com/cheggaaa/pb/v3"
 )
 
 var numHosts = flag.Int("hosts", 1, "number of host vars to generate")

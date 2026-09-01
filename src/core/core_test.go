@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gologme/log"
 	"github.com/Uqda/Core/src/config"
+	"github.com/gologme/log"
 )
 
 // GetLoggerWithPrefix creates a new logger instance with prefix.

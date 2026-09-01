@@ -7,7 +7,7 @@
 **An encrypted, self-organizing IPv6 overlay network**
 
 [![CI](https://github.com/Uqda/Core/actions/workflows/ci.yml/badge.svg)](https://github.com/Uqda/Core/actions/workflows/ci.yml)
-[![Go version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![Go version](https://img.shields.io/badge/Go-1.25.13%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Uqda/Core)](https://goreportcard.com/report/github.com/Uqda/Core)
 [![License](https://img.shields.io/badge/License-LGPLv3-blue.svg)](LICENSE)
 
@@ -38,7 +38,7 @@ Each node generates a cryptographic identity and derives its IPv6 address from t
 
 ## Build
 
-Requirements: [Go 1.25 or newer](https://go.dev/dl/) and Git.
+Requirements: [Go 1.25.13 or newer](https://go.dev/dl/) and Git.
 
 ```bash
 git clone https://github.com/Uqda/Core.git
