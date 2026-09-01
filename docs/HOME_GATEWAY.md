@@ -38,7 +38,7 @@ then install the gateway dependencies:
 
 ```sh
 sudo apt update
-sudo apt install network-manager radvd
+sudo apt install network-manager radvd iw
 curl -fsSLO https://github.com/Uqda/Core/releases/latest/download/uqda-gateway
 chmod +x uqda-gateway
 sudo install -m 0755 uqda-gateway /usr/local/sbin/uqda-gateway
