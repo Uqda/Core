@@ -28,6 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Resolve release version
+        shell: bash
         run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
@@ -70,6 +71,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Resolve release version
+        shell: bash
         run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
@@ -107,6 +109,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Resolve release version
+        shell: bash
         run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
@@ -141,6 +144,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Resolve release version
+        shell: bash
         run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
@@ -176,6 +180,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Resolve release version
+        shell: bash
         run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
@@ -278,6 +283,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Resolve release version
+        shell: bash
         run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
@@ -303,6 +309,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Resolve release version
+        shell: bash
         run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
@@ -326,6 +333,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Resolve release version
+        shell: bash
         run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - name: Test installer scripts
         env:
@@ -354,6 +362,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Resolve release version
+        shell: bash
         run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - name: Validate stable tag and notes
         run: |
