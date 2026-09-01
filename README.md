@@ -19,7 +19,7 @@
 
 ## Project status
 
-**v0.1.0 is the recommended stable UQDA release for supported platforms.** The project has not been independently security-audited and should not be treated as an anonymity system. Use an IPv6 firewall and avoid exposing services that should not be reachable by other network participants.
+**v0.1.1 is the recommended stable UQDA release for supported platforms.** The project has not been independently security-audited and should not be treated as an anonymity system. Use an IPv6 firewall and avoid exposing services that should not be reachable by other network participants.
 
 ## Features
 
@@ -60,7 +60,7 @@ bundle for the checksum manifest and GitHub artifact attestations. Review the
 script before running it:
 
 ```bash
-curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0/install.sh
+curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.1/install.sh
 sudo sh install.sh
 ```
 
@@ -68,7 +68,7 @@ To update through the same verified path while preserving the existing
 configuration and node identity:
 
 ```bash
-curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.0/updater.sh
+curl -fsSLO https://github.com/Uqda/Core/releases/download/v0.1.1/updater.sh
 sudo sh updater.sh
 ```
 
@@ -80,6 +80,13 @@ Fedora derivatives such as Bazzite, macOS, EdgeOS 2.x, VyOS 1.3, and the listed
 portable Linux/FreeBSD/OpenBSD targets. Windows users should download the
 matching `.msi` asset from the release. OpenWrt is not yet included in the
 one-command installer and remains an explicitly unvalidated release target.
+
+The project does not currently have a paid Apple Developer account. macOS
+packages are therefore published with `-unsigned.pkg` in their filename and
+will trigger a Gatekeeper warning when opened from Finder. Prefer the verified
+command-line installer above, which downloads the declared package and checks
+its SHA-256 digest before invoking the system installer. Do not disable
+Gatekeeper globally.
 
 ## Run
 

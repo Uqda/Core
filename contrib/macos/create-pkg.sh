@@ -142,13 +142,14 @@ EOF
 # Finally pack the .pkg and, for stable releases, sign it with the dedicated
 # Developer ID Installer identity.
 PACKAGE="${PKGNAME}-${PKGVERSION}-macos-${PKGARCH}.pkg"
-UNSIGNED_PACKAGE="${PKGNAME}-${PKGVERSION}-macos-${PKGARCH}-unsigned.pkg"
-( cd pkgbuild/flat && xar --compression none -cf "../../${UNSIGNED_PACKAGE}" * )
+PACKAGE_INPUT="${PKGNAME}-${PKGVERSION}-macos-${PKGARCH}-package-input.pkg"
+( cd pkgbuild/flat && xar --compression none -cf "../../${PACKAGE_INPUT}" * )
 
 if [ -n "${MACOS_INSTALLER_IDENTITY:-}" ]; then
-  productsign --sign "$MACOS_INSTALLER_IDENTITY" "$UNSIGNED_PACKAGE" "$PACKAGE"
-  rm "$UNSIGNED_PACKAGE"
+  productsign --sign "$MACOS_INSTALLER_IDENTITY" "$PACKAGE_INPUT" "$PACKAGE"
+  rm "$PACKAGE_INPUT"
   pkgutil --check-signature "$PACKAGE"
 else
-  mv "$UNSIGNED_PACKAGE" "$PACKAGE"
+  PACKAGE="${PKGNAME}-${PKGVERSION}-macos-${PKGARCH}-unsigned.pkg"
+  mv "$PACKAGE_INPUT" "$PACKAGE"
 fi

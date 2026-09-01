@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## v0.1.1
+
+- Raised the minimum Go toolchain to 1.25.13, removing 27 reachable standard
+  library vulnerabilities present in the v0.1.0 binaries.
+- Enforced Go formatting and patched Go 1.25 runners in CI.
+- Added an optional Apple Developer ID signing and notarization path for macOS.
+- Clearly labels macOS packages as unsigned when Apple credentials are absent
+  and documents the checksum-verified command-line installation path.
+- Serialized Ironwood peer debug snapshots with RTT updates, fixing a data race
+  reachable through peer-status queries.
 
 - Restricted the local administration socket to its owner with mode `0600`.
 - Required root privileges for `uqdactl` on Unix-like systems and an elevated

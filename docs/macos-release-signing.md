@@ -1,9 +1,10 @@
 # macOS release signing and notarization
 
-Stable macOS installer packages must be signed with Apple Developer ID
-certificates and accepted by Apple's notarization service before publication.
-The stable release workflow intentionally fails instead of publishing an
-unsigned or unnotarized `.pkg`.
+When Apple Developer credentials are available, stable macOS installer packages
+are signed with Apple Developer ID certificates and accepted by Apple's
+notarization service before publication. Without those paid credentials, the
+workflow publishes an explicitly named `-unsigned.pkg` and the release notes
+must disclose that Finder will show a Gatekeeper warning.
 
 ## Required GitHub Actions secrets
 
@@ -32,7 +33,8 @@ Never commit certificates, private keys, passwords, or decoded copies.
 
 ## Release gate
 
-For each `amd64` and `arm64` package, the stable release workflow:
+When signing credentials are configured, for each `amd64` and `arm64` package
+the stable release workflow:
 
 1. imports both Developer ID identities into an ephemeral keychain;
 2. signs `uqda` and `uqdactl` with hardened runtime and a secure timestamp;
@@ -44,3 +46,6 @@ For each `amd64` and `arm64` package, the stable release workflow:
 
 Before publishing, inspect the logs for `Accepted` from `notarytool` and verify
 that `pkgutil --check-signature` names the expected Developer ID Installer team.
+
+Without credentials, users should install through the checksum-verifying
+`install.sh` path and must not be instructed to disable Gatekeeper globally.
