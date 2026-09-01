@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.2
+
+- Added `uqda-gateway` with safe plan/apply/status/rollback workflows for
+  Raspberry Pi OS, Debian/Ubuntu, and an experimental OpenWrt profile.
+- Added a hardened café hotspot mode with client isolation, host/private-network
+  firewalling, explicit public-use acknowledgement, and recovery guidance.
+- Added `uqda-latency` for loss, percentile, jitter, and target measurement.
+- Added latency sorting to `uqdactl getPeers` and documented nearby/direct peer
+  selection plus SQM/CAKE bufferbloat diagnosis.
+- Added the project Homebrew Cask, comprehensive project documentation, and
+  checksum-covered gateway/performance helpers to stable releases.
+
 ## v0.1.1
 
 - Raised the minimum Go toolchain to 1.25.13, removing 27 reachable standard
