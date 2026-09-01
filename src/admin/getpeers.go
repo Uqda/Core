@@ -72,10 +72,35 @@ func (a *AdminSocket) getPeersHandler(req *GetPeersRequest, res *GetPeersRespons
 		slices.SortStableFunc(res.Peers, sortByUptime)
 	case "cost":
 		slices.SortStableFunc(res.Peers, sortByCost)
+	case "latency", "rtt":
+		slices.SortStableFunc(res.Peers, sortByLatency)
 	default:
 		slices.SortStableFunc(res.Peers, sortByDefault)
 	}
 	return nil
+}
+
+func sortByLatency(a, b PeerEntry) int {
+	if a.Up != b.Up {
+		if a.Up {
+			return -1
+		}
+		return 1
+	}
+	// A zero duration means that no valid sample exists yet, not zero latency.
+	if (a.Latency == 0) != (b.Latency == 0) {
+		if a.Latency > 0 {
+			return -1
+		}
+		return 1
+	}
+	if a.Latency < b.Latency {
+		return -1
+	}
+	if a.Latency > b.Latency {
+		return 1
+	}
+	return sortByCost(a, b)
 }
 
 func sortByDefault(a, b PeerEntry) int {
