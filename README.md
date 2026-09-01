@@ -71,7 +71,8 @@ installer. It supports both Apple Silicon and Intel Macs:
 
 ```bash
 brew tap uqda/core https://github.com/Uqda/Core
-brew install --cask uqda
+brew trust --cask uqda/core/uqda
+brew install --cask uqda/core/uqda
 ```
 
 To ask Homebrew to check and install the newest stable release:
@@ -80,9 +81,11 @@ To ask Homebrew to check and install the newest stable release:
 brew upgrade --cask --greedy-latest uqda
 ```
 
-The Cask intentionally delegates package selection and SHA-256 verification to
-the release installer, so the direct and Homebrew paths have the same platform
-detection and checksum protection.
+Homebrew requires explicit trust for third-party taps. Trusting only
+`uqda/core/uqda` limits that approval to this Cask instead of every executable
+definition in the tap. The Cask delegates package selection and SHA-256
+verification to the release installer, so the direct and Homebrew paths have
+the same platform detection and checksum protection.
 
 To update through the same verified path while preserving the existing
 configuration and node identity:
