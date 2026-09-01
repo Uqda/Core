@@ -75,7 +75,8 @@ sudo sh install.sh
 
 ```bash
 brew tap uqda/core https://github.com/Uqda/Core
-brew install --cask uqda
+brew trust --cask uqda/core/uqda
+brew install --cask uqda/core/uqda
 ```
 
 <div dir="rtl" align="right">
@@ -90,8 +91,10 @@ brew upgrade --cask --greedy-latest uqda
 
 <div dir="rtl" align="right">
 
-يفوّض Homebrew اختيار حزمة المعالج والتحقق من SHA-256 إلى برنامج التثبيت؛
-لذلك تستخدم طريقة Homebrew والطريقة المباشرة الحماية نفسها.
+يتطلب Homebrew موافقة صريحة على مستودعات الطرف الثالث. يقيّد أمر الثقة
+الموضح أعلاه الموافقة بحزمة `uqda/core/uqda` وحدها بدل الوثوق بكل التعريفات
+التنفيذية في المستودع. ويفوّض Homebrew اختيار حزمة المعالج والتحقق من SHA-256
+إلى برنامج التثبيت؛ لذلك تستخدم طريقة Homebrew والطريقة المباشرة الحماية نفسها.
 
 وللتحديث عبر المسار المتحقق منه نفسه مع الاحتفاظ بملف الإعداد وهوية العقدة الحالية:
 
