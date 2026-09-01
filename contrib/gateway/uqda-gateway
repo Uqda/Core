@@ -60,7 +60,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 detect_backend() {
-	[ "$BACKEND" = auto ] || return
+	[ "$BACKEND" = auto ] || return 0
 	if [ -r /etc/openwrt_release ] && command -v uci >/dev/null 2>&1; then
 		BACKEND=openwrt
 	elif command -v nmcli >/dev/null 2>&1; then
