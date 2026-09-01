@@ -10,7 +10,7 @@ Thank you for helping improve Uqda. Small, focused changes are the easiest to re
 
 ## Local checks
 
-Uqda Core requires Go 1.25 or newer. Before opening a pull request, run:
+Uqda Core requires Go 1.25.13 or newer. Before opening a pull request, run:
 
 ```bash
 gofmt -w .

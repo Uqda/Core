@@ -15,14 +15,14 @@ import (
 
 	"suah.dev/protect"
 
-	"github.com/olekukonko/tablewriter"
-	"github.com/olekukonko/tablewriter/renderer"
-	"github.com/olekukonko/tablewriter/tw"
 	"github.com/Uqda/Core/src/admin"
 	"github.com/Uqda/Core/src/core"
 	"github.com/Uqda/Core/src/multicast"
 	"github.com/Uqda/Core/src/tun"
 	"github.com/Uqda/Core/src/version"
+	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/renderer"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 func main() {
