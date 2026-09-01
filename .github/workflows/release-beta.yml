@@ -4,14 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Stable SemVer tag
-        required: true
-        default: v0.1.0
+        description: Stable SemVer tag (leave blank to use the newest release-notes file)
+        required: false
   push:
-    branches: [main, fix/stable-release-workflow]
+    branches: [main]
     paths:
-      - ".github/workflows/release-beta.yml"
-      - ".github/releases/v0.1.0.md"
+      - ".github/releases/v*.md"
 
 permissions:
   contents: read
@@ -21,7 +19,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  UQDA_VERSION: ${{ inputs.tag || 'v0.1.0' }}
+  UQDA_VERSION: ${{ inputs.tag }}
 
 jobs:
   quality-gate:
@@ -29,13 +27,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - name: Resolve release version
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - name: Validate stable version
+      - name: Validate stable version and notes
         run: |
-          test "$UQDA_VERSION" = "v0.1.0"
-          test -f .github/releases/v0.1.0.md
+          printf '%s\n' "$UQDA_VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'
+          test -f ".github/releases/${UQDA_VERSION}.md"
           test "$(sh contrib/semver/version.sh)" = "$UQDA_VERSION"
       - name: Unit and handshake tests
         run: |
@@ -43,7 +43,7 @@ jobs:
           go test ./src/core -run=^$ -fuzz=FuzzVersionDecode -fuzztime=15s
       - name: Installer platform matrix
         env:
-          UQDA_TEST_VERSION: v0.1.0
+          UQDA_TEST_VERSION: ${{ env.UQDA_VERSION }}
         run: sh tests/install_test.sh
       - name: Shell syntax
         run: sh -n install.sh updater.sh tests/install_test.sh
@@ -69,6 +69,8 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - name: Resolve release version
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -104,6 +106,8 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - name: Resolve release version
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -136,6 +140,8 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - name: Resolve release version
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -159,6 +165,8 @@ jobs:
   macos:
     name: macOS (${{ matrix.arch }})
     runs-on: macos-latest
+    env:
+      MACOS_SIGNING_ENABLED: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_P12_BASE64 != '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -167,23 +175,96 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - name: Resolve release version
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+      - name: Install Apple signing identities
+        if: env.MACOS_SIGNING_ENABLED == 'true'
+        env:
+          APPLICATION_P12_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_P12_BASE64 }}
+          INSTALLER_P12_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_P12_PASSWORD }}
+          NOTARY_KEY_BASE64: ${{ secrets.APPLE_NOTARY_KEY_P8_BASE64 }}
+          NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+        run: |
+          test -n "$APPLICATION_P12_BASE64"
+          test -n "$INSTALLER_P12_BASE64"
+          test -n "$P12_PASSWORD"
+          test -n "$NOTARY_KEY_BASE64"
+          test -n "$NOTARY_KEY_ID"
+          test -n "$NOTARY_ISSUER_ID"
+
+          application_p12="$RUNNER_TEMP/developer-id-application.p12"
+          installer_p12="$RUNNER_TEMP/developer-id-installer.p12"
+          notary_key="$RUNNER_TEMP/AuthKey_${NOTARY_KEY_ID}.p8"
+          keychain="$RUNNER_TEMP/uqda-signing.keychain-db"
+          keychain_password="$(openssl rand -hex 32)"
+
+          printf '%s' "$APPLICATION_P12_BASE64" | base64 --decode > "$application_p12"
+          printf '%s' "$INSTALLER_P12_BASE64" | base64 --decode > "$installer_p12"
+          printf '%s' "$NOTARY_KEY_BASE64" | base64 --decode > "$notary_key"
+          chmod 0600 "$application_p12" "$installer_p12" "$notary_key"
+
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$application_p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security import "$installer_p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain"
+          security list-keychains -d user -s "$keychain"
+
+          application_identity="$(security find-identity -v -p codesigning "$keychain" | sed -n 's/.*"\(Developer ID Application:.*\)"/\1/p' | head -1)"
+          installer_identity="$(security find-identity -v -p basic "$keychain" | sed -n 's/.*"\(Developer ID Installer:.*\)"/\1/p' | head -1)"
+          test -n "$application_identity"
+          test -n "$installer_identity"
+
+          echo "MACOS_APPLICATION_IDENTITY=$application_identity" >> "$GITHUB_ENV"
+          echo "MACOS_INSTALLER_IDENTITY=$installer_identity" >> "$GITHUB_ENV"
+          echo "MACOS_SIGNING_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
+          echo "APPLE_NOTARY_KEY_PATH=$notary_key" >> "$GITHUB_ENV"
+          echo "APPLE_NOTARY_KEY_ID=$NOTARY_KEY_ID" >> "$GITHUB_ENV"
+          echo "APPLE_NOTARY_ISSUER_ID=$NOTARY_ISSUER_ID" >> "$GITHUB_ENV"
       - name: Build and inspect installer
         env:
           PKGARCH: ${{ matrix.arch }}
         run: |
           sh contrib/macos/create-pkg.sh
           package=$(find . -maxdepth 1 -name 'uqda-*.pkg' -print -quit)
+          test -n "$package"
+          if [ "$MACOS_SIGNING_ENABLED" != true ]; then
+            case "$package" in *-unsigned.pkg) ;; *) exit 1 ;; esac
+            echo "Apple signing credentials are not configured; publishing an explicitly unsigned package."
+          fi
           pkgutil --expand "$package" expanded.pkg
           grep "version=\"${UQDA_VERSION#v}\"" expanded.pkg/Distribution
           test -s expanded.pkg/base.pkg/Payload
+      - name: Notarize signed installer
+        if: env.MACOS_SIGNING_ENABLED == 'true'
+        run: |
+          package=$(find . -maxdepth 1 -name 'uqda-*.pkg' -print -quit)
+          pkgutil --check-signature "$package" | grep 'Developer ID Installer'
+          xcrun notarytool submit "$package" \
+            --key "$APPLE_NOTARY_KEY_PATH" \
+            --key-id "$APPLE_NOTARY_KEY_ID" \
+            --issuer "$APPLE_NOTARY_ISSUER_ID" \
+            --wait
+          xcrun stapler staple "$package"
+          xcrun stapler validate "$package"
+          spctl --assess --type install --verbose=4 "$package"
       - uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}
           path: "uqda-*.pkg"
           if-no-files-found: error
+      - name: Remove Apple signing keychain
+        if: ${{ always() && env.MACOS_SIGNING_ENABLED == 'true' }}
+        run: |
+          if [ -n "${MACOS_SIGNING_KEYCHAIN:-}" ]; then
+            security delete-keychain "$MACOS_SIGNING_KEYCHAIN"
+          fi
 
   windows:
     name: Windows (${{ matrix.arch }})
@@ -196,6 +277,8 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - name: Resolve release version
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -204,7 +287,7 @@ jobs:
         shell: bash
         run: |
           sh contrib/msi/build-msi.sh "${{ matrix.arch }}"
-          test "$(sh contrib/msi/msversion.sh)" = "0.1.0"
+          test "$(sh contrib/msi/msversion.sh)" = "${UQDA_VERSION#v}"
           test -s "uqda-${UQDA_VERSION#v}-${{ matrix.arch }}.msi"
       - uses: actions/upload-artifact@v4
         with:
@@ -219,6 +302,8 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - name: Resolve release version
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -240,9 +325,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - name: Resolve release version
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
       - name: Test installer scripts
         env:
-          UQDA_TEST_VERSION: v0.1.0
+          UQDA_TEST_VERSION: ${{ env.UQDA_VERSION }}
         run: |
           sh -n install.sh updater.sh tests/install_test.sh
           sh tests/install_test.sh
@@ -256,7 +343,7 @@ jobs:
 
   publish:
     name: Publish signed stable release
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: [quality-gate, portable, debian, router, macos, windows, vendored-source, release-tools]
     runs-on: ubuntu-latest
     permissions:
@@ -266,10 +353,12 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v6
-      - name: Validate stable tag
+      - name: Resolve release version
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
+      - name: Validate stable tag and notes
         run: |
-          test "$UQDA_VERSION" = "v0.1.0"
-          test -f .github/releases/v0.1.0.md
+          printf '%s\n' "$UQDA_VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'
+          test -f ".github/releases/${UQDA_VERSION}.md"
       - uses: actions/download-artifact@v5
         with:
           path: release-assets
@@ -310,4 +399,4 @@ jobs:
           gh release create "$UQDA_VERSION" release-assets/* \
             --target "$GITHUB_SHA" \
             --title "UQDA Core $UQDA_VERSION" \
-            --notes-file .github/releases/v0.1.0.md
+            --notes-file ".github/releases/${UQDA_VERSION}.md"

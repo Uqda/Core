@@ -138,7 +138,7 @@ case "$PLATFORM" in
 		;;
 	*)
 		[ "$OS" = macos ] || die "unsupported platform: $PLATFORM"
-		ASSET="uqda-${VERSION#v}-macos-$ARCH.pkg"
+		ASSET="uqda-${VERSION#v}-macos-$ARCH-unsigned.pkg"
 		METHOD=pkg
 		;;
 esac

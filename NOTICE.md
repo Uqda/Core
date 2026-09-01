@@ -11,6 +11,11 @@ UQDA is maintained under its own name and repository. It is not the official Ygg
 
 The repository's license is provided in [LICENSE](LICENSE). Copyright and license notices belonging to upstream and third-party contributors remain applicable to their respective work.
 
+The pinned Ironwood dependency is mirrored under `third_party/ironwood` with
+its original license and copyright files. UQDA carries a minimal local actor
+synchronization patch for peer debug snapshots until an equivalent fix is
+available upstream.
+
 The EdgeOS/VyOS integration under `contrib/vyatta` is adapted from
 [`neilalexander/vyatta-yggdrasil`](https://github.com/neilalexander/vyatta-yggdrasil),
 Copyright (C) Neil Alexander T., and is distributed under GPL-3.0. Its original

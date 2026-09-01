@@ -2,7 +2,7 @@
 
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
-TEST_VERSION=${UQDA_TEST_VERSION:-v0.1.0}
+TEST_VERSION=${UQDA_TEST_VERSION:-v0.1.1}
 BARE_VERSION=${TEST_VERSION#v}
 
 plan() {
@@ -23,7 +23,7 @@ assert_asset Linux x86_64 systemd-portable "uqda-${TEST_VERSION}-linux-amd64.tar
 assert_asset Linux armv7l systemd-portable "uqda-${TEST_VERSION}-linux-armv7.tar.gz"
 assert_asset Linux mipsel edgeos2x "uqda-edgeos2x-${BARE_VERSION}-mipsel.deb"
 assert_asset Linux x86_64 vyos13 "uqda-vyos13-${BARE_VERSION}-amd64.deb"
-assert_asset Darwin arm64 launchd "uqda-${BARE_VERSION}-macos-arm64.pkg"
+assert_asset Darwin arm64 launchd "uqda-${BARE_VERSION}-macos-arm64-unsigned.pkg"
 assert_asset FreeBSD amd64 portable "uqda-${TEST_VERSION}-freebsd-amd64.tar.gz"
 assert_asset OpenBSD arm64 portable "uqda-${TEST_VERSION}-openbsd-arm64.tar.gz"
 
