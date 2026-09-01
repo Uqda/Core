@@ -21,6 +21,10 @@
 
 **The latest stable UQDA release is recommended for supported platforms.** The project has not been independently security-audited and should not be treated as an anonymity system. Use an IPv6 firewall and avoid exposing services that should not be reachable by other network participants.
 
+Read the [complete project guide](docs/PROJECT_GUIDE.md) for the architecture,
+identity and addressing model, routing, cryptography, security boundaries,
+configuration, every supported installation path, operation, and development.
+
 ## Features
 
 - End-to-end encrypted traffic between UQDA nodes.
