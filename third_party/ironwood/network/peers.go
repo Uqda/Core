@@ -247,13 +247,10 @@ func (p *peer) handler() error {
 		if usize, err = binary.ReadUvarint(rbuf); err != nil {
 			return err
 		}
-		// The configured limit is a uint64, but slice lengths use int. Reject a
-		// peer-controlled length that cannot be represented on this platform
-		// before converting it or attempting an allocation.
-		if usize > p.peers.core.config.peerMaxMessageSize || usize > uint64(^uint(0)>>1) {
-			return types.ErrOversizedMessage
+		size, err := checkedPeerMessageSize(usize, p.peers.core.config.peerMaxMessageSize)
+		if err != nil {
+			return err
 		}
-		size := int(usize)
 		bs := allocBytes(size)
 		if _, err = io.ReadFull(rbuf, bs); err != nil {
 			freeBytes(bs)
@@ -267,6 +264,15 @@ func (p *peer) handler() error {
 			return err
 		}
 	}
+}
+
+// checkedPeerMessageSize rejects peer-controlled lengths that exceed either
+// the configured protocol limit or the platform's maximum slice length.
+func checkedPeerMessageSize(size, limit uint64) (int, error) {
+	if size > limit || size > uint64(^uint(0)>>1) {
+		return 0, types.ErrOversizedMessage
+	}
+	return int(size), nil
 }
 
 func (p *peer) _handlePacket(bs []byte) error {
