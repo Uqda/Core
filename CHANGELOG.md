@@ -10,6 +10,9 @@
   and documents the checksum-verified command-line installation path.
 - Serialized Ironwood peer debug snapshots with RTT updates, fixing a data race
   reachable through peer-status queries.
+- Replaced the fast SHA-256 group-password derivation with Argon2id to resist
+  offline password guessing. Nodes using a group password must upgrade
+  together because v0.1.0 used the legacy derivation.
 
 - Restricted the local administration socket to its owner with mode `0600`.
 - Required root privileges for `uqdactl` on Unix-like systems and an elevated
@@ -994,84 +997,3 @@ for protecting high-value or safety-critical traffic.
 
 ### Fixed
 
-* macOS local ping bug, which previously prevented you from pinging your own `utun` adapter's IPv6 address
-
-## [0.2.3] - 2018-06-29
-
-### Added
-
-* Begin keeping changelog (incomplete and possibly inaccurate information before this point).
-* Build RPMs in CircleCI using alien. This provides package support for Fedora, Red Hat Enterprise Linux, CentOS and other RPM-based distributions.
-
-### Changed
-
-* Local backpressure improvements.
-* Change `box_pub_key` to `key` in admin API for simplicity.
-* Session cleanup.
-
-## [0.2.2] - 2018-06-21
-
-### Added
-
-* Add `uqdaconf` utility for testing with the `vyatta-uqda` package.
-* Add a randomized retry delay after TCP disconnects, to prevent synchronization livelocks.
-
-### Changed
-
-* Update build script to strip by default, which significantly reduces the size of the binary.
-* Add debug `-d` and UPX `-u` flags to the `build` script.
-* Start pprof in debug builds based on an environment variable (e.g. `PPROFLISTEN=localhost:6060`), instead of a flag.
-
-### Fixed
-
-* Fix typo in big-endian BOM so that both little-endian and big-endian UTF-16 files are detected correctly.
-
-## [0.2.1] - 2018-06-15
-
-### Changed
-
-* The address range was moved from `fd00::/8` to `200::/7`. This range was chosen as it is marked as deprecated. The change prevents overlap with other ULA privately assigned ranges.
-
-### Fixed
-
-* UTF-16 detection conversion for configuration files, which can particularly be a problem on Windows 10 if a configuration file is generated from within PowerShell.
-* Fixes to the Debian package control file.
-* Fixes to the launchd service for macOS.
-* Fixes to the DHT and switch.
-
-## [0.2.0] - 2018-06-13
-
-### Added
-
-* Exchange version information during connection setup, to prevent connections with incompatible versions.
-
-### Changed
-
-* Wire format changes (backwards incompatible).
-* Less maintenance traffic per peer.
-* Exponential back-off for DHT maintenance traffic (less maintenance traffic for known good peers).
-* Iterative DHT (added sometime between v0.1.0 and here).
-* Use local queue sizes for a sort of local-only backpressure routing, instead of the removed bandwidth estimates, when deciding where to send a packet.
-
-### Removed
-
-* UDP peering, this may be added again if/when a better implementation appears.
-* Per peer bandwidth estimation, as this has been replaced with an early local backpressure implementation.
-
-## [0.1.0] - 2018-02-01
-
-### Added
-
-* Adopt semantic versioning.
-
-### Changed
-
-* Wire format changes (backwards incompatible).
-* Many other undocumented changes leading up to this release and before the next one.
-
-## [0.0.1] - 2017-12-28
-
-### Added
-
-* First commit.
-* Initial public release.
