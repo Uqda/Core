@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Resolve release version
-        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -70,7 +70,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Resolve release version
-        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -107,7 +107,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Resolve release version
-        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -141,7 +141,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Resolve release version
-        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -176,7 +176,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Resolve release version
-        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -278,7 +278,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Resolve release version
-        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -303,7 +303,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Resolve release version
-        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -326,7 +326,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Resolve release version
-        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - name: Test installer scripts
         env:
           UQDA_TEST_VERSION: ${{ env.UQDA_VERSION }}
@@ -354,7 +354,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Resolve release version
-        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh \"${UQDA_VERSION:-}\")" >> "$GITHUB_ENV"
+        run: echo "UQDA_VERSION=$(sh contrib/semver/release-version.sh "${UQDA_VERSION:-}")" >> "$GITHUB_ENV"
       - name: Validate stable tag and notes
         run: |
           printf '%s\n' "$UQDA_VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'
