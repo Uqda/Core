@@ -25,6 +25,10 @@ Read the [complete project guide](docs/PROJECT_GUIDE.md) for the architecture,
 identity and addressing model, routing, cryptography, security boundaries,
 configuration, every supported installation path, operation, and development.
 
+Want one box to serve every phone and computer at home? Follow the
+[UQDA home gateway guide](docs/HOME_GATEWAY.md) for Raspberry Pi OS,
+Debian/Ubuntu appliances, and the experimental OpenWrt profile.
+
 ## Features
 
 - End-to-end encrypted traffic between UQDA nodes.
