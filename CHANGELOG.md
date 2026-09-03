@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## v0.1.3
+
 - Added `uqdactl doctor`, a read-only, secret-safe health and security summary
   for the daemon, identity, administration endpoint, TUN, direct peers,
   routing convergence, and multicast bootstrap state.
