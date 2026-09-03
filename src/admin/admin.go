@@ -190,6 +190,20 @@ func (a *AdminSocket) SetupAdminHandlers() {
 		},
 	)
 	_ = a.AddHandler(
+		"doctor", "Run safe node health and security diagnostics", []string{},
+		func(in json.RawMessage) (interface{}, error) {
+			req := &DoctorRequest{}
+			res := &DoctorResponse{}
+			if err := json.Unmarshal(in, req); err != nil {
+				return nil, err
+			}
+			if err := a.doctorHandler(req, res); err != nil {
+				return nil, err
+			}
+			return res, nil
+		},
+	)
+	_ = a.AddHandler(
 		"getTree", "Show known Tree entries", []string{},
 		func(in json.RawMessage) (interface{}, error) {
 			req := &GetTreeRequest{}

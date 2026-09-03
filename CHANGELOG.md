@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+- Added `uqdactl doctor`, a read-only, secret-safe health and security summary
+  for the daemon, identity, administration endpoint, TUN, direct peers,
+  routing convergence, and multicast bootstrap state.
+- Added deterministic diagnostics tests for healthy, isolated, disconnected,
+  headless, loopback-admin, and insecure-admin configurations.
+- Added stable `0`/`2`/`1` exit semantics for healthy/warning/failure results
+  and JSON output for monitoring.
+- Fixed `uqdactl` connection failures so an unavailable administration endpoint
+  returns a non-zero exit status instead of reporting a fatal message with a
+  successful process status.
+
 ## v0.1.2
 
 - Added `uqda-gateway` with safe plan/apply/status/rollback workflows for
@@ -91,8 +104,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Security
 - in case of vulnerabilities.
 -->
-
-## [Unreleased]
 
 ## [0.1.0-beta.1] - 2026-08-30
 

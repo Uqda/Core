@@ -675,6 +675,7 @@ host application.
 On Unix-like systems, run administration commands as root:
 
 ```bash
+sudo uqdactl doctor
 sudo uqdactl getSelf
 sudo uqdactl getPeers
 sudo uqdactl getTree
@@ -683,6 +684,15 @@ sudo uqdactl getSessions
 sudo uqdactl getTun
 sudo uqdactl getMulticastInterfaces
 ```
+
+`doctor` is a read-only first-line diagnostic. It checks the running build and
+identity, the administration endpoint security boundary, TUN state, connected
+peer count and best measured direct RTT, routing-table convergence, and local
+multicast bootstrap state. Its output deliberately excludes peer URIs, public
+keys, private keys, link passwords, and group passwords. Use
+`sudo uqdactl -json doctor` for monitoring. Exit status `0` means healthy, `2`
+means the node is running with warnings, and `1` reports a security or identity
+failure.
 
 List every command registered by the running build:
 
@@ -723,6 +733,7 @@ configuration. Confirm persistence requirements before restarting.
 - `getTree`: current signed tree view;
 - `getTun`: interface name and effective MTU;
 - `getMulticastInterfaces`: which local interfaces beacon/listen.
+- `doctor`: a secret-safe summary of health, connectivity, and admin security.
 
 ## Updates, release verification, and provenance
 

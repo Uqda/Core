@@ -88,7 +88,9 @@ func run() int {
 		conn, err = net.Dial("tcp", cmdLineEnv.endpoint)
 	}
 	if err != nil {
-		panic(err)
+		fmt.Fprint(os.Stderr, logbuffer.String())
+		fmt.Fprintln(os.Stderr, "uqdactl: could not connect to the administration endpoint; verify that UQDA is running:", err)
+		return 1
 	}
 
 	// Configuration and socket setup are complete; retain only the promises
@@ -145,6 +147,13 @@ func run() int {
 		if json, err := json.MarshalIndent(recv.Response, "", "  "); err == nil {
 			fmt.Println(string(json))
 		}
+		if strings.EqualFold(send.Name, "doctor") {
+			var resp admin.DoctorResponse
+			if err := json.Unmarshal(recv.Response, &resp); err != nil {
+				panic(err)
+			}
+			return doctorExitCode(resp)
+		}
 		return 0
 	}
 
@@ -166,6 +175,22 @@ func run() int {
 	table := tablewriter.NewTable(os.Stdout, opts...)
 
 	switch strings.ToLower(send.Name) {
+	case "doctor":
+		var resp admin.DoctorResponse
+		if err := json.Unmarshal(recv.Response, &resp); err != nil {
+			panic(err)
+		}
+		table.Header([]string{"Status", "Check", "Result"})
+		for _, check := range resp.Checks {
+			_ = table.Append([]string{strings.ToUpper(check.Status), check.Name, check.Summary})
+		}
+		for _, recommendation := range resp.Recommendations {
+			_ = table.Append([]string{"NEXT", "recommendation", recommendation})
+		}
+		_ = table.Render()
+		fmt.Println("Overall status:", strings.ToUpper(resp.Status))
+		return doctorExitCode(resp)
+
 	case "list":
 		var resp admin.ListResponse
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
