@@ -50,6 +50,11 @@ func run() int {
 
 	cmdLineEnv := newCmdLineEnv()
 	cmdLineEnv.parseFlagsAndArgs()
+	style, err := newOutputStyle(cmdLineEnv.color, cmdLineEnv.injson, os.Stdout)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "uqdactl:", err)
+		return 1
+	}
 
 	if cmdLineEnv.ver {
 		fmt.Println("Build name:", version.BuildName())
@@ -180,15 +185,16 @@ func run() int {
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
 			panic(err)
 		}
-		table.Header([]string{"Status", "Check", "Result"})
+		table.Header(style.headers("Status", "Check", "Result"))
 		for _, check := range resp.Checks {
-			_ = table.Append([]string{strings.ToUpper(check.Status), check.Name, check.Summary})
+			status := strings.ToUpper(check.Status)
+			_ = table.Append([]string{style.status(status), style.label(check.Name), check.Summary})
 		}
 		for _, recommendation := range resp.Recommendations {
-			_ = table.Append([]string{"NEXT", "recommendation", recommendation})
+			_ = table.Append([]string{style.status("NEXT"), style.label("recommendation"), recommendation})
 		}
 		_ = table.Render()
-		fmt.Println("Overall status:", strings.ToUpper(resp.Status))
+		fmt.Println(style.strong("Overall status:"), style.status(strings.ToUpper(resp.Status)))
 		return doctorExitCode(resp)
 
 	case "list":
@@ -196,12 +202,12 @@ func run() int {
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
 			panic(err)
 		}
-		table.Header([]string{"Command", "Arguments", "Description"})
+		table.Header(style.headers("Command", "Arguments", "Description"))
 		for _, entry := range resp.List {
 			for i := range entry.Fields {
 				entry.Fields[i] = entry.Fields[i] + "=..."
 			}
-			_ = table.Append([]string{entry.Command, strings.Join(entry.Fields, ", "), entry.Description})
+			_ = table.Append([]string{style.label(entry.Command), strings.Join(entry.Fields, ", "), entry.Description})
 		}
 		_ = table.Render()
 
@@ -210,12 +216,12 @@ func run() int {
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
 			panic(err)
 		}
-		_ = table.Append([]string{"Build name:", resp.BuildName})
-		_ = table.Append([]string{"Build version:", resp.BuildVersion})
-		_ = table.Append([]string{"IPv6 address:", resp.IPAddress})
-		_ = table.Append([]string{"IPv6 subnet:", resp.Subnet})
-		_ = table.Append([]string{"Routing table size:", fmt.Sprintf("%d", resp.RoutingEntries)})
-		_ = table.Append([]string{"Public key:", resp.PublicKey})
+		_ = table.Append([]string{style.label("Build name:"), resp.BuildName})
+		_ = table.Append([]string{style.label("Build version:"), style.good(resp.BuildVersion)})
+		_ = table.Append([]string{style.label("IPv6 address:"), resp.IPAddress})
+		_ = table.Append([]string{style.label("IPv6 subnet:"), resp.Subnet})
+		_ = table.Append([]string{style.label("Routing table size:"), fmt.Sprintf("%d", resp.RoutingEntries)})
+		_ = table.Append([]string{style.label("Public key:"), resp.PublicKey})
 		_ = table.Render()
 
 	case "getpeers":
@@ -223,7 +229,7 @@ func run() int {
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
 			panic(err)
 		}
-		table.Header([]string{"URI", "State", "Dir", "IP Address", "Uptime", "RTT", "RX", "TX", "Down", "Up", "Pr", "Cost", "Last Error"})
+		table.Header(style.headers("URI", "State", "Dir", "IP Address", "Uptime", "RTT", "RX", "TX", "Down", "Up", "Pr", "Cost", "Last Error"))
 		for _, peer := range resp.Peers {
 			state, lasterr, dir, rtt, rxr, txr := "Up", "-", "Out", "-", "-", "-"
 			if !peer.Up {
@@ -231,7 +237,7 @@ func run() int {
 					lasterr = fmt.Sprintf("%s ago: %s", peer.LastErrorTime.Round(time.Second), peer.LastError)
 				}
 			} else if rttms := float64(peer.Latency.Microseconds()) / 1000; rttms > 0 {
-				rtt = fmt.Sprintf("%.02fms", rttms)
+				rtt = style.latency(fmt.Sprintf("%.02fms", rttms), rttms)
 			}
 			if peer.Inbound {
 				dir = "In"
@@ -247,9 +253,12 @@ func run() int {
 			if peer.TXRate > 0 {
 				txr = peer.TXRate.String() + "/s"
 			}
+			if lasterr != "-" {
+				lasterr = style.bad(lasterr)
+			}
 			_ = table.Append([]string{
 				uristring,
-				state,
+				style.status(state),
 				dir,
 				peer.IPAddress,
 				(time.Duration(peer.Uptime) * time.Second).String(),
@@ -270,7 +279,7 @@ func run() int {
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
 			panic(err)
 		}
-		table.Header([]string{"Public Key", "IP Address", "Parent", "Sequence"})
+		table.Header(style.headers("Public Key", "IP Address", "Parent", "Sequence"))
 		for _, tree := range resp.Tree {
 			_ = table.Append([]string{
 				tree.PublicKey,
@@ -288,7 +297,7 @@ func run() int {
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
 			panic(err)
 		}
-		table.Header([]string{"Public Key", "IP Address", "Path", "Seq"})
+		table.Header(style.headers("Public Key", "IP Address", "Path", "Seq"))
 		for _, p := range resp.Paths {
 			_ = table.Append([]string{
 				p.PublicKey,
@@ -304,7 +313,7 @@ func run() int {
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
 			panic(err)
 		}
-		table.Header([]string{"Public Key", "IP Address", "Uptime", "RX", "TX"})
+		table.Header(style.headers("Public Key", "IP Address", "Uptime", "RX", "TX"))
 		for _, p := range resp.Sessions {
 			_ = table.Append([]string{
 				p.PublicKey,
@@ -333,11 +342,11 @@ func run() int {
 		}
 		fmtBool := func(b bool) string {
 			if b {
-				return "Yes"
+				return style.status("Yes")
 			}
 			return "-"
 		}
-		table.Header([]string{"Name", "Listen Address", "Beacon", "Listen", "Password"})
+		table.Header(style.headers("Name", "Listen Address", "Beacon", "Listen", "Password"))
 		for _, p := range resp.Interfaces {
 			_ = table.Append([]string{
 				p.Name,
@@ -354,10 +363,16 @@ func run() int {
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
 			panic(err)
 		}
-		_ = table.Append([]string{"TUN enabled:", fmt.Sprintf("%#v", resp.Enabled)})
+		enabled := fmt.Sprintf("%#v", resp.Enabled)
 		if resp.Enabled {
-			_ = table.Append([]string{"Interface name:", resp.Name})
-			_ = table.Append([]string{"Interface MTU:", fmt.Sprintf("%d", resp.MTU)})
+			enabled = style.good(enabled)
+		} else {
+			enabled = style.warn(enabled)
+		}
+		_ = table.Append([]string{style.label("TUN enabled:"), enabled})
+		if resp.Enabled {
+			_ = table.Append([]string{style.label("Interface name:"), resp.Name})
+			_ = table.Append([]string{style.label("Interface MTU:"), fmt.Sprintf("%d", resp.MTU)})
 		}
 		_ = table.Render()
 

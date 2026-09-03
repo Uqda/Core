@@ -158,6 +158,13 @@ printing private keys, peer passwords, or other configuration secrets. It
 exits with status `0` when healthy, `2` for warnings, and `1` for a security or
 identity failure.
 
+Interactive terminal output uses restrained semantic colors: green for healthy
+or connected state, yellow for warnings, red for failures, and cyan for labels.
+Colors are disabled automatically for JSON, redirected output, and terminals
+using `NO_COLOR`. Use `-color=always` or `-color=never` to override automatic
+detection for human-readable output. Status words remain present, so color is
+never the only indication.
+
 New nodes remain compatible with existing protocol 0.5 peers. When both sides support the hardened handshake, they negotiate it automatically. To require the hardened handshake on a controlled link and reject legacy peers, append `?secure=required` to both the peer URI and listener URI.
 
 Use `-json` with `-genconf` if strict JSON is preferred over commented HJSON. Creating a TUN interface normally requires administrator privileges. On Linux, the binary may instead be granted the required capability:

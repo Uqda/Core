@@ -5,19 +5,57 @@ set -eu
 
 TARGET_MS=20
 COUNT=20
+COLOR=auto
 
-say() { printf '%s\n' "[UQDA latency] $*"; }
-die() { printf '%s\n' "[UQDA latency] ERROR: $*" >&2; exit 1; }
+RESET=
+BOLD=
+RED=
+GREEN=
+YELLOW=
+CYAN=
+
+configure_color() {
+	case "$COLOR" in
+		auto) [ -t 1 ] && [ "${TERM:-}" != dumb ] && [ -z "${NO_COLOR:-}" ] || return 0 ;;
+		always) : ;;
+		never) return 0 ;;
+		*) printf '%s\n' "[UQDA latency] ERROR: --color must be auto, always, or never" >&2; exit 1 ;;
+	esac
+	RESET=$(printf '\033[0m')
+	BOLD=$(printf '\033[1m')
+	RED=$(printf '\033[31m')
+	GREEN=$(printf '\033[32m')
+	YELLOW=$(printf '\033[33m')
+	CYAN=$(printf '\033[36m')
+}
+
+say() {
+	STYLE=
+	case "$1" in
+		PASS:*) STYLE=$GREEN ;;
+		WARN:*) STYLE=$YELLOW ;;
+		FAIL:*|CANCELLED:*) STYLE=$RED ;;
+	esac
+	printf '%s%s%s %s%s%s\n' "$BOLD$CYAN" '[UQDA latency]' "$RESET" "$STYLE" "$*" "$RESET"
+}
+
+die() {
+	printf '%s%s%s %sERROR: %s%s\n' "$BOLD$CYAN" '[UQDA latency]' "$RESET" "$RED" "$*" "$RESET" >&2
+	exit 1
+}
 
 usage() {
 	cat <<'EOF'
 Usage:
-  uqda-latency ADDRESS [--target-ms N] [--count N]
+  uqda-latency ADDRESS [--target-ms N] [--count N] [--color MODE]
   uqda-latency peers
 
 Reports loss, minimum, average, p50, p95, maximum, and successive-sample
 jitter. Exit status is 0 only when all samples return and p95 meets the target;
 2 means the target was missed.
+
+Colors use MODE auto (default), always, or never. Automatic mode colors only
+an interactive terminal and respects NO_COLOR.
 EOF
 }
 
@@ -33,10 +71,15 @@ while [ "$#" -gt 0 ]; do
 	case "$1" in
 		--target-ms) [ "$#" -ge 2 ] || die "--target-ms needs a value"; TARGET_MS=$2; shift 2 ;;
 		--count) [ "$#" -ge 2 ] || die "--count needs a value"; COUNT=$2; shift 2 ;;
+		--color) [ "$#" -ge 2 ] || die "--color needs a value"; COLOR=$2; shift 2 ;;
+		--color=*) COLOR=${1#*=}; shift ;;
+		--no-color) COLOR=never; shift ;;
 		-h|--help) usage; exit 0 ;;
 		*) die "unknown option: $1" ;;
 	esac
 done
+
+configure_color
 
 case "$TARGET_MS" in ''|*[!0-9.]*|.*|*.*.*) die "target must be a positive number" ;; esac
 case "$COUNT" in ''|*[!0-9]*) die "count must be a positive integer" ;; esac
@@ -46,7 +89,18 @@ awk -v n="$TARGET_MS" 'BEGIN { exit !(n > 0) }' || die "target must be greater t
 TMP_BASE=${TMPDIR:-/tmp}
 [ -d "$TMP_BASE" ] || TMP_BASE=.
 TMP_DIR=$(mktemp -d "$TMP_BASE/uqda-latency.XXXXXX") || die "could not create temporary directory"
-trap 'rm -rf "$TMP_DIR"' EXIT HUP INT TERM
+cleanup() { [ -z "${TMP_DIR:-}" ] || rm -rf "$TMP_DIR"; }
+cancel() {
+	CODE=$1
+	trap - EXIT HUP INT TERM
+	cleanup
+	say "CANCELLED: measurement interrupted" >&2
+	exit "$CODE"
+}
+trap cleanup EXIT
+trap 'cancel 129' HUP
+trap 'cancel 130' INT
+trap 'cancel 143' TERM
 RAW=$TMP_DIR/ping.txt
 TIMES=$TMP_DIR/times.txt
 SORTED=$TMP_DIR/sorted.txt

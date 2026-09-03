@@ -10,6 +10,18 @@ OUT=$(sh "$TOOL" plan --backend networkmanager --wan eth0 --lan wlan0 --ssid Hom
 printf '%s\n' "$OUT" | grep -F 'backend=networkmanager' >/dev/null
 printf '%s\n' "$OUT" | grep -F 'WAN=eth0; Wi-Fi/LAN=wlan0; SSID=Home-UQDA' >/dev/null
 printf '%s\n' "$OUT" | grep -F 'No changes made' >/dev/null && exit 1 || true
+if printf '%s\n' "$OUT" | grep "$(printf '\033')" >/dev/null; then
+	echo 'automatic color escaped into redirected gateway output' >&2
+	exit 1
+fi
+
+COLOR_OUT=$(sh "$TOOL" plan --backend networkmanager --wan eth0 --lan wlan0 --color always)
+printf '%s\n' "$COLOR_OUT" | grep "$(printf '\033')" >/dev/null
+NO_COLOR_OUT=$(NO_COLOR=1 sh "$TOOL" plan --backend networkmanager --wan eth0 --lan wlan0)
+if printf '%s\n' "$NO_COLOR_OUT" | grep "$(printf '\033')" >/dev/null; then
+	echo 'NO_COLOR gateway output contained ANSI escapes' >&2
+	exit 1
+fi
 
 OUT=$(sh "$TOOL" plan --backend openwrt)
 printf '%s\n' "$OUT" | grep -F 'WAN=REQUIRED; Wi-Fi/LAN=REQUIRED' >/dev/null

@@ -19,9 +19,43 @@ COUNTRY=
 PASSWORD_FILE=
 PUBLIC_ACK=0
 APPLY=0
+COLOR=auto
 
-say() { printf '%s\n' "[UQDA gateway] $*"; }
-die() { printf '%s\n' "[UQDA gateway] ERROR: $*" >&2; exit 1; }
+RESET=
+BOLD=
+RED=
+GREEN=
+YELLOW=
+CYAN=
+
+configure_color() {
+	case "$COLOR" in
+		auto) [ -t 1 ] && [ "${TERM:-}" != dumb ] && [ -z "${NO_COLOR:-}" ] || return 0 ;;
+		always) : ;;
+		never) return 0 ;;
+		*) printf '%s\n' "[UQDA gateway] ERROR: --color must be auto, always, or never" >&2; exit 1 ;;
+	esac
+	RESET=$(printf '\033[0m')
+	BOLD=$(printf '\033[1m')
+	RED=$(printf '\033[31m')
+	GREEN=$(printf '\033[32m')
+	YELLOW=$(printf '\033[33m')
+	CYAN=$(printf '\033[36m')
+}
+
+say() {
+	STYLE=
+	case "$*" in
+		*' applied;'*|*' applied'|*'rolled back'*) STYLE=$GREEN ;;
+		'No changes made.'*|*'not configured'*|*'requires --public'*) STYLE=$YELLOW ;;
+	esac
+	printf '%s%s%s %s%s%s\n' "$BOLD$CYAN" '[UQDA gateway]' "$RESET" "$STYLE" "$*" "$RESET"
+}
+
+die() {
+	printf '%s%s%s %sERROR: %s%s\n' "$BOLD$CYAN" '[UQDA gateway]' "$RESET" "$RED" "$*" "$RESET" >&2
+	exit 1
+}
 need() { command -v "$1" >/dev/null 2>&1 || die "required command not found: $1"; }
 
 usage() {
@@ -42,6 +76,8 @@ Options:
   --password-file FILE File containing the Wi-Fi password (8-63 characters)
   --public             Acknowledge operation of an untrusted public network
   --config FILE        UQDA configuration (default: /etc/uqda.conf)
+  --color MODE         Color output: auto (default), always, or never
+  --no-color           Disable color output
 
 Safety:
   plan is read-only. apply requires explicit interfaces, root, and a password
@@ -60,10 +96,15 @@ while [ "$#" -gt 0 ]; do
 		--password-file) [ "$#" -ge 2 ] || die "--password-file needs a value"; PASSWORD_FILE=$2; shift 2 ;;
 		--public) PUBLIC_ACK=1; shift ;;
 		--config) [ "$#" -ge 2 ] || die "--config needs a value"; UQDA_CONFIG=$2; shift 2 ;;
+		--color) [ "$#" -ge 2 ] || die "--color needs a value"; COLOR=$2; shift 2 ;;
+		--color=*) COLOR=${1#*=}; shift ;;
+		--no-color) COLOR=never; shift ;;
 		-h|--help) usage; exit 0 ;;
 		*) die "unknown option: $1" ;;
 	esac
 done
+
+configure_color
 
 case "$PROFILE" in home|cafe) : ;; *) die "--profile must be home or cafe" ;; esac
 
