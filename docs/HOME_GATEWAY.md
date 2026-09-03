@@ -70,6 +70,11 @@ sudo uqda-gateway apply --wan eth0 --lan wlan0 --ssid Home-UQDA \
 rm -f /tmp/uqda-wifi-password
 ```
 
+The gateway helper uses semantic colors only on an interactive terminal. It
+keeps redirected logs plain, respects `NO_COLOR`, and accepts
+`--color auto|always|never` or `--no-color`. Every colored state also includes
+text so logs and accessibility tools retain the complete meaning.
+
 Use the correct two-letter regulatory country. The tool refuses to guess WAN
 and Wi-Fi interfaces. It creates only a connection named `uqda-gateway` and
 owned files under `/var/lib/uqda-gateway` so removal is targeted.

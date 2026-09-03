@@ -707,6 +707,13 @@ sudo uqdactl -json getSelf
 sudo uqdactl -json getPeers
 ```
 
+Human-readable `uqdactl` tables use semantic terminal colors in automatic mode:
+green for healthy/connected state, yellow for warnings, red for failures, and
+cyan for headings and labels. Automatic mode requires a terminal, respects
+`NO_COLOR`, and never adds ANSI escapes to JSON or redirected output. Use
+`-color=always` for terminal capture or `-color=never` for plain text. Status
+words remain visible independently of color.
+
 Use a non-default endpoint by putting options before the command:
 
 ```bash

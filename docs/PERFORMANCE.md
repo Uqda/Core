@@ -42,6 +42,12 @@ different explicit target for a remote site:
 uqda-latency 21c:f3b0:e941:88bc:2938:a694:9012:37f2 --count 50 --target-ms 40
 ```
 
+Interactive results use green, yellow, and red status colors. Automatic color
+is never written into redirected output and respects `NO_COLOR`; use
+`--color always`, `--color never`, or `--no-color` when an explicit choice is
+needed. Interrupting a measurement with `Ctrl+C` exits cleanly with status 130,
+removes its temporary files, and does not print follow-on file errors.
+
 List direct peers from lowest measured RTT to highest:
 
 ```sh
