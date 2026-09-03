@@ -144,6 +144,20 @@ On Unix-like systems, administration is intentionally root-only. Run all
 local administration socket is created with mode `0600`; access is not granted
 to ordinary users or groups.
 
+Run the read-only health and security diagnostic after installation or when
+connectivity is unclear:
+
+```bash
+sudo uqdactl doctor
+sudo uqdactl -json doctor
+```
+
+`doctor` checks the running daemon, identity, administration endpoint, TUN,
+direct peers, routing convergence, and multicast bootstrap state without
+printing private keys, peer passwords, or other configuration secrets. It
+exits with status `0` when healthy, `2` for warnings, and `1` for a security or
+identity failure.
+
 New nodes remain compatible with existing protocol 0.5 peers. When both sides support the hardened handshake, they negotiate it automatically. To require the hardened handshake on a controlled link and reject legacy peers, append `?secure=required` to both the peer URI and listener URI.
 
 Use `-json` with `-genconf` if strict JSON is preferred over commented HJSON. Creating a TUN interface normally requires administrator privileges. On Linux, the binary may instead be granted the required capability:
