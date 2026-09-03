@@ -7,9 +7,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"syscall"
@@ -39,6 +41,43 @@ type node struct {
 	admin     *admin.AdminSocket
 }
 
+func printUsage(w io.Writer, command string) {
+	fmt.Fprintf(w, `UQDA Core node daemon
+
+Usage:
+  %s [options]
+
+Manage an installed, running node (an elevated terminal may be required):
+  uqdactl doctor
+  uqdactl getSelf
+  uqdactl getPeers
+
+Start a temporary node:
+  %s -autoconf
+
+Create and use a persistent configuration:
+  %s -genconf > uqda.conf
+  %s -useconffile uqda.conf
+
+Read identity values from a configuration without starting the node:
+  %s -useconffile uqda.conf -address
+  %s -useconffile uqda.conf -subnet
+  %s -useconffile uqda.conf -publickey
+
+Notes:
+  -address, -subnet, -publickey, -exportkey and -normaliseconf require
+  -useconf or -useconffile.
+  -user is a daemon/service option and requires a user or user:group value.
+  SOCKS, port forwarding and -nameserver belong to uqda-stack, not UQDA Core.
+
+Options:
+`, command, command, command, command, command, command, command)
+	previous := flag.CommandLine.Output()
+	flag.CommandLine.SetOutput(w)
+	flag.PrintDefaults()
+	flag.CommandLine.SetOutput(previous)
+}
+
 // The main function is responsible for configuring and starting UQDA.
 func main() {
 	genconf := flag.Bool("genconf", false, "print a new config to stdout")
@@ -56,6 +95,9 @@ func main() {
 	loglevel := flag.String("loglevel", "info", "loglevel to enable")
 	chuserto := flag.String("user", "", "user (and, optionally, group) to set UID/GID to")
 	notifyFd := flag.Int("notifyfd", -1, "write a newline to this file-descriptor to indicate readiness to a service manager")
+	flag.Usage = func() {
+		printUsage(flag.CommandLine.Output(), filepath.Base(os.Args[0]))
+	}
 	flag.Parse()
 
 	done := make(chan struct{})
@@ -132,11 +174,13 @@ func main() {
 		return
 
 	default:
-		fmt.Println("Usage:")
-		flag.PrintDefaults()
+		printUsage(os.Stdout, filepath.Base(os.Args[0]))
 
-		if *getaddr || *getsnet {
+		if *getaddr || *getsnet || *getpkey || *exportkey || *normaliseconf {
 			fmt.Println("\nError: You need to specify some config data using -useconf or -useconffile.")
+		}
+		if *chuserto != "" {
+			fmt.Println("\nError: -user is a daemon option; combine it with -autoconf, -useconf or -useconffile.")
 		}
 		return
 	}
