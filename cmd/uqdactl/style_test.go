@@ -76,7 +76,7 @@ func TestColoredTableKeepsAlignment(t *testing.T) {
 	_ = table.Append([]string{style.status("WARNING"), style.label("peers"), "no peers are connected"})
 	_ = table.Render()
 
-	escapes := regexp.MustCompile("\\x1b\\[[0-9;]*m")
+	escapes := regexp.MustCompile(`\x1b\[[0-9;]*m`)
 	wantWidth := 0
 	for _, line := range strings.Split(strings.TrimSpace(output.String()), "\n") {
 		plain := escapes.ReplaceAllString(line, "")
