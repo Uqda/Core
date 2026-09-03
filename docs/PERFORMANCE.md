@@ -18,7 +18,8 @@ failure.
 
 ## Measure
 
-Install the helper from source until it is included in the next release:
+Stable releases starting with v0.1.2 publish the helper as a checksum-covered
+release asset. It can also be installed directly from the reviewed source:
 
 ```sh
 curl -fsSLo uqda-latency \
