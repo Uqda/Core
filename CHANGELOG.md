@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## v0.1.4
+
 - Added consistent, accessible terminal colors to `uqdactl`, `uqda-latency`,
   and `uqda-gateway`, with automatic TTY detection, `NO_COLOR`, explicit
   always/never modes, plain redirected output, and color-free JSON.
