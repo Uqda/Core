@@ -1,7 +1,7 @@
 #!/bin/sh
 
 set -eu
-ROOT=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 TEMP_BASE=${TMPDIR:-/tmp}
 [ -d "$TEMP_BASE" ] || TEMP_BASE=.
 SANDBOX=$(mktemp -d "$TEMP_BASE/uqda-uninstall-test.XXXXXX")
