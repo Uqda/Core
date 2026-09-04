@@ -179,12 +179,12 @@ sudo setcap CAP_NET_ADMIN=+eip ./uqda
 Pull the public multi-platform package from GitHub Container Registry:
 
 ```bash
-docker pull ghcr.io/uqda/core:latest
+docker pull ghcr.io/uqda/uqda-core:latest
 docker run --rm -it \
   --cap-add=NET_ADMIN \
   --device=/dev/net/tun \
   -v uqda-config:/etc/uqda \
-  ghcr.io/uqda/core:latest
+  ghcr.io/uqda/uqda-core:latest
 ```
 
 The package supports `linux/amd64`, `linux/arm64`, `linux/arm/v7`, and
