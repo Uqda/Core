@@ -7,7 +7,7 @@
 - Added task-oriented `uqda` help with copyable examples for every option and
   clearer errors for options that require configuration input.
 - Published the official public multi-platform container package as
-  `ghcr.io/uqda/uqda-core`, with stable, latest, and edge tags.
+  `ghcr.io/uqda/core`, with stable, latest, and edge tags.
 - Added SBOM and build provenance for container images plus post-publish
   anonymous-pull and executable-version verification.
 - Fixed the release path so containers are published directly by the stable

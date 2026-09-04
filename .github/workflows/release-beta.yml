@@ -397,7 +397,7 @@ jobs:
         id: container_meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/uqda/uqda-core
+          images: ghcr.io/uqda/core
           tags: |
             type=raw,value=${{ env.UQDA_VERSION }}
             type=semver,pattern={{version}},value=${{ env.UQDA_VERSION }}
@@ -422,7 +422,7 @@ jobs:
         env:
           CONTAINER_DIGEST: ${{ steps.container_build.outputs.digest }}
         run: |
-          image="ghcr.io/uqda/uqda-core@${CONTAINER_DIGEST}"
+          image="ghcr.io/uqda/core@${CONTAINER_DIGEST}"
           docker buildx imagetools inspect "$image"
           docker logout ghcr.io
           docker pull --platform linux/amd64 "$image"
@@ -463,10 +463,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "$UQDA_VERSION" >/dev/null 2>&1; then
-            echo "Release $UQDA_VERSION already exists; refusing to overwrite it."
-            exit 1
+            echo "Release $UQDA_VERSION already exists; keeping its published assets immutable."
+          else
+            gh release create "$UQDA_VERSION" release-assets/* \
+              --target "$GITHUB_SHA" \
+              --title "UQDA Core $UQDA_VERSION" \
+              --notes-file ".github/releases/${UQDA_VERSION}.md"
           fi
-          gh release create "$UQDA_VERSION" release-assets/* \
-            --target "$GITHUB_SHA" \
-            --title "UQDA Core $UQDA_VERSION" \
-            --notes-file ".github/releases/${UQDA_VERSION}.md"

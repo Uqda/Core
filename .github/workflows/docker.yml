@@ -17,7 +17,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ghcr.io/uqda/uqda-core
+  IMAGE_NAME: ghcr.io/uqda/core
 
 jobs:
   build-docker:
