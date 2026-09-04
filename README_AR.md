@@ -200,22 +200,35 @@ sudo setcap CAP_NET_ADMIN=+eip ./uqda
 
 ## التشغيل بواسطة الحاويات
 
-يمكن بناء المشروع وتشغيله بواسطة دوكر (Docker):
+يمكن سحب حزمة عُقَد العامة متعددة المعماريات من سجل حاويات GitHub:
+
+</div>
+
+```bash
+docker pull ghcr.io/uqda/core:latest
+docker run --rm -it \
+  --cap-add=NET_ADMIN \
+  --device=/dev/net/tun \
+  -v uqda-config:/etc/uqda \
+  ghcr.io/uqda/core:latest
+```
+
+<div dir="rtl" align="right">
+
+تدعم الحزمة `linux/amd64` و`linux/arm64` و`linux/arm/v7` و`linux/arm/v5`.
+تنشر الإصدارات المستقرة الوسوم `vX.Y.Z` و`X.Y.Z` و`X.Y` و`X` و`latest`،
+وتُنشر نسخة التطوير الحالية بالوسم `edge`. تنشئ الحاوية إعداداتها داخل وحدة
+التخزين الدائمة `uqda-config` عند التشغيل الأول.
+
+ولبناء الصورة محليًا بدلًا من سحب الحزمة:
 
 </div>
 
 ```bash
 docker build -t uqda-core -f contrib/docker/Dockerfile .
-docker run --rm -it \
-  --cap-add=NET_ADMIN \
-  --device=/dev/net/tun \
-  -v uqda-config:/etc/uqda \
-  uqda-core
 ```
 
 <div dir="rtl" align="right">
-
-تنشئ الحاوية إعداداتها داخل وحدة التخزين الدائمة `uqda-config` عند التشغيل الأول.
 
 ## إيدج أو إس وفاي أو إس
 
