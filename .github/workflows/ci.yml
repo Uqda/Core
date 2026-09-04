@@ -186,7 +186,7 @@ jobs:
       - uses: actions/checkout@v6
       - name: Validate Cask release metadata
         run: |
-          expected_version="$(sh contrib/semver/version.sh)"
+          expected_version="$(sh contrib/semver/release-version.sh)"
           expected_version="${expected_version#v}"
           expected_sha="$(shasum -a 256 install.sh | awk '{print $1}')"
           grep -Fx "  version \"${expected_version}\"" Casks/uqda.rb
