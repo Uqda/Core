@@ -25,6 +25,7 @@ GO111MODULE=on GOOS=darwin GOARCH=${PKGARCH-amd64} ./build
 test -f uqda || (echo "uqda binary not found"; exit 1)
 test -f uqdactl || (echo "uqdactl binary not found"; exit 1)
 test -f contrib/macos/uqda.plist || (echo "contrib/macos/uqda.plist not found"; exit 1)
+test -f uninstall.sh || (echo "uninstall.sh not found"; exit 1)
 test -f contrib/semver/version.sh || (echo "contrib/semver/version.sh not found"; exit 1)
 
 # Stable releases sign the Mach-O executables before packaging. Keep this
@@ -49,12 +50,14 @@ mkdir -p pkgbuild/scripts
 mkdir -p pkgbuild/flat/base.pkg
 mkdir -p pkgbuild/flat/Resources/en.lproj
 mkdir -p pkgbuild/root/usr/local/bin
+mkdir -p pkgbuild/root/usr/local/share/uqda
 mkdir -p pkgbuild/root/Library/LaunchDaemons
 
 # Copy package contents into the pkgbuild root
 cp uqda pkgbuild/root/usr/local/bin
 cp uqdactl pkgbuild/root/usr/local/bin
 cp contrib/macos/uqda.plist pkgbuild/root/Library/LaunchDaemons
+cp uninstall.sh pkgbuild/root/usr/local/share/uqda/uninstall.sh
 
 # Create the postinstall script
 cat > pkgbuild/scripts/postinstall << EOF
@@ -85,6 +88,7 @@ EOF
 chmod +x pkgbuild/scripts/postinstall
 chmod +x pkgbuild/root/usr/local/bin/uqda
 chmod +x pkgbuild/root/usr/local/bin/uqdactl
+chmod +x pkgbuild/root/usr/local/share/uqda/uninstall.sh
 
 # Pack payload and scripts
 ( cd pkgbuild/scripts && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > pkgbuild/flat/base.pkg/Scripts
@@ -100,7 +104,7 @@ PAYLOADSIZE=$(( $(wc -c pkgbuild/flat/base.pkg/Payload | awk '{ print $1 }') / 1
 # Create the PackageInfo file
 cat > pkgbuild/flat/base.pkg/PackageInfo << EOF
 <pkg-info format-version="2" identifier="io.github.uqda.pkg" version="${PKGVERSION}" install-location="/" auth="root">
-  <payload installKBytes="${PAYLOADSIZE}" numberOfFiles="3"/>
+  <payload installKBytes="${PAYLOADSIZE}" numberOfFiles="4"/>
   <scripts>
     <postinstall file="./postinstall"/>
   </scripts>
