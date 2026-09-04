@@ -125,7 +125,7 @@ case "$OS" in
 
 		if [ "$TEST_MODE" != 1 ] && command -v dpkg-query >/dev/null 2>&1 && command -v dpkg >/dev/null 2>&1; then
 			for package in uqda uqda-edgeos2x uqda-vyos13; do
-				if dpkg-query -W -f='${db:Status-Status}' "$package" 2>/dev/null | grep -q 'installed$'; then
+				if dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -q 'installed$'; then
 					if [ "$PURGE" -eq 1 ]; then
 						run_service_command "purge package $package" dpkg --purge "$package"
 					else
