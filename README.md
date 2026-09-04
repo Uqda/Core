@@ -90,7 +90,7 @@ brew install --cask uqda/core/uqda
 To ask Homebrew to check and install the newest stable release:
 
 ```bash
-brew upgrade --cask --greedy-latest uqda
+brew upgrade --cask uqda/core/uqda
 ```
 
 Homebrew requires explicit trust for third-party taps. Trusting only
@@ -109,6 +109,36 @@ sudo sh updater.sh
 
 For publisher-authenticated verification with Sigstore before installation, see
 [the release verification guide](docs/release-verification.md).
+
+## Uninstall
+
+Every supported Unix-like package includes the official uninstaller. Normal
+removal stops and removes the service and binaries but preserves the
+configuration and cryptographic node identity, making a later reinstall use
+the same node:
+
+```bash
+sudo /usr/local/share/uqda/uninstall.sh
+```
+
+Debian/Ubuntu and router packages install it at
+`/usr/share/uqda/uninstall.sh`. Homebrew users can use:
+
+```bash
+brew uninstall --cask uqda/core/uqda
+```
+
+To permanently remove all UQDA configuration, node identity, and backups,
+download and review the release script, then explicitly enable purge mode:
+
+```bash
+curl -fsSLO https://github.com/Uqda/Core/releases/latest/download/uninstall.sh
+sudo sh uninstall.sh --dry-run --purge
+sudo sh uninstall.sh --purge
+```
+
+The purge command asks for the word `PURGE`; automation must additionally
+pass `--yes`. This deletion cannot be undone.
 
 Supported release paths are systemd-based Debian/Ubuntu, Fedora and immutable
 Fedora derivatives such as Bazzite, macOS, EdgeOS 2.x, VyOS 1.3, and the listed
