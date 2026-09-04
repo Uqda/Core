@@ -491,6 +491,35 @@ latest release and run it as an administrator. The package installs `uqda.exe`,
 The service log is written under the same directory. The default Windows admin
 endpoint is `tcp://localhost:9001`; keep it bound to localhost.
 
+The MSI adds its installation directory to the machine `PATH`. Close and open
+PowerShell after installation so the new process receives the updated
+environment, then run these commands from an elevated window:
+
+```powershell
+uqda.exe -version
+uqdactl.exe list
+uqdactl.exe getSelf
+uqdactl.exe getPeers
+uqdactl.exe doctor
+Get-Service UQDA
+Restart-Service UQDA
+```
+
+PowerShell does not search the current directory for executables. With an older
+package that does not register `PATH`, change to the quoted installation path
+and use an explicit `.\` prefix:
+
+```powershell
+cd "C:\Program Files (x86)\UQDA"
+.\uqda.exe -version
+.\uqdactl.exe getSelf
+```
+
+The x64 and ARM64 packages normally use `C:\Program Files\UQDA`; x86 normally
+uses `C:\Program Files (x86)\UQDA`. Standard MSI uninstall removes the service,
+binaries, Wintun payload, and PATH entry while preserving `%ProgramData%\UQDA`
+so a later reinstall keeps the same node identity.
+
 ### Docker
 
 ```bash
@@ -612,7 +641,7 @@ fields; it intentionally omits the private key:
 | macOS | `/etc/uqda.conf` | `unix:///var/run/uqda.sock` | `auto`, MTU up to 65535 |
 | FreeBSD | `/usr/local/etc/uqda.conf` | `unix:///var/run/uqda.sock` | `/dev/tun0`, max MTU 32767 |
 | OpenBSD | `/etc/uqda.conf` | `unix:///var/run/uqda.sock` | `tun0`, max MTU 16384 |
-| Windows | `C:\Program Files\UQDA\uqda.conf` in generic defaults; MSI service uses `%ProgramData%\UQDA\uqda.conf` | `tcp://localhost:9001` | `UQDA` |
+| Windows | `%ProgramData%\UQDA\uqda.conf` | `tcp://localhost:9001` | `UQDA` |
 
 Packaged builds may override generic defaults at link time. The service/package
 configuration is authoritative for an installed system.
@@ -812,6 +841,11 @@ sudo uqdactl getSelf
 Running `uqda` without a mode or configuration prints its flags. A packaged
 service normally starts it with `-useconffile`. Use `uqda -version` to inspect
 the installed binary and `sudo uqdactl getSelf` to inspect the running daemon.
+
+On Windows, use `uqda.exe -version` and `uqdactl.exe getSelf` from an elevated
+PowerShell window. If PowerShell reports that the command exists in the current
+directory, invoke it as `.\uqda.exe` or `.\uqdactl.exe`; newer MSI packages add
+the installation directory to the system `PATH` automatically.
 
 ### Binary version and daemon version differ
 
