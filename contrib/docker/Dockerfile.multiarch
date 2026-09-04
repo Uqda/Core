@@ -16,7 +16,7 @@ RUN set -eux; \
     if [ "$TARGETARCH" = arm ] && [ -n "$TARGETVARIANT" ]; then \
       export GOARM="${TARGETVARIANT#v}"; \
     fi; \
-    UQDA_VERSION="$UQDA_VERSION" ./build; \
+    UQDA_VERSION="${UQDA_VERSION:-}" ./build; \
     go build -o /src/genkeys cmd/genkeys/main.go
 
 FROM docker.io/alpine
