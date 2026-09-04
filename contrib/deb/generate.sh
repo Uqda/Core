@@ -41,6 +41,7 @@ echo "Building $PKGFILE"
 mkdir -p /tmp/$PKGNAME/
 mkdir -p /tmp/$PKGNAME/debian/
 mkdir -p /tmp/$PKGNAME/usr/bin/
+mkdir -p /tmp/$PKGNAME/usr/share/uqda/
 mkdir -p /tmp/$PKGNAME/lib/systemd/system/
 
 cat > /tmp/$PKGNAME/debian/changelog << EOF
@@ -72,6 +73,7 @@ EOF
 cat > /tmp/$PKGNAME/debian/install << EOF
 usr/bin/uqda usr/bin
 usr/bin/uqdactl usr/bin
+usr/share/uqda/uninstall.sh usr/share/uqda
 lib/systemd/system/*.service lib/systemd/system
 EOF
 cat > /tmp/$PKGNAME/debian/postinst << EOF
@@ -127,11 +129,13 @@ EOF
 
 cp uqda /tmp/$PKGNAME/usr/bin/
 cp uqdactl /tmp/$PKGNAME/usr/bin/
+cp uninstall.sh /tmp/$PKGNAME/usr/share/uqda/uninstall.sh
+chmod 0755 /tmp/$PKGNAME/usr/share/uqda/uninstall.sh
 cp contrib/systemd/uqda-default-config.service.debian /tmp/$PKGNAME/lib/systemd/system/uqda-default-config.service
 cp contrib/systemd/uqda.service.debian /tmp/$PKGNAME/lib/systemd/system/uqda.service
 
 tar --no-xattrs --owner=0 --group=0 -czvf /tmp/$PKGNAME/data.tar.gz -C /tmp/$PKGNAME/ \
-  usr/bin/uqda usr/bin/uqdactl \
+  usr/bin/uqda usr/bin/uqdactl usr/share/uqda/uninstall.sh \
   lib/systemd/system/uqda.service \
   lib/systemd/system/uqda-default-config.service
 tar --no-xattrs --owner=0 --group=0 -czvf /tmp/$PKGNAME/control.tar.gz -C /tmp/$PKGNAME/debian .
