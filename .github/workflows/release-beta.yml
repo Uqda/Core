@@ -47,11 +47,13 @@ jobs:
           UQDA_TEST_VERSION: ${{ env.UQDA_VERSION }}
         run: sh tests/install_test.sh
       - name: Shell syntax
-        run: sh -n install.sh updater.sh tests/install_test.sh contrib/gateway/uqda-gateway contrib/performance/uqda-latency tests/gateway_test.sh tests/latency_test.sh
+        run: sh -n install.sh updater.sh uninstall.sh tests/install_test.sh tests/uninstall_test.sh contrib/gateway/uqda-gateway contrib/performance/uqda-latency tests/gateway_test.sh tests/latency_test.sh
       - name: Network helper tests
         run: |
           sh tests/gateway_test.sh
           sh tests/latency_test.sh
+      - name: Uninstaller safety tests
+        run: sh tests/uninstall_test.sh
       - name: Stage network helpers
         run: |
           cp contrib/gateway/uqda-gateway uqda-gateway
@@ -105,7 +107,7 @@ jobs:
           ./build
           archive="uqda-${UQDA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
           mkdir "$archive"
-          cp uqda uqdactl install.sh updater.sh README.md README_AR.md LICENSE NOTICE.md "$archive/"
+          cp uqda uqdactl install.sh updater.sh uninstall.sh README.md README_AR.md LICENSE NOTICE.md "$archive/"
           tar -czf "$archive.tar.gz" "$archive"
       - uses: actions/upload-artifact@v4
         with:
@@ -138,6 +140,7 @@ jobs:
           package=$(find . -maxdepth 1 -name 'uqda-*.deb' -print -quit)
           dpkg-deb --info "$package"
           dpkg-deb --contents "$package" | grep -E 'usr/bin/(uqda|uqdactl)$'
+          dpkg-deb --contents "$package" | grep 'usr/share/uqda/uninstall.sh'
       - uses: actions/upload-artifact@v4
         with:
           name: debian-${{ matrix.arch }}
@@ -174,6 +177,7 @@ jobs:
           package=$(find . -maxdepth 1 -name 'uqda-*.deb' -print -quit)
           test "$(dpkg-deb -f "$package" Architecture)" = "${{ matrix.arch }}"
           dpkg-deb --contents "$package" | grep 'usr/lib/systemd/system/uqda@.service'
+          dpkg-deb --contents "$package" | grep 'usr/share/uqda/uninstall.sh'
           dpkg-deb --contents "$package" | grep 'templates/interfaces/uqda/node.def'
           dpkg-deb --contents "$package" | head -1 | grep '^drwxr-xr-x'
       - uses: actions/upload-artifact@v4
@@ -262,6 +266,7 @@ jobs:
           pkgutil --expand "$package" expanded.pkg
           grep "version=\"${UQDA_VERSION#v}\"" expanded.pkg/Distribution
           test -s expanded.pkg/base.pkg/Payload
+          pkgutil --payload-files "$package" | grep 'usr/local/share/uqda/uninstall.sh'
       - name: Notarize signed installer
         if: env.MACOS_SIGNING_ENABLED == 'true'
         run: |
@@ -355,14 +360,16 @@ jobs:
         env:
           UQDA_TEST_VERSION: ${{ env.UQDA_VERSION }}
         run: |
-          sh -n install.sh updater.sh tests/install_test.sh
+          sh -n install.sh updater.sh uninstall.sh tests/install_test.sh tests/uninstall_test.sh
           sh tests/install_test.sh
+          sh tests/uninstall_test.sh
       - uses: actions/upload-artifact@v4
         with:
           name: release-tools
           path: |
             install.sh
             updater.sh
+            uninstall.sh
           if-no-files-found: error
 
   publish:
@@ -437,7 +444,7 @@ jobs:
         run: |
           cd release-assets
           find . -maxdepth 1 -type f ! -name SHA256SUMS ! -name SHA256SUMS.sigstore.json -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
-          test "$(find . -maxdepth 1 -type f | wc -l)" -ge 30
+          test "$(find . -maxdepth 1 -type f | wc -l)" -ge 31
           cat SHA256SUMS
       - name: Install Cosign
         uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0

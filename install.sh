@@ -256,6 +256,8 @@ case "$METHOD" in
 		tar -xzf "$TMPDIR_UQDA/$ASSET" -C "$TMPDIR_UQDA/unpacked" --strip-components=1
 		install -m 0755 "$TMPDIR_UQDA/unpacked/uqda" /usr/local/bin/uqda
 		install -m 0755 "$TMPDIR_UQDA/unpacked/uqdactl" /usr/local/bin/uqdactl
+		mkdir -p /usr/local/share/uqda
+		install -m 0755 "$TMPDIR_UQDA/unpacked/uninstall.sh" /usr/local/share/uqda/uninstall.sh
 		install_portable_service
 		;;
 esac

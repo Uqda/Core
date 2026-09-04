@@ -97,7 +97,7 @@ brew install --cask uqda/core/uqda
 </div>
 
 ```bash
-brew upgrade --cask --greedy-latest uqda
+brew upgrade --cask uqda/core/uqda
 ```
 
 <div dir="rtl" align="right">
@@ -120,6 +120,47 @@ sudo sh updater.sh
 
 للتحقق من هوية ناشر الإصدار بواسطة Sigstore قبل التثبيت، راجع
 [دليل التحقق من الإصدارات](docs/release-verification.md).
+
+## إزالة عُقَد
+
+تتضمن كل حزمة مدعومة للأنظمة الشبيهة بيونكس برنامج الإزالة الرسمي. تزيل
+الطريقة العادية الخدمة والملفات التنفيذية مع الاحتفاظ بالإعداد وهوية العقدة
+التشفيرية، حتى تستخدم إعادة التثبيت اللاحقة هوية العقدة نفسها:
+
+</div>
+
+```bash
+sudo /usr/local/share/uqda/uninstall.sh
+```
+
+<div dir="rtl" align="right">
+
+تضع حزم ديبيان وأوبونتو وحزم أجهزة التوجيه البرنامج في
+`/usr/share/uqda/uninstall.sh`. أما مستخدمو Homebrew فيستخدمون:
+
+</div>
+
+```bash
+brew uninstall --cask uqda/core/uqda
+```
+
+<div dir="rtl" align="right">
+
+لإزالة الإعداد وهوية العقدة وجميع النسخ الاحتياطية نهائيًا، نزّل برنامج
+الإزالة من أحدث إصدار وراجعه، ثم استخدم وضع الحذف الكامل صراحةً:
+
+</div>
+
+```bash
+curl -fsSLO https://github.com/Uqda/Core/releases/latest/download/uninstall.sh
+sudo sh uninstall.sh --dry-run --purge
+sudo sh uninstall.sh --purge
+```
+
+<div dir="rtl" align="right">
+
+يعرض الأمر الأخير تحذيرًا ويطلب كتابة الكلمة `PURGE`. ويجب إضافة `--yes`
+عند التشغيل الآلي. لا يمكن التراجع عن حذف الهوية والإعدادات بعد تنفيذه.
 
 تشمل مسارات الإصدار المدعومة أنظمة ديبيان وأوبونتو وفيدورا، وأنظمة فيدورا
 الثابتة مثل بازايت (Bazzite)، والمعتمدة على مدير الخدمات سيستم دي (systemd)،

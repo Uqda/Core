@@ -25,6 +25,10 @@ jobs:
         run: |
           sh tests/gateway_test.sh
           sh tests/latency_test.sh
+      - name: Uninstaller tests
+        run: |
+          sh -n uninstall.sh tests/uninstall_test.sh
+          sh tests/uninstall_test.sh
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
 
@@ -193,6 +197,7 @@ jobs:
           grep -Fx "  sha256 \"${expected_sha}\"" Casks/uqda.rb
           grep -F 'releases/download/v#{version}/install.sh' Casks/uqda.rb
           grep -F '"--version", "v#{version}"' Casks/uqda.rb
+          grep -F '"/usr/local/share/uqda/uninstall.sh"' Casks/uqda.rb
       - name: Validate Cask syntax and style
         run: |
           ruby -c Casks/uqda.rb

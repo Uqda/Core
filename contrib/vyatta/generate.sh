@@ -30,8 +30,10 @@ chmod 0755 "$STAGE"
 
 GOOS=linux GOARCH="$GOARCH" GOMIPS="$GOMIPS" CGO_ENABLED=0 ./build
 
-mkdir -p "$STAGE/usr/local/bin" "$STAGE/DEBIAN"
+mkdir -p "$STAGE/usr/local/bin" "$STAGE/usr/share/uqda" "$STAGE/DEBIAN"
 cp uqda uqdactl "$STAGE/usr/local/bin/"
+cp uninstall.sh "$STAGE/usr/share/uqda/uninstall.sh"
+chmod 0755 "$STAGE/usr/share/uqda/uninstall.sh"
 cp -R contrib/vyatta/package/opt "$STAGE/"
 cp -R contrib/vyatta/package/usr "$STAGE/"
 
