@@ -2,6 +2,18 @@
 
 package config
 
+import (
+	"os"
+	"path/filepath"
+)
+
+func windowsConfigFile() string {
+	if programData := os.Getenv("ProgramData"); programData != "" {
+		return filepath.Join(programData, "UQDA", "uqda.conf")
+	}
+	return `C:\ProgramData\UQDA\uqda.conf`
+}
+
 // Sane defaults for the Windows platform. The "default" options may be
 // may be replaced by the running configuration.
 func getDefaults() platformDefaultParameters {
@@ -10,7 +22,7 @@ func getDefaults() platformDefaultParameters {
 		DefaultAdminListen: "tcp://localhost:9001",
 
 		// Configuration (used for uqdactl)
-		DefaultConfigFile: "C:\\Program Files\\UQDA\\uqda.conf",
+		DefaultConfigFile: windowsConfigFile(),
 
 		// Multicast interfaces
 		DefaultMulticastInterfaces: []MulticastInterfaceConfig{
