@@ -1,6 +1,6 @@
 cask "uqda" do
-  version "0.1.5"
-  sha256 "9ed9bc866898b27584e5d1f3bf2363fd5a186a5a48b3c49f5dfbb21c280ffd2c"
+  version "0.1.6"
+  sha256 "202c191d612f3499570afab6a9cb731cbdd9e3402d2abc28409bd11652006379"
 
   url "https://github.com/Uqda/Core/releases/download/v#{version}/install.sh"
   name "UQDA"
@@ -20,8 +20,11 @@ cask "uqda" do
     sudo:       true,
   }
 
-  uninstall launchctl: "uqda",
-            pkgutil:   "io.github.uqda.pkg"
+  uninstall script: {
+    executable: "/bin/sh",
+    args:       ["/usr/local/share/uqda/uninstall.sh"],
+    sudo:       true,
+  }
 
   caveats <<~EOS
     UQDA's macOS package is unsigned because the project does not use a paid
@@ -30,5 +33,11 @@ cask "uqda" do
 
     Check the running node with:
       sudo uqdactl getSelf
+
+    Homebrew uninstall preserves the node identity for a future reinstall:
+      brew uninstall --cask uqda/core/uqda
+
+    For permanent removal, download uninstall.sh from the latest release and
+    run: sudo sh uninstall.sh --purge
   EOS
 end
