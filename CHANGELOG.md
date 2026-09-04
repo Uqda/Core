@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## v0.1.7
+
+- Made uninstaller dry-run output explicitly state that actions are planned and
+  that no files were changed.
+- Added regression coverage preventing dry-run from reporting completed removal.
+
 ## v0.1.6
 
 - Added a cross-platform `uninstall.sh` with safe preservation, explicit purge,

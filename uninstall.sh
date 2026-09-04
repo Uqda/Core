@@ -60,23 +60,35 @@ root_path() { printf '%s%s\n' "$TEST_ROOT" "$1"; }
 remove_file() {
 	target=$(root_path "$1")
 	if [ -e "$target" ] || [ -L "$target" ]; then
-		say "remove $1"
-		[ "$DRY_RUN" -eq 1 ] || rm -f "$target"
+		if [ "$DRY_RUN" -eq 1 ]; then
+			say "would remove $1"
+		else
+			say "remove $1"
+			rm -f "$target"
+		fi
 	fi
 }
 
 remove_dir() {
 	target=$(root_path "$1")
 	if [ -d "$target" ] || [ -L "$target" ]; then
-		say "remove $1"
-		[ "$DRY_RUN" -eq 1 ] || rm -rf "$target"
+		if [ "$DRY_RUN" -eq 1 ]; then
+			say "would remove $1"
+		else
+			say "remove $1"
+			rm -rf "$target"
+		fi
 	fi
 }
 
 run_service_command() {
 	description=$1
 	shift
-	say "$description"
+	if [ "$DRY_RUN" -eq 1 ]; then
+		say "would $description"
+	else
+		say "$description"
+	fi
 	if [ "$DRY_RUN" -ne 1 ] && [ "$TEST_MODE" != 1 ]; then
 		"$@" || true
 	fi
@@ -92,6 +104,7 @@ case "$raw_os" in
 esac
 
 say "uninstalling UQDA on $OS"
+[ "$DRY_RUN" -eq 0 ] || say "dry-run mode enabled: no changes will be made"
 [ "$PURGE" -eq 0 ] || say "purge mode enabled: configuration and node identity will be deleted"
 
 case "$OS" in
@@ -196,11 +209,21 @@ if [ "$PURGE" -eq 1 ]; then
 		"$TEST_ROOT"/config/uqda.tun[0-9]*.conf; do
 		[ -e "$pattern" ] || [ -L "$pattern" ] || continue
 		display=${pattern#"$TEST_ROOT"}
-		say "remove $display"
-		[ "$DRY_RUN" -eq 1 ] || rm -f "$pattern"
+		if [ "$DRY_RUN" -eq 1 ]; then
+			say "would remove $display"
+		else
+			say "remove $display"
+			rm -f "$pattern"
+		fi
 	done
 
 	remove_dir /var/lib/uqda
+fi
+
+if [ "$DRY_RUN" -eq 1 ]; then
+	say "dry run completed; no files were changed"
+	[ "$PURGE" -eq 0 ] || say "run again without --dry-run and type PURGE to confirm permanent deletion"
+elif [ "$PURGE" -eq 1 ]; then
 	say "UQDA was completely removed, including configuration and node identity"
 else
 	say "UQDA services and program files were removed"

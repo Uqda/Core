@@ -59,9 +59,16 @@ assert_present /var/backups/uqda.conf.20260904
 assert_present /config/uqda.tun0.conf
 
 before=$(find "$SANDBOX" -print | sort)
-UQDA_TEST_MODE=1 UQDA_TEST_ROOT=$SANDBOX UQDA_TEST_OS=Linux sh "$ROOT/uninstall.sh" --purge --dry-run >/dev/null
+dry_output=$(UQDA_TEST_MODE=1 UQDA_TEST_ROOT=$SANDBOX UQDA_TEST_OS=Linux sh "$ROOT/uninstall.sh" --purge --dry-run)
 after=$(find "$SANDBOX" -print | sort)
 [ "$before" = "$after" ] || { echo "dry-run changed files" >&2; exit 1; }
+printf '%s\n' "$dry_output" | grep -F "dry-run mode enabled: no changes will be made" >/dev/null
+printf '%s\n' "$dry_output" | grep -F "would remove /etc/uqda" >/dev/null
+printf '%s\n' "$dry_output" | grep -F "dry run completed; no files were changed" >/dev/null
+if printf '%s\n' "$dry_output" | grep -F "was completely removed" >/dev/null; then
+	echo "dry-run falsely reported completed removal" >&2
+	exit 1
+fi
 
 UQDA_TEST_MODE=1 UQDA_TEST_ROOT=$SANDBOX UQDA_TEST_OS=Linux sh "$ROOT/uninstall.sh" --purge --yes
 assert_missing /etc/uqda
