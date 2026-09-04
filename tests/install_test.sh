@@ -41,5 +41,6 @@ resolved=$(UQDA_VERSION= UQDA_RELEASES_FILE=$fixture UQDA_RESOLVE_ONLY=1 sh "$RO
 grep -F 'chmod 0600 "$CONFIG_FILE"' "$ROOT/install.sh" >/dev/null
 grep -F 'systemd-deb) SOCKET_PATH=/var/run/uqda/uqda.sock' "$ROOT/install.sh" >/dev/null
 grep -F 'systemd-portable) SOCKET_PATH=/var/run/uqda.sock' "$ROOT/install.sh" >/dev/null
+grep -F 'install -m 0755 "$TMPDIR_UQDA/unpacked/uninstall.sh" /usr/local/share/uqda/uninstall.sh' "$ROOT/install.sh" >/dev/null
 
 echo "installer platform matrix passed for $TEST_VERSION"
