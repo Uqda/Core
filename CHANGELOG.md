@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## v0.1.6
+
+- Added a cross-platform `uninstall.sh` with safe preservation, explicit purge,
+  confirmation, and dry-run modes.
+- Bundled the uninstaller with macOS, Debian, router, and portable packages.
+- Integrated Homebrew uninstall with the official removal path.
+- Added isolated removal tests and English/Arabic lifecycle documentation.
+
 ## v0.1.5
 
 - Added task-oriented `uqda` help with copyable examples for every option and
