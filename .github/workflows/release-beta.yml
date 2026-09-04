@@ -397,7 +397,7 @@ jobs:
         id: container_meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/uqda/core
+          images: ghcr.io/uqda/uqda-core
           tags: |
             type=raw,value=${{ env.UQDA_VERSION }}
             type=semver,pattern={{version}},value=${{ env.UQDA_VERSION }}
@@ -419,12 +419,12 @@ jobs:
       - name: Make container package public
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api --method PATCH /orgs/Uqda/packages/container/core -f visibility=public
+        run: gh api --method PATCH /orgs/Uqda/packages/container/uqda-core -f visibility=public
       - name: Verify public package and version
         env:
           CONTAINER_DIGEST: ${{ steps.container_build.outputs.digest }}
         run: |
-          image="ghcr.io/uqda/core@${CONTAINER_DIGEST}"
+          image="ghcr.io/uqda/uqda-core@${CONTAINER_DIGEST}"
           docker buildx imagetools inspect "$image"
           docker logout ghcr.io
           docker pull --platform linux/amd64 "$image"
