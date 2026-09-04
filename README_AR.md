@@ -215,7 +215,7 @@ docker run --rm -it \
 
 <div dir="rtl" align="right">
 
-تدعم الحزمة `linux/amd64` و`linux/arm64` و`linux/arm/v7` و`linux/arm/v5`.
+تدعم الحزمة `linux/amd64` و`linux/arm64` و`linux/arm/v7` و`linux/arm/v6`.
 تنشر الإصدارات المستقرة الوسوم `vX.Y.Z` و`X.Y.Z` و`X.Y` و`X` و`latest`،
 وتُنشر نسخة التطوير الحالية بالوسم `edge`. تنشئ الحاوية إعداداتها داخل وحدة
 التخزين الدائمة `uqda-config` عند التشغيل الأول.

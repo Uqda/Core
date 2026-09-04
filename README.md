@@ -188,7 +188,7 @@ docker run --rm -it \
 ```
 
 The package supports `linux/amd64`, `linux/arm64`, `linux/arm/v7`, and
-`linux/arm/v5`. Stable releases publish `vX.Y.Z`, `X.Y.Z`, `X.Y`, `X`, and
+`linux/arm/v6`. Stable releases publish `vX.Y.Z`, `X.Y.Z`, `X.Y`, `X`, and
 `latest` tags; the current development build is published as `edge`. The
 container creates its configuration inside the persistent `uqda-config` volume
 on first start.
