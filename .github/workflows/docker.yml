@@ -2,6 +2,7 @@ name: Docker Build
 
 on:
   workflow_dispatch:
+  pull_request:
   push:
     branches: [main, master]
     tags: ["v*"]
@@ -16,7 +17,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ghcr.io/uqda/core
 
 jobs:
   build-docker:
@@ -31,7 +32,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GitHub Container Registry
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -42,10 +43,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=tag
-            type=ref,event=branch
+            type=raw,value=edge,enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
@@ -56,9 +57,30 @@ jobs:
         with:
           context: .
           file: ./contrib/docker/Dockerfile.multiarch
-          platforms: linux/amd64,linux/arm64,linux/armhf,linux/armel
-          # Every branch is built, while only version tags publish a package.
-          push: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
+          # Pull requests build only. Main publishes edge; release tags publish
+          # immutable SemVer tags when a tag is pushed outside GITHUB_TOKEN.
+          push: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          provenance: false
+          provenance: mode=max
+          sbom: true
+
+      - name: Make the package public
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method PATCH /orgs/Uqda/packages/container/core -f visibility=public
+
+      - name: Verify anonymous pull and executable
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        env:
+          DIGEST: ${{ steps.docker_build.outputs.digest }}
+        run: |
+          image="${IMAGE_NAME}@${DIGEST}"
+          docker buildx imagetools inspect "$image"
+          docker logout "$REGISTRY"
+          docker pull --platform linux/amd64 "$image"
+          docker run --rm --platform linux/amd64 \
+            --entrypoint /usr/bin/uqda "$image" -version | tee version.txt
+          grep -F 'Build name: uqda' version.txt

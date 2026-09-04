@@ -176,16 +176,28 @@ sudo setcap CAP_NET_ADMIN=+eip ./uqda
 
 ## Docker
 
+Pull the public multi-platform package from GitHub Container Registry:
+
 ```bash
-docker build -t uqda-core -f contrib/docker/Dockerfile .
+docker pull ghcr.io/uqda/core:latest
 docker run --rm -it \
   --cap-add=NET_ADMIN \
   --device=/dev/net/tun \
   -v uqda-config:/etc/uqda \
-  uqda-core
+  ghcr.io/uqda/core:latest
 ```
 
-The container creates its configuration inside the persistent `uqda-config` volume on first start.
+The package supports `linux/amd64`, `linux/arm64`, `linux/arm/v7`, and
+`linux/arm/v6`. Stable releases publish `vX.Y.Z`, `X.Y.Z`, `X.Y`, `X`, and
+`latest` tags; the current development build is published as `edge`. The
+container creates its configuration inside the persistent `uqda-config` volume
+on first start.
+
+To build locally instead:
+
+```bash
+docker build -t uqda-core -f contrib/docker/Dockerfile .
+```
 
 ## EdgeOS and VyOS
 
