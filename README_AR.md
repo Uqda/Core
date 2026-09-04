@@ -205,12 +205,12 @@ sudo setcap CAP_NET_ADMIN=+eip ./uqda
 </div>
 
 ```bash
-docker pull ghcr.io/uqda/core:latest
+docker pull ghcr.io/uqda/uqda-core:latest
 docker run --rm -it \
   --cap-add=NET_ADMIN \
   --device=/dev/net/tun \
   -v uqda-config:/etc/uqda \
-  ghcr.io/uqda/core:latest
+  ghcr.io/uqda/uqda-core:latest
 ```
 
 <div dir="rtl" align="right">
