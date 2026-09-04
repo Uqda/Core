@@ -45,7 +45,7 @@ func printUsage(w io.Writer, command string) {
 	fmt.Fprintf(w, `UQDA Core node daemon
 
 Usage:
-  %s [options]
+  %[1]s [options]
 
 Manage an installed, running node (an elevated terminal may be required):
   uqdactl doctor
@@ -53,16 +53,37 @@ Manage an installed, running node (an elevated terminal may be required):
   uqdactl getPeers
 
 Start a temporary node:
-  %s -autoconf
+  %[1]s -autoconf
 
 Create and use a persistent configuration:
-  %s -genconf > uqda.conf
-  %s -useconffile uqda.conf
+  %[1]s -genconf > uqda.conf
+  %[1]s -useconffile uqda.conf
 
 Read identity values from a configuration without starting the node:
-  %s -useconffile uqda.conf -address
-  %s -useconffile uqda.conf -subnet
-  %s -useconffile uqda.conf -publickey
+  %[1]s -useconffile uqda.conf -address
+  %[1]s -useconffile uqda.conf -subnet
+  %[1]s -useconffile uqda.conf -publickey
+
+Examples for every option:
+  -address         %[1]s -useconffile uqda.conf -address
+  -autoconf        %[1]s -autoconf
+  -exportkey       %[1]s -useconffile uqda.conf -exportkey
+                   Warning: this prints the private key; never share it.
+  -genconf         %[1]s -genconf > uqda.conf
+  -json            %[1]s -genconf -json > uqda.json
+  -loglevel        %[1]s -autoconf -loglevel debug
+                   Levels: error, warn, info, debug or trace.
+  -logto           %[1]s -autoconf -logto uqda.log
+                   Values: stdout, syslog or a file path.
+  -normaliseconf   %[1]s -useconffile uqda.conf -normaliseconf
+  -notifyfd        Service-manager integration only; do not use manually.
+  -publickey       %[1]s -useconffile uqda.conf -publickey
+  -subnet          %[1]s -useconffile uqda.conf -subnet
+  -useconf         cat uqda.conf | %[1]s -useconf
+  -useconffile     %[1]s -useconffile uqda.conf
+  -user            %[1]s -useconffile uqda.conf -user USER:GROUP
+                   Unix daemon option; GROUP is optional.
+  -version         %[1]s -version
 
 Notes:
   -address, -subnet, -publickey, -exportkey and -normaliseconf require
@@ -71,7 +92,7 @@ Notes:
   SOCKS, port forwarding and -nameserver belong to uqda-stack, not UQDA Core.
 
 Options:
-`, command, command, command, command, command, command, command)
+`, command)
 	previous := flag.CommandLine.Output()
 	flag.CommandLine.SetOutput(w)
 	flag.PrintDefaults()
