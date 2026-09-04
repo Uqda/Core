@@ -416,10 +416,6 @@ jobs:
           labels: ${{ steps.container_meta.outputs.labels }}
           provenance: mode=max
           sbom: true
-      - name: Make container package public
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh api --method PATCH /orgs/Uqda/packages/container/uqda-core -f visibility=public
       - name: Verify public package and version
         env:
           CONTAINER_DIGEST: ${{ steps.container_build.outputs.digest }}
