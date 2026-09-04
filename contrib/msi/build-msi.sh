@@ -124,6 +124,15 @@ cat > wix.xml << EOF
               DiskId="1"
               Source="${PKGWINTUNDLL}" />
 
+            <Environment
+              Id="UQDAPath"
+              Name="PATH"
+              Value="[UQDAInstallFolder]"
+              Action="set"
+              Part="last"
+              Permanent="no"
+              System="yes" />
+
             <ServiceInstall
               Id="ServiceInstaller"
               Account="LocalSystem"
