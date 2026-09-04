@@ -107,6 +107,40 @@ curl -fsSLO https://github.com/Uqda/Core/releases/latest/download/updater.sh
 sudo sh updater.sh
 ```
 
+### Windows
+
+Download the matching `.msi` asset from the latest release and run it as an
+administrator. The installer creates and starts the `UQDA` Windows service.
+New packages add the installation directory to the system `PATH`; open a new
+PowerShell window after installation, then use:
+
+```powershell
+uqda.exe -version
+uqdactl.exe list
+uqdactl.exe getSelf
+uqdactl.exe getPeers
+uqdactl.exe doctor
+Get-Service UQDA
+Restart-Service UQDA
+```
+
+Service commands require an elevated PowerShell window. Do not run `uqda.exe`
+without a mode to inspect the installed node: that only prints daemon flags.
+Use `uqdactl.exe getSelf` for the running node.
+
+In an older package whose directory is not yet in `PATH`, PowerShell requires
+the `.\` prefix for a program in the current directory:
+
+```powershell
+cd "C:\Program Files (x86)\UQDA"
+.\uqda.exe -version
+.\uqdactl.exe getSelf
+```
+
+Depending on the installed architecture, the directory can instead be
+`C:\Program Files\UQDA`. The configuration and service log are under
+`$env:ProgramData\UQDA`.
+
 For publisher-authenticated verification with Sigstore before installation, see
 [the release verification guide](docs/release-verification.md).
 

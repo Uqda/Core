@@ -118,6 +118,47 @@ sudo sh updater.sh
 
 <div dir="rtl" align="right">
 
+### Windows
+
+نزّل ملف `.msi` المناسب لمعمارية الجهاز من أحدث إصدار، وشغّله بصلاحيات
+المسؤول. ينشئ المثبّت خدمة Windows باسم `UQDA` ويشغّلها تلقائيًا. تضيف
+الحزم الجديدة مجلد التثبيت إلى متغير النظام `PATH`؛ افتح نافذة PowerShell
+جديدة بعد التثبيت، ثم استخدم:
+
+</div>
+
+```powershell
+uqda.exe -version
+uqdactl.exe list
+uqdactl.exe getSelf
+uqdactl.exe getPeers
+uqdactl.exe doctor
+Get-Service UQDA
+Restart-Service UQDA
+```
+
+<div dir="rtl" align="right">
+
+تحتاج أوامر الخدمة إلى نافذة PowerShell مشغّلة بصلاحيات المسؤول. لا تستخدم
+`uqda.exe` وحده لفحص العقدة المثبّتة؛ فهذا يعرض خيارات برنامج الخدمة فقط.
+استخدم `uqdactl.exe getSelf` لمعرفة حالة العقدة العاملة.
+
+في الحزم القديمة التي لم تضف المجلد إلى `PATH`، يتطلب PowerShell كتابة البادئة
+`.\` لتشغيل ملف من المجلد الحالي:
+
+</div>
+
+```powershell
+cd "C:\Program Files (x86)\UQDA"
+.\uqda.exe -version
+.\uqdactl.exe getSelf
+```
+
+<div dir="rtl" align="right">
+
+قد يكون مسار حزمة 64 بت `C:\Program Files\UQDA` بدلًا من ذلك. يوجد ملف
+الإعداد وسجل الخدمة داخل `$env:ProgramData\UQDA`.
+
 للتحقق من هوية ناشر الإصدار بواسطة Sigstore قبل التثبيت، راجع
 [دليل التحقق من الإصدارات](docs/release-verification.md).
 
