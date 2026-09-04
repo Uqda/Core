@@ -25,14 +25,18 @@ dotnet tool install --global wix --version 5.0.0
 
 # Create the postinstall script
 cat > updateconfig.bat << EOF
-if not exist %ALLUSERSPROFILE%\\UQDA (
-  mkdir %ALLUSERSPROFILE%\\UQDA
+@echo off
+setlocal
+set "UQDA_CONFIG_DIR=%ProgramData%\\UQDA"
+if not exist "%UQDA_CONFIG_DIR%" (
+  mkdir "%UQDA_CONFIG_DIR%" || exit /b 1
 )
-if not exist %ALLUSERSPROFILE%\\UQDA\\uqda.conf (
-  if exist uqda.exe (
-    uqda.exe -genconf > %ALLUSERSPROFILE%\\UQDA\\uqda.conf
+if not exist "%UQDA_CONFIG_DIR%\\uqda.conf" (
+  if exist "%~dp0uqda.exe" (
+    "%~dp0uqda.exe" -genconf > "%UQDA_CONFIG_DIR%\\uqda.conf" || exit /b 1
   )
 )
+exit /b 0
 EOF
 
 # Work out metadata for the package info
@@ -143,7 +147,7 @@ cat > wix.xml << EOF
               Name="UQDA"
               Start="auto"
               Type="ownProcess"
-              Arguments='-useconffile "%ALLUSERSPROFILE%\\UQDA\\uqda.conf" -logto "%ALLUSERSPROFILE%\\UQDA\\uqda.log"'
+              Arguments='-useconffile "[CommonAppDataFolder]UQDA\\uqda.conf" -logto "[CommonAppDataFolder]UQDA\\uqda.log"'
               Vital="yes" />
 
             <ServiceControl
