@@ -1,8 +1,7 @@
 package core
 
-// This file contains the version metadata struct
-// Used in the initial connection setup and key exchange
-// Some of this could arguably go in wire.go instead
+// Connection metadata implements the Yggdrasil wire protocol. Product release
+// identity is defined separately in src/version.
 
 import (
 	"bytes"
@@ -14,8 +13,8 @@ import (
 )
 
 // This is the version-specific metadata exchanged at the start of a connection.
-// It must always begin with the 4 bytes "meta" and a wire formatted uint64 major version number.
-// The current version also includes a minor version number, and the box/sig/link keys that need to be exchanged to open a connection.
+// It begins with the four-byte "meta" preamble and a uint16 payload length.
+// Length-delimited fields carry protocol versions, the public key and priority.
 type version_metadata struct {
 	majorVer  uint16
 	minorVer  uint16
@@ -41,7 +40,7 @@ type handshakeError string
 
 func (e handshakeError) Error() string { return string(e) }
 
-const ErrHandshakeInvalidPreamble = handshakeError("invalid handshake, remote side is not Yggdrasil")
+const ErrHandshakeInvalidPreamble = handshakeError("invalid handshake: remote peer did not send a Yggdrasil protocol preamble")
 const ErrHandshakeInvalidLength = handshakeError("invalid handshake length, possible version mismatch")
 const ErrHandshakeInvalidPassword = handshakeError("invalid password supplied, check your config")
 const ErrHandshakeHashFailure = handshakeError("invalid hash length")

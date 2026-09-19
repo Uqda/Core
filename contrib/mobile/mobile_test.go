@@ -13,16 +13,16 @@ func TestStartUqda(t *testing.T) {
 	logger.EnableLevel("warn")
 	logger.EnableLevel("info")
 
-	ygg := &Uqda{
+	node := &Uqda{
 		logger: logger,
 	}
-	if err := ygg.StartAutoconfigure(); err != nil {
+	if err := node.StartAutoconfigure(); err != nil {
 		t.Fatalf("Failed to start Uqda: %s", err)
 	}
-	t.Log("Address:", ygg.GetAddressString())
-	t.Log("Subnet:", ygg.GetSubnetString())
-	t.Log("Routing entries:", ygg.GetRoutingEntries())
-	if err := ygg.Stop(); err != nil {
+	t.Log("Address:", node.GetAddressString())
+	t.Log("Subnet:", node.GetSubnetString())
+	t.Log("Routing entries:", node.GetRoutingEntries())
+	if err := node.Stop(); err != nil {
 		t.Fatalf("Failed to stop Uqda: %s", err)
 	}
 }
@@ -32,23 +32,23 @@ func TestStartUqda(t *testing.T) {
 // payload reached writePC, which also panicked.
 func TestSendBufferRejectsBadLength(t *testing.T) {
 	logger := log.New(os.Stdout, "", 0)
-	ygg := &Uqda{logger: logger}
-	if err := ygg.StartAutoconfigure(); err != nil {
+	node := &Uqda{logger: logger}
+	if err := node.StartAutoconfigure(); err != nil {
 		t.Fatalf("Failed to start Uqda: %s", err)
 	}
-	defer func() { _ = ygg.Stop() }()
+	defer func() { _ = node.Stop() }()
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatalf("SendBuffer must not panic on bad length, got: %v", r)
 		}
 	}()
-	if err := ygg.SendBuffer([]byte{1, 2, 3, 4}, -1); err != nil {
+	if err := node.SendBuffer([]byte{1, 2, 3, 4}, -1); err != nil {
 		t.Fatalf("SendBuffer returned unexpected error: %s", err)
 	}
-	if err := ygg.SendBuffer(nil, 0); err != nil {
+	if err := node.SendBuffer(nil, 0); err != nil {
 		t.Fatalf("SendBuffer returned unexpected error: %s", err)
 	}
-	if err := ygg.Send(nil); err != nil {
+	if err := node.Send(nil); err != nil {
 		t.Fatalf("Send returned unexpected error: %s", err)
 	}
 }

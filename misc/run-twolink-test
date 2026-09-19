@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Each lab node receives an explicitly generated ephemeral Uqda identity.
+
 # Connects nodes in two namespaces by two links with different bandwidth (10mbit and 100mbit)
 
 ip netns add node1
@@ -19,8 +21,8 @@ ip netns exec node2 tc qdisc add dev veth21 root tbf rate 10mbit burst 8192 late
 ip netns exec node1 tc qdisc add dev veth12 root tbf rate 100mbit burst 8192 latency 1ms
 ip netns exec node2 tc qdisc add dev veth22 root tbf rate 100mbit burst 8192 latency 1ms
 
-echo '{AdminListen: "unix://node1.sock"}' | ip netns exec node1 env PPROFLISTEN=localhost:6060 ./uqda -logging "info,warn,error,debug" -useconf &> node1.log &
-echo '{AdminListen: "unix://node2.sock"}' | ip netns exec node2 env PPROFLISTEN=localhost:6060 ./uqda -logging "info,warn,error,debug" -useconf &> node2.log &
+./uqda -genconf -json | sed 's|"AdminListen":.*|"AdminListen": "unix://node1.sock",|' | ip netns exec node1 env PPROFLISTEN=localhost:6060 ./uqda -loglevel debug -useconf &> node1.log &
+./uqda -genconf -json | sed 's|"AdminListen":.*|"AdminListen": "unix://node2.sock",|' | ip netns exec node2 env PPROFLISTEN=localhost:6060 ./uqda -loglevel debug -useconf &> node2.log &
 
 echo "Started, to continue you should (possibly w/ sudo):"
 echo "kill" $(jobs -p)

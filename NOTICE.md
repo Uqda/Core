@@ -24,5 +24,5 @@ include the applicable notices and meet the terms for their actual dependency
 set; this summary is not an exhaustive third-party license inventory.
 
 The standalone `contrib/yggdrasil-brute-simple` tool has its own license.
-The upstream logo in `contrib/logo` is retained as source provenance and is not
-presented as Uqda branding.
+The upstream logo in `docs/upstream-assets/ygg-neilalexander.svg` is retained
+as source provenance and is not presented as Uqda branding.
