@@ -15,7 +15,7 @@ import "C"
 import (
 	"unsafe"
 
-	"github.com/yggdrasil-network/yggdrasil-go/src/tun"
+	"github.com/Uqda/Core/src/tun"
 )
 
 type MobileLogger struct {

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yggdrasil-network/yggdrasil-go/src/config"
+	"github.com/Uqda/Core/src/config"
 )
 
 func TestValidateConfigAcceptsDefaults(t *testing.T) {

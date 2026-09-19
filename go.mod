@@ -1,4 +1,4 @@
-module github.com/yggdrasil-network/yggdrasil-go
+module github.com/Uqda/Core
 
 go 1.25.0
 

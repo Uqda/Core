@@ -9,7 +9,7 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/yggdrasil-network/yggdrasil-go/src/config"
+	"github.com/Uqda/Core/src/config"
 	"golang.org/x/sys/windows"
 
 	"golang.zx2c4.com/wintun"

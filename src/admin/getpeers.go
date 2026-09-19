@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yggdrasil-network/yggdrasil-go/src/address"
+	"github.com/Uqda/Core/src/address"
 )
 
 type GetPeersRequest struct {

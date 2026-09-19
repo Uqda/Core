@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yggdrasil-network/yggdrasil-go/src/config"
+	"github.com/Uqda/Core/src/config"
 )
 
 // TestJitteredBackoffDurationBounds characterizes jitteredBackoffDuration's

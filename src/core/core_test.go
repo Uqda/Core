@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/gologme/log"
-	"github.com/yggdrasil-network/yggdrasil-go/src/config"
+	"github.com/Uqda/Core/src/config"
 )
 
 // GetLoggerWithPrefix creates a new logger instance with prefix.

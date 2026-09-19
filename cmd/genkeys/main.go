@@ -20,7 +20,7 @@ import (
 
 	"suah.dev/protect"
 
-	"github.com/yggdrasil-network/yggdrasil-go/src/address"
+	"github.com/Uqda/Core/src/address"
 )
 
 type keySet struct {

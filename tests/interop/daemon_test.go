@@ -1,5 +1,5 @@
 // Package interop contains black-box compatibility tests that exercise the
-// compiled yggdrasil daemon binary itself (config file, CLI flags, admin
+// compiled uqda daemon binary itself (config file, CLI flags, admin
 // socket, peering) rather than the internal Go API.
 //
 // This is deliberately a different layer than src/core's existing
@@ -11,7 +11,7 @@
 // implementation would: a config file on disk and the admin socket.
 //
 // Today there is only one implementation in this repository, so this test
-// builds and runs two instances of the *same* yggdrasil binary — it is a
+// builds and runs two instances of the *same* uqda binary — it is a
 // same-codebase compatibility harness, not yet a cross-implementation one.
 // Once cmd/uqda exists as a distinct binary (see ../../RESTRUCTURING.md),
 // this test is the intended place to extend coverage to run one process
@@ -31,9 +31,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yggdrasil-network/yggdrasil-go/src/address"
-	"github.com/yggdrasil-network/yggdrasil-go/src/admin"
-	"github.com/yggdrasil-network/yggdrasil-go/src/config"
+	"github.com/Uqda/Core/src/address"
+	"github.com/Uqda/Core/src/admin"
+	"github.com/Uqda/Core/src/config"
 )
 
 // freeTCPPort asks the OS for an unused loopback TCP port. There is an
@@ -50,22 +50,22 @@ func freeTCPPort(t *testing.T) int {
 	return l.Addr().(*net.TCPAddr).Port
 }
 
-// buildYggdrasil compiles the daemon binary once per test run into a
-// temporary directory and returns its path.
-func buildYggdrasil(t *testing.T) string {
+// buildUqda compiles the daemon binary once per test run into a temporary
+// directory and returns its path.
+func buildUqda(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	binName := "yggdrasil-under-test"
+	binName := "uqda-under-test"
 	if os.PathSeparator == '\\' {
 		binName += ".exe"
 	}
 	binPath := filepath.Join(dir, binName)
 
-	cmd := exec.Command("go", "build", "-o", binPath, "github.com/yggdrasil-network/yggdrasil-go/cmd/yggdrasil")
+	cmd := exec.Command("go", "build", "-o", binPath, "github.com/Uqda/Core/cmd/uqda")
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		t.Fatalf("failed to build yggdrasil binary: %v\n%s", err, stderr.String())
+		t.Fatalf("failed to build uqda binary: %v\n%s", err, stderr.String())
 	}
 	return binPath
 }
@@ -216,7 +216,7 @@ func waitForCondition(timeout time.Duration, fn func() bool) bool {
 }
 
 // TestDaemonPeeringAndAddressDerivation runs two independently-configured
-// yggdrasil daemon processes, peers them over TCP exactly as a real
+// uqda daemon processes, peers them over TCP exactly as a real
 // deployment would (via config file + CLI flags, not the internal Go API),
 // and checks:
 //
@@ -230,7 +230,7 @@ func waitForCondition(timeout time.Duration, fn func() bool) bool {
 //     since any drift here breaks addressing compatibility with the rest
 //     of the Yggdrasil network.
 func TestDaemonPeeringAndAddressDerivation(t *testing.T) {
-	binPath := buildYggdrasil(t)
+	binPath := buildUqda(t)
 
 	listenPort := freeTCPPort(t)
 	nodeA := startNode(t, binPath, nodeSpec{label: "nodeA", listenPort: listenPort})

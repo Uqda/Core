@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/yggdrasil-network/yggdrasil-go/src/config"
-	"github.com/yggdrasil-network/yggdrasil-go/src/core"
+	"github.com/Uqda/Core/src/config"
+	"github.com/Uqda/Core/src/core"
 )
 
 // validateConfig checks a parsed configuration for problems that would

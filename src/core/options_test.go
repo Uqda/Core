@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/yggdrasil-network/yggdrasil-go/src/config"
+	"github.com/Uqda/Core/src/config"
 )
 
 // Tests that duplicate peers in the configuration file
