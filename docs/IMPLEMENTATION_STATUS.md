@@ -7,7 +7,7 @@ A workstream is only marked **Tested** when there is an actual test, benchmark,
 or verification command backing the claim — not because code exists. See
 linked evidence in each row.
 
-Last updated: after the CI race/vet/vulncheck jobs and the identity package extraction (on top of `dd5d315`).
+Last updated: after the peer-removal race fix (on top of `31279fb`).
 
 ## Phase tracker
 
@@ -22,7 +22,7 @@ Last updated: after the CI race/vet/vulncheck jobs and the identity package extr
 | 2 | Baseline: performance numbers (startup/memory/CPU/throughput/convergence) | **Not started** | Requires the interop/lab harness below to exist first — see BASELINE.md "Performance — not measured yet" |
 | 3 | Structural refactor (identity/peer/transport/routing/session/discovery/security/tun/admin/config/diagnostics boundaries) | **In progress** | First slice done: [src/identity/tls.go](../src/identity/tls.go) extracted from `src/core/tls.go` (commit `dd5d315`), tested, full suite green including the black-box daemon test. Peer/transport/routing/session/discovery/tun/admin/config/diagnostics boundaries not yet touched |
 | 4 | Uqda Guard (security boundary) | **Not started** | Blocked on the hardened-handshake decision — **now resolved**: no new wire messages, implementation-side hardening only (see NAMING.md "Open question", now closed) |
-| 5 | Peer lifecycle rebuild | **Not started** | |
+| 5 | Peer lifecycle rebuild | **In progress** | Characterization tests added (`TestRepeatedConnectDisconnectCycles`, `TestImmediateReAddAfterRemove`, `src/core/core_test.go`) surfaced a real race in `links.remove` (`src/core/link.go`): the `_links` map entry was only deleted asynchronously by the dial goroutine's own cleanup, so an immediate double-`RemovePeer` or an `AddPeer` right after a `RemovePeer` could behave incorrectly. Fixed in commit `31279fb` (synchronous delete), both tests pass 3-5x repeated runs. Full lifecycle model (explicit connecting/connected/closing states, bounded+jittered backoff audit) not yet done |
 | 6 | Transport layer reorganization | **Not started** | |
 | 7 | Routing improvements | **Not started** | High-risk; requires topology simulation before any change, per policy |
 | 8 | Reliability engineering (abnormal-condition matrix) | **Not started** | |
