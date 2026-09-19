@@ -71,9 +71,17 @@ CGO_ENABLED=1`. This development machine has no C compiler installed
 
 **This is a genuine environment limitation, not a code issue.** Race
 detection must run in CI on a Linux runner (where a C toolchain is normally
-preinstalled) rather than on this machine. Recorded here as a blocker per
-the "document and continue" policy; CI setup for this is tracked in
-[docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md).
+preinstalled) rather than on this machine.
+
+A `race` job now exists in [.github/workflows/ci.yml](.github/workflows/ci.yml)
+(`go test -race ./...` on `ubuntu-latest`), alongside new `vet` and
+`vulncheck` jobs, all wired into the `tests-ok` required-checks gate. As of
+this commit that workflow is **authored but not yet run**: this checkout
+has no git remote configured, so nothing has pushed it to GitHub for
+Actions to actually execute. Do not treat "the workflow file exists" as
+"race detection passed" until it has actually run at least once — this is
+exactly the distinction [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md)
+exists to keep honest.
 
 ## Dependency vulnerability scan
 

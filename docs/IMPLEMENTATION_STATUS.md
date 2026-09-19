@@ -7,7 +7,7 @@ A workstream is only marked **Tested** when there is an actual test, benchmark,
 or verification command backing the claim — not because code exists. See
 linked evidence in each row.
 
-Last updated: after commit `48dd761` (admin socket exposure warning).
+Last updated: after the CI race/vet/vulncheck jobs and the identity package extraction (on top of `dd5d315`).
 
 ## Phase tracker
 
@@ -17,10 +17,10 @@ Last updated: after commit `48dd761` (admin socket exposure warning).
 | 1 | Naming specification | **Implemented** | [NAMING.md](../NAMING.md), commit `87f5d26` |
 | 1 | Restructuring roadmap | **Implemented** | [RESTRUCTURING.md](../RESTRUCTURING.md), commit `87f5d26` |
 | 2 | Baseline: format/vet/build/test | **Tested** | [BASELINE.md](../BASELINE.md), commits `a60ac11` — gofmt clean, vet clean, build clean, `go test ./...` all green |
-| 2 | Baseline: race detection | **Blocked** | No cgo/C compiler on the current dev machine; must run in CI on Linux. See BASELINE.md "Race detector" section |
+| 2 | Baseline: race detection | **Blocked** (locally) / **Implemented, not yet run** (CI) | No cgo/C compiler on the current dev machine, so this can't run here (see BASELINE.md "Race detector" section). A `race` job now exists in `.github/workflows/ci.yml` (`go test -race ./...` on `ubuntu-latest`) - authored but not yet executed, since this checkout has no git remote yet for Actions to run against. Do not mark this "Tested" until it has actually run once |
 | 2 | Baseline: dependency vulnerability scan | **Tested** | `govulncheck` run, 0 reachable vulnerabilities; 5 unreachable transitive ones logged in BASELINE.md for Phase 22 |
 | 2 | Baseline: performance numbers (startup/memory/CPU/throughput/convergence) | **Not started** | Requires the interop/lab harness below to exist first — see BASELINE.md "Performance — not measured yet" |
-| 3 | Structural refactor (identity/peer/transport/routing/session/discovery/security/tun/admin/config/diagnostics boundaries) | **Not started** | Target layout defined in RESTRUCTURING.md; not yet executed |
+| 3 | Structural refactor (identity/peer/transport/routing/session/discovery/security/tun/admin/config/diagnostics boundaries) | **In progress** | First slice done: [src/identity/tls.go](../src/identity/tls.go) extracted from `src/core/tls.go` (commit `dd5d315`), tested, full suite green including the black-box daemon test. Peer/transport/routing/session/discovery/tun/admin/config/diagnostics boundaries not yet touched |
 | 4 | Uqda Guard (security boundary) | **Not started** | Blocked on the hardened-handshake decision — **now resolved**: no new wire messages, implementation-side hardening only (see NAMING.md "Open question", now closed) |
 | 5 | Peer lifecycle rebuild | **Not started** | |
 | 6 | Transport layer reorganization | **Not started** | |
@@ -39,7 +39,7 @@ Last updated: after commit `48dd761` (admin socket exposure warning).
 | 19 | Verifiable builds/releases (SBOM, signing) | **Not started** | No git remote/CI configured yet on this checkout |
 | 20 | Verified update subsystem | **Not started** | Net-new; no update mechanism exists upstream |
 | 21 | Platform support validation | **Not started** | |
-| 22 | Supply-chain security | **In progress** | Initial `govulncheck` pass done (see Phase 2 row); no dependency bumps made yet |
+| 22 | Supply-chain security | **In progress** | Initial `govulncheck` pass done (see Phase 2 row); no dependency bumps made yet. `vulncheck` CI job authored (not yet run - no remote) |
 | 23 | Licensing/attribution (NOTICE.md) | **Not started** | |
 | 23 | Threat model | **Implemented** | [docs/THREAT_MODEL.md](THREAT_MODEL.md): 10 concrete threats mapped to actual file/line boundaries in this codebase. 3 of the identified gaps have since been addressed (admin socket exposure now warns, config/key file permissions now warn, ansible vault file now 0600) and the doc was updated in place with the actual fix + test reference for each rather than left stale. One entry (post-handshake connection deadlines) was corrected after checking Ironwood's source directly — it already enforces a 3s peer timeout with 1s keepalives, which the original entry had incorrectly called unmitigated |
 | 24 | Full documentation set | **In progress** | ARCHITECTURE.md, NAMING.md, RESTRUCTURING.md, BASELINE.md, [SECURITY.md](../SECURITY.md), [docs/THREAT_MODEL.md](THREAT_MODEL.md) exist; README rewrite, Arabic README, upstream-comparison doc still pending |

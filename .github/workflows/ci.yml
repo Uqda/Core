@@ -45,6 +45,47 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
 
+  vet:
+    name: go vet
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+      - name: go vet
+        run: go vet ./...
+
+  race:
+    # Race detection requires cgo, and therefore a C toolchain. Ubuntu
+    # runners ship one by default; the primary Windows development
+    # environment for this repository does not, which is why this can't
+    # run there (see BASELINE.md's "Race detector" section) and needs to
+    # be a CI-only gate instead.
+    name: Race detector (Linux)
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+      - name: go test -race
+        run: go test -race ./...
+
+  vulncheck:
+    name: Vulnerability scan
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
   build-linux:
     strategy:
       fail-fast: false
@@ -145,7 +186,7 @@ jobs:
 
   tests-ok:
     name: All tests passed
-    needs: [lint, codeql, build-linux, build-windows, build-macos]
+    needs: [lint, codeql, vet, race, vulncheck, build-linux, build-windows, build-macos]
     runs-on: ubuntu-latest
     if: ${{ !cancelled() }}
     steps:
