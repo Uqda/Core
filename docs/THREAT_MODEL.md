@@ -7,7 +7,7 @@ mitigation elsewhere in the codebase should map back to a threat listed
 here, and every threat listed here should eventually map to a mitigation,
 a test, or an explicitly accepted residual risk.
 
-Scope: this document covers the `yggdrasil-go` implementation in this
+Scope: this document covers the Uqda implementation (originally forked from `yggdrasil-go`) in this
 repository. Routing and session-layer wire framing is owned by the external
 `github.com/Arceliar/ironwood` dependency and is out of scope for this
 document — see that project's own security posture. This repository's own
@@ -63,7 +63,7 @@ bytes into this parser.
 **Boundary:** after `version_metadata.decode()` succeeds, the connection is
 handed to `l.core.HandleConn()` (`src/core/link.go:708`), which delegates
 to Ironwood. `conn.SetDeadline(time.Time{})` clears the *handshake*
-deadline (`src/core/link.go:657`) — yggdrasil-go itself sets no read/write
+deadline (`src/core/link.go:657`) — Uqda itself sets no read/write
 deadline on an established link.
 
 - **Threat:** a peer that completes the handshake but then sends slowly,
@@ -77,10 +77,10 @@ deadline on an established link.
   future, cleared the moment any packet is received; if nothing arrives in
   time the next `Read` fails and the peer is torn down. `peerKeepAliveDelay`
   (default 1s, `network/config.go`) makes an idle-but-alive peer send a
-  keepalive before that deadline would fire. yggdrasil-go does not
+  keepalive before that deadline would fire. Uqda does not
   currently override either default via `iwn.With...` options in
   `src/core/core.go`'s `iwe.NewPacketConnWithPassword` call.
-- **Why yggdrasil-go does not add its own deadline on top:** `net.Conn`
+- **Why Uqda does not add its own deadline on top:** `net.Conn`
   has one read deadline, not a stack of them — a second `SetReadDeadline`
   call at the link.go layer would silently overwrite (race against)
   Ironwood's own deadline management on the exact same `net.Conn`, which
@@ -147,9 +147,10 @@ them outward.
 
 **Boundary:** `src/admin/admin.go`. Explicitly marked upstream with
 `// TODO: Add authentication` (line 18). Default listen addresses are
-local-only (`unix:///var/run/yggdrasil.sock` on Linux/macOS/*BSD,
-`tcp://localhost:9001` on Windows — see `src/config/defaults_*.go`), and
-the Unix socket is created with mode `0660` (`src/admin/admin.go:118`).
+local-only (`unix:///run/uqda/admin.sock` on Linux, `unix:///var/run/uqda/admin.sock`
+on macOS/*BSD, `tcp://localhost:9001` on Windows — see
+`src/config/defaults_*.go`), and the Unix socket is created with mode
+`0660` (`src/admin/admin.go:118`).
 
 - **Threat:** any local process that can reach the socket (same user, or
   same group if the socket's group permissions allow it, or any process at
@@ -197,7 +198,7 @@ code change.
 ### 8. Stolen identity key
 
 **Boundary:** wherever the private key touches disk or memory:
-`src/config` (loading/generating), `cmd/yggdrasil/main.go` (holds it in
+`src/config` (loading/generating), `cmd/uqda/main.go` (holds it in
 process memory for the process lifetime).
 
 - **Threat:** if the config file (or `PrivateKeyPath` file) is readable by
@@ -206,7 +207,7 @@ process memory for the process lifetime).
 - **Mitigation today:** `config.FilePermissionsAreUnsafe`
   (`src/config/permissions.go`, commit `4bf1891`) checks the config file
   (via `-useconffile`) and any `PrivateKeyPath` target for group/other
-  access on Unix-likes, and `cmd/yggdrasil/main.go` logs a warning naming
+  access on Unix-likes, and `cmd/uqda/main.go` logs a warning naming
   the path (never the key material) when either is unsafe. Deliberately a
   warning, not a hard failure, so an operator's existing working setup
   keeps working. On Windows this check is a documented no-op
@@ -217,7 +218,7 @@ process memory for the process lifetime).
   raw private key) is now created at 0600 and has that mode enforced even
   when regenerating an existing file (commit `4a8b113`). Verified by
   `TestFilePermissionsAreUnsafe*` (`src/config`),
-  `TestWarnIfConfigFilePermissionsAreUnsafe` (`cmd/yggdrasil`), and
+  `TestWarnIfConfigFilePermissionsAreUnsafe` (`cmd/uqda`), and
   `TestWriteHostVars*` (`contrib/ansible`).
 - **Residual risk:** no equivalent check exists for Windows (ACL
   inspection was judged out of scope for this pass — see the comment in
@@ -236,7 +237,7 @@ install, staged verification, safe rollback).
 
 ### 10. Log/diagnostic data leakage
 
-**Boundary:** `cmd/yggdrasil/main.go` logging setup, `src/admin`'s
+**Boundary:** `cmd/uqda/main.go` logging setup, `src/admin`'s
 `getSelf`/`getPeers`/etc. handlers.
 
 - **Threat:** private keys, passwords, or `GroupPassword` values ending up

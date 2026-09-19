@@ -33,7 +33,7 @@ Clean. No issues reported across any package.
 ## Build
 
 ```
-go build ./cmd/yggdrasil ./cmd/yggdrasilctl ./cmd/genkeys
+go build ./cmd/uqda ./cmd/uqdactl ./cmd/genkeys
 ```
 
 Succeeds. All three binaries produced without warnings.
@@ -44,7 +44,9 @@ Succeeds. All three binaries produced without warnings.
 go test ./...
 ```
 
-All packages pass:
+All packages pass (this captured output predates the module rename to
+`github.com/Uqda/Core` - it's preserved verbatim as an accurate record of
+what actually ran at the time, not edited to match the current path):
 
 ```
 ok    github.com/yggdrasil-network/yggdrasil-go/contrib/mobile   0.134s
@@ -135,7 +137,7 @@ and real numbers — not before.
 ```bash
 gofmt -l .
 go vet ./...
-go build ./cmd/yggdrasil ./cmd/yggdrasilctl ./cmd/genkeys
+go build ./cmd/uqda ./cmd/uqdactl ./cmd/genkeys
 go test ./...
 go test -race ./...   # requires CGO_ENABLED=1 and a C compiler
 go run golang.org/x/vuln/cmd/govulncheck@latest ./...

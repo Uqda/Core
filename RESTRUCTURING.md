@@ -1,21 +1,26 @@
 # Restructuring & Versioning Roadmap
 
-**Status: roadmap only. This document describes future work. No files have
-been moved, renamed, or otherwise modified as part of writing this document.**
+**Status: the `cmd/` and packaging rename described below has been executed**
+(see [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) for the
+exact commits). The `src/` subsystem-boundary restructuring (identity/peer/
+transport/routing/session/discovery/security/tun/admin/config/diagnostics)
+is still in progress - only the identity slice has been done so far. This
+document is kept as the target layout and mapping table for the parts not
+done yet; entries below that are already complete are marked as such rather
+than left implying they're still pending.
 
-It exists so that any contributor or AI agent picking up rebrand work later
-has a single target to build toward, instead of re-deriving it from chat
-history. See [NAMING.md](NAMING.md) for the naming rules this layout follows,
-and [ARCHITECTURE.md](ARCHITECTURE.md) for the current-state layout it maps
-from.
+It exists so that any contributor or AI agent picking up this work has a
+single target to build toward, instead of re-deriving it from chat history.
+See [NAMING.md](NAMING.md) for the naming rules this layout follows, and
+[ARCHITECTURE.md](ARCHITECTURE.md) for the actual current-state layout.
 
 ## Target directory layout
 
 ```
 Uqda/Core
 ├── cmd/
-│   ├── uqda/            (from cmd/yggdrasil/)
-│   ├── uqdactl/         (from cmd/yggdrasilctl/)
+│   ├── uqda/            (DONE - was cmd/yggdrasil/)
+│   ├── uqdactl/         (DONE - was cmd/yggdrasilctl/)
 │   └── genkeys/         (unchanged)
 │
 ├── src/
@@ -64,10 +69,10 @@ Uqda/Core
 
 | Current | Target | Notes |
 |---|---|---|
-| `cmd/yggdrasil/` | `cmd/uqda/` | Binary renamed `yggdrasil` → `uqda` |
-| `cmd/yggdrasilctl/` | `cmd/uqdactl/` | Binary renamed `yggdrasilctl` → `uqdactl` |
+| `cmd/yggdrasil/` | `cmd/uqda/` | **DONE.** Binary renamed `yggdrasil` → `uqda` |
+| `cmd/yggdrasilctl/` | `cmd/uqdactl/` | **DONE.** Binary renamed `yggdrasilctl` → `uqdactl` |
 | `cmd/genkeys/` | `cmd/genkeys/` | Unchanged |
-| `src/core/core.go`, `src/core/tls.go` | `src/identity/` | Identity/key logic split out of the general `core` package |
+| `src/core/tls.go` | `src/identity/tls.go` | **DONE** (see IMPLEMENTATION_STATUS.md Phase 3). `src/core/core.go` itself still holds the rest of identity/key state and hasn't moved |
 | `src/core/link.go` | `src/peer/` | Generic peer-management logic |
 | `src/core/link_tcp*.go`, `link_tls.go`, `link_quic.go`, `link_ws*.go`, `link_socks.go`, `link_unix.go` | `src/transport/{tcp,tls,quic,websocket,socks,unix}/` | Split per-transport |
 | `src/core/api.go`, `proto.go` | `src/routing/` | Ironwood-facing wrapper (Ironwood dependency itself is untouched, keeps its own name/license) |
@@ -75,11 +80,11 @@ Uqda/Core
 | `src/admin/` (remainder) | `src/admin/` | Conceptually "Uqda Control"; path can stay `admin/` unless a literal rename is desired later |
 | `src/multicast/` | `src/discovery/` | |
 | `src/tun/`, `src/ipv6rwc/` | `src/tun/` | Merge TUN + the ipv6 read-write-close shim under one subsystem |
-| `src/config/` | `src/config/` | Unchanged internally; file renamed `yggdrasil.conf` → `uqda.conf` |
+| `src/config/` | `src/config/` | **DONE** internally (default config filename/paths are now `uqda.conf` under `/etc/uqda/` etc. - see NAMING.md); package/directory layout itself unchanged |
 | `src/version/` | `src/version/` | Unchanged |
 | *(none — new)* | `src/security/` | Uqda Guard: connection admission, rate limiting, resource quotas, input validation |
 | *(none — new)* | `src/diagnostics/` | Uqda Doctor: expands the existing `uqdactl doctor`-equivalent into a first-class subsystem |
-| `contrib/systemd/yggdrasil.service` etc. | `contrib/systemd/uqda.service` etc. | All packaging files renamed to match |
+| `contrib/systemd/yggdrasil.service` etc. | `contrib/systemd/uqda.service` etc. | **DONE.** All packaging files (systemd, deb, apparmor, openrc, busybox-init, freebsd, macos, msi, docker, mobile) renamed to match |
 
 ## Versioning scheme
 
@@ -127,10 +132,14 @@ on it actually starts.
 24. Full documentation set
 25. Engineering rules for whoever (human or AI) executes the above
 
-## Explicit non-goals of this document
+## What has and hasn't happened since this document was written
 
-- No package is renamed yet.
-- No binary is renamed yet.
-- No file has moved.
-- `go.mod`'s module path (`github.com/yggdrasil-network/yggdrasil-go`) is
-  unchanged — updating it is part of Phase 3, not this document.
+- Binaries: **done** (`cmd/uqda`, `cmd/uqdactl`).
+- `go.mod` module path: **done** (`github.com/Uqda/Core`).
+- Packaging (systemd/deb/apparmor/openrc/busybox-init/freebsd/macos/msi/docker/mobile): **done**.
+- `src/` internal package restructuring (identity/peer/transport/routing/
+  session/discovery/security/tun/admin/diagnostics boundaries): **not done**,
+  except the identity/TLS slice. This is genuinely large, separate work from
+  the product rename and is tracked in
+  [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) Phase 3, not
+  bundled into the rename commits.
