@@ -7,10 +7,10 @@ package config
 func getDefaults() platformDefaultParameters {
 	return platformDefaultParameters{
 		// Admin
-		DefaultAdminListen: "unix:///var/run/yggdrasil.sock",
+		DefaultAdminListen: "unix:///var/run/uqda/admin.sock",
 
-		// Configuration (used for yggdrasilctl)
-		DefaultConfigFile: "/usr/local/etc/yggdrasil.conf",
+		// Configuration (used for uqdactl)
+		DefaultConfigFile: "/usr/local/etc/uqda/uqda.conf",
 
 		// Multicast interfaces
 		DefaultMulticastInterfaces: []MulticastInterfaceConfig{

@@ -20,8 +20,8 @@ import (
 	"github.com/Uqda/Core/src/version"
 )
 
-// The Core object represents the Yggdrasil node. You should create a Core
-// object for each Yggdrasil node you plan to run.
+// The Core object represents the Uqda node. You should create a Core
+// object for each Uqda node you plan to run.
 type Core struct {
 	// This is the main data structure that holds everything else for a node
 	// We're going to keep our own copy of the provided config - that way we can
@@ -145,7 +145,7 @@ func (c *Core) RetryPeersNow() {
 	})
 }
 
-// Stop shuts down the Yggdrasil node.
+// Stop shuts down the Uqda node.
 func (c *Core) Stop() {
 	phony.Block(c, func() {
 		c.log.Infoln("Stopping...")

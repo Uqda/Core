@@ -45,7 +45,7 @@ func TestJitteredBackoffDurationBounds(t *testing.T) {
 }
 
 // TestIsValidPeerSchemeMatchesDialerFor cross-checks IsValidPeerScheme
-// (exported for cmd/yggdrasil's "-checkconf") directly against
+// (exported for cmd/uqda's "-checkconf") directly against
 // links.dialerFor's own switch statement, using a real Core - dialerFor
 // only selects which linkProtocol would handle a scheme, it doesn't
 // perform any I/O, so this is safe to call for every candidate without

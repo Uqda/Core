@@ -1,6 +1,6 @@
 /*
-The config package contains structures related to the configuration of an
-Yggdrasil node.
+The config package contains structures related to the configuration of a
+Uqda node.
 
 The configuration contains, amongst other things, encryption keys which are used
 to derive a node's identity, information about peerings and node information
@@ -11,7 +11,7 @@ In order for a node to maintain the same identity across restarts, you should
 persist the configuration onto the filesystem or into some configuration storage
 so that the encryption keys (and therefore the node ID) do not change.
 
-Note that Yggdrasil will automatically populate sane defaults for any
+Note that Uqda will automatically populate sane defaults for any
 configuration option that is not provided.
 */
 package config
@@ -37,8 +37,8 @@ import (
 )
 
 // NodeConfig is the main configuration structure, containing configuration
-// options that are necessary for an Yggdrasil node to run. You will need to
-// supply one of these structs to the Yggdrasil core when starting a node.
+// options that are necessary for a Uqda node to run. You will need to
+// supply one of these structs to Uqda Core when starting a node.
 type NodeConfig struct {
 	PrivateKey          KeyBytes                   `json:",omitempty" comment:"Your private key. DO NOT share this with anyone!"`
 	PrivateKeyPath      string                     `json:",omitempty" comment:"The path to your private key file in PEM format."`
@@ -46,14 +46,14 @@ type NodeConfig struct {
 	Peers               []string                   `comment:"List of outbound peer connection strings (e.g. tls://a.b.c.d:e or\nsocks://a.b.c.d:e/f.g.h.i:j). Connection strings can contain options,\nsee https://yggdrasil-network.github.io/configurationref.html#peers.\nYggdrasil has no concept of bootstrap nodes - all network traffic\nwill transit peer connections. Therefore make sure to only peer with\nnearby nodes that have good connectivity and low latency. Avoid adding\npeers to this list from distant countries as this will worsen your\nnode's connectivity and performance considerably."`
 	InterfacePeers      map[string][]string        `comment:"List of connection strings for outbound peer connections in URI format,\narranged by source interface, e.g. { \"eth0\": [ \"tls://a.b.c.d:e\" ] }.\nYou should only use this option if your machine is multi-homed and you\nwant to establish outbound peer connections on different interfaces.\nOtherwise you should use \"Peers\"."`
 	Listen              []string                   `comment:"Listen addresses for incoming connections. You will need to add\nlisteners in order to accept incoming peerings from non-local nodes.\nThis is not required if you wish to establish outbound peerings only.\nMulticast peer discovery will work regardless of any listeners set\nhere. Each listener should be specified in URI format as above, e.g.\ntls://0.0.0.0:0 or tls://[::]:0 to listen on all interfaces."`
-	AdminListen         string                     `json:",omitempty" comment:"Listen address for admin connections. Default is to listen for local\nconnections either on TCP/9001 or a UNIX socket depending on your\nplatform. Use this value for yggdrasilctl -endpoint=X. To disable\nthe admin socket, use the value \"none\" instead."`
+	AdminListen         string                     `json:",omitempty" comment:"Listen address for admin connections. Default is to listen for local\nconnections either on TCP/9001 or a UNIX socket depending on your\nplatform. Use this value for uqdactl -endpoint=X. To disable\nthe admin socket, use the value \"none\" instead."`
 	MulticastInterfaces []MulticastInterfaceConfig `comment:"Configuration for which interfaces multicast peer discovery should be\nenabled on. Regex is a regular expression which is matched against an\ninterface name, and interfaces use the first configuration that they\nmatch against. Beacon controls whether or not your node advertises its\npresence to others, whereas Listen controls whether or not your node\nlistens out for and tries to connect to other advertising nodes. See\nhttps://yggdrasil-network.github.io/configurationref.html#multicastinterfaces\nfor more supported options."`
 	AllowedPublicKeys   []string                   `comment:"List of peer public keys to allow incoming peering connections\nfrom. If left empty/undefined then all connections will be allowed\nby default. This does not affect outgoing peerings, nor does it\naffect link-local peers discovered via multicast.\nWARNING: THIS IS NOT A FIREWALL and DOES NOT limit who can reach\nopen ports or services running on your machine, for that see the\nGroupPassword option below."`
 	GroupPassword       string                     `comment:"Traffic is only allowed to/from nodes with the same group password.\nIf you want to form a private sub-network or ensure that other public\nusers cannot connect to your machines, choose a strong group password\nand then configure the same password only with other group members.\nIf left empty or not specified, public connectivity will be permitted.\nIf specified, you WILL NOT be able to reach public services or hosts.\nThis option DOES NOT affect peering connections or traffic routing."`
 	IfName              string                     `comment:"Local network interface name for TUN adapter, or \"auto\" to select\nan interface automatically, or \"none\" to run without TUN."`
 	IfMTU               uint64                     `comment:"Maximum Transmission Unit (MTU) size for your local TUN interface.\nDefault is the largest supported size for your platform. The lowest\npossible value is 1280."`
 	LogLookups          bool                       `json:",omitempty"`
-	NodeInfoPrivacy     bool                       `comment:"By default, nodeinfo contains some defaults including the platform,\narchitecture and Yggdrasil version. These can help when surveying\nthe network and diagnosing network routing problems. Enabling\nnodeinfo privacy prevents this, so that only items specified in\n\"NodeInfo\" are sent back if specified."`
+	NodeInfoPrivacy     bool                       `comment:"By default, nodeinfo contains some defaults including the platform,\narchitecture and Uqda build version. These can help when surveying\nthe network and diagnosing network routing problems. Enabling\nnodeinfo privacy prevents this, so that only items specified in\n\"NodeInfo\" are sent back if specified."`
 	NodeInfo            map[string]interface{}     `comment:"Optional nodeinfo. This must be a { \"key\": \"value\", ... } map\nor set as null. This is entirely optional but, if set, is visible\nto the whole network on request."`
 }
 

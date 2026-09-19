@@ -9,8 +9,8 @@ func getDefaults() platformDefaultParameters {
 		// Admin
 		DefaultAdminListen: "tcp://localhost:9001",
 
-		// Configuration (used for yggdrasilctl)
-		DefaultConfigFile: "C:\\Program Files\\Yggdrasil\\yggdrasil.conf",
+		// Configuration (used for uqdactl)
+		DefaultConfigFile: "C:\\ProgramData\\Uqda\\uqda.conf",
 
 		// Multicast interfaces
 		DefaultMulticastInterfaces: []MulticastInterfaceConfig{
@@ -20,6 +20,6 @@ func getDefaults() platformDefaultParameters {
 		// TUN
 		MaximumIfMTU:  65535,
 		DefaultIfMTU:  65535,
-		DefaultIfName: "Yggdrasil",
+		DefaultIfName: "Uqda",
 	}
 }

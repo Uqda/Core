@@ -30,10 +30,9 @@ type ReadWriteCloser interface {
 	SetMTU(uint64)
 }
 
-// TunAdapter represents a running TUN interface and extends the
-// yggdrasil.Adapter type. In order to use the TUN adapter with Yggdrasil, you
-// should pass this object to the yggdrasil.SetRouterAdapter() function before
-// calling yggdrasil.Start().
+// TunAdapter represents a running TUN interface, bridging a
+// ReadWriteCloser (typically ipv6rwc.NewReadWriteCloser wrapping a Uqda
+// Core instance) to the OS's TUN device. Construct one with New.
 type TunAdapter struct {
 	rwc         ReadWriteCloser
 	log         core.Logger
@@ -98,8 +97,9 @@ func MaximumMTU() uint64 {
 	return config.GetDefaults().MaximumIfMTU
 }
 
-// Init initialises the TUN module. You must have acquired a Listener from
-// the Yggdrasil core before this point and it must not be in use elsewhere.
+// New initialises the TUN module, wrapping the given ReadWriteCloser
+// (typically backed by a Uqda Core instance) to bridge its traffic to the
+// OS's TUN device.
 func New(rwc ReadWriteCloser, log core.Logger, opts ...SetupOption) (*TunAdapter, error) {
 	tun := &TunAdapter{
 		rwc: rwc,

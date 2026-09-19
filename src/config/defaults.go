@@ -10,7 +10,7 @@ type platformDefaultParameters struct {
 	// Admin socket
 	DefaultAdminListen string
 
-	// Configuration (used for yggdrasilctl)
+	// Configuration (used for uqdactl)
 	DefaultConfigFile string
 
 	// Multicast interfaces

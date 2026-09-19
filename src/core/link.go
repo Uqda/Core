@@ -637,7 +637,7 @@ func (l *links) connect(ctx context.Context, u *url.URL, info linkInfo, options 
 // for inbound listen addresses (see links.listen's switch statement,
 // which this must be kept in sync with). Exported so a caller that wants
 // to validate a configuration without actually starting a listener - e.g.
-// cmd/yggdrasil's "-checkconf" - doesn't need to duplicate this list and
+// cmd/uqda's "-checkconf" - doesn't need to duplicate this list and
 // risk it drifting out of sync.
 func IsValidListenScheme(scheme string) bool {
 	switch strings.ToLower(scheme) {
