@@ -7,7 +7,7 @@ A workstream is only marked **Tested** when there is an actual test, benchmark,
 or verification command backing the claim — not because code exists. See
 linked evidence in each row.
 
-Last updated: after the Phase 16 daemon interoperability harness commit (on top of `b74c506`).
+Last updated: after commit `48dd761` (admin socket exposure warning).
 
 ## Phase tracker
 
@@ -29,9 +29,9 @@ Last updated: after the Phase 16 daemon interoperability harness commit (on top 
 | 9 | Uqda Doctor expansion | **Not started** | `uqdactl` currently has no `doctor` subcommand in this checkout — to confirm during Phase 9 scoping |
 | 10 | Uqda Gateway deployment profile | **Not started** | |
 | 11 | Privacy boundary documentation | **Not started** | |
-| 12 | Identity/key safety hardening | **Not started** | |
-| 13 | Configuration safety improvements | **Not started** | |
-| 14 | Admin API hardening | **Not started** | |
+| 12 | Identity/key safety hardening | **In progress** | [contrib/ansible/genkeys.go](../contrib/ansible/genkeys.go) vault file now created at 0600 (commit `4a8b113`, tested). Daemon now warns on unsafe config/`PrivateKeyPath` file permissions on Unix, no-ops correctly on Windows ([src/config/permissions.go](../src/config/permissions.go), commit `4bf1891`, tested). Not yet done: corrupted/missing-identity handling audit, upgrade-preservation tests |
+| 13 | Configuration safety improvements | **Not started** | `-checkconf`-equivalent validation command not yet implemented |
+| 14 | Admin API hardening | **In progress** | [src/admin/admin.go](../src/admin/admin.go): warns when the admin socket binds to a non-loopback TCP address, explaining the lack of authentication (commit `48dd761`, tested: loopback/0.0.0.0/unix-socket cases). Actual authentication on the admin socket itself is still not implemented — the TODO in that file's header is still accurate |
 | 15 | Logging/metrics standardization | **Not started** | |
 | 16 | Full automated test suite (unit/integration/interop/fuzz/stress) | **In progress** | [tests/interop/daemon_test.go](../tests/interop/daemon_test.go): black-box two-process daemon test (config file + admin socket, not the internal API) verifying peering and address-derivation correctness. Currently same-codebase only — becomes a true cross-implementation test once `cmd/uqda` exists (see that file's package doc). Fuzz: `FuzzVersionMetadataDecode` and `FuzzMulticastAdvertisementUnmarshalBinary` added, both run 2.5M+/3.1M+ execs with zero crashes. Stress/chaos still not started |
 | 17 | Uqda Lab (network laboratory) | **Not started** | |
@@ -41,7 +41,7 @@ Last updated: after the Phase 16 daemon interoperability harness commit (on top 
 | 21 | Platform support validation | **Not started** | |
 | 22 | Supply-chain security | **In progress** | Initial `govulncheck` pass done (see Phase 2 row); no dependency bumps made yet |
 | 23 | Licensing/attribution (NOTICE.md) | **Not started** | |
-| 23 | Threat model | **Implemented** | [docs/THREAT_MODEL.md](THREAT_MODEL.md): 10 concrete threats mapped to actual file/line boundaries in this codebase, each with mitigation status and residual risk called out honestly (admin socket has no auth today; post-handshake connections have no read/write deadline; identity file permissions are unenforced) |
+| 23 | Threat model | **Implemented** | [docs/THREAT_MODEL.md](THREAT_MODEL.md): 10 concrete threats mapped to actual file/line boundaries in this codebase. 3 of the identified gaps have since been addressed (admin socket exposure now warns, config/key file permissions now warn, ansible vault file now 0600) and the doc was updated in place with the actual fix + test reference for each rather than left stale. One entry (post-handshake connection deadlines) was corrected after checking Ironwood's source directly — it already enforces a 3s peer timeout with 1s keepalives, which the original entry had incorrectly called unmitigated |
 | 24 | Full documentation set | **In progress** | ARCHITECTURE.md, NAMING.md, RESTRUCTURING.md, BASELINE.md, [SECURITY.md](../SECURITY.md), [docs/THREAT_MODEL.md](THREAT_MODEL.md) exist; README rewrite, Arabic README, upstream-comparison doc still pending |
 | 25 | Engineering rules | **Implemented** | Encoded in this repo's working process (small coherent commits, test-before-refactor, no wire changes) rather than as a separate document |
 

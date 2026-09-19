@@ -62,19 +62,39 @@ bytes into this parser.
 
 **Boundary:** after `version_metadata.decode()` succeeds, the connection is
 handed to `l.core.HandleConn()` (`src/core/link.go:708`), which delegates
-to Ironwood. `conn.SetDeadline(time.Time{})` clears the handshake deadline
-entirely (`src/core/link.go:657`) — there is no read/write deadline on an
-established link at the yggdrasil-go layer.
+to Ironwood. `conn.SetDeadline(time.Time{})` clears the *handshake*
+deadline (`src/core/link.go:657`) — yggdrasil-go itself sets no read/write
+deadline on an established link.
 
 - **Threat:** a peer that completes the handshake but then sends slowly,
   never sends, or never reads (holding the TCP connection open) ties up
   the connection's goroutines/buffers indefinitely.
-- **Mitigation today:** none at this layer; this is delegated to Ironwood
-  and to OS-level TCP keepalive behavior.
-- **Residual risk:** open — tracked for Phase 4/Phase 8 (Uqda Guard /
-  Reliability Engineering). Any future timeout added here must be
-  verified against real Ironwood traffic patterns first, since an
-  aggressive timeout could disconnect legitimate slow links.
+- **Correction (verified against Ironwood `v0.0.0-20260613025018-d50055b11f5e` source):**
+  an earlier version of this document said this was unmitigated. That was
+  wrong. Ironwood's `network/peers.go` (`peerMonitor.sent`/`.recv`) already
+  calls `conn.SetReadDeadline` on the same connection: sending any
+  non-keepalive packet arms a deadline `peerTimeout` (default 3s) in the
+  future, cleared the moment any packet is received; if nothing arrives in
+  time the next `Read` fails and the peer is torn down. `peerKeepAliveDelay`
+  (default 1s, `network/config.go`) makes an idle-but-alive peer send a
+  keepalive before that deadline would fire. yggdrasil-go does not
+  currently override either default via `iwn.With...` options in
+  `src/core/core.go`'s `iwe.NewPacketConnWithPassword` call.
+- **Why yggdrasil-go does not add its own deadline on top:** `net.Conn`
+  has one read deadline, not a stack of them — a second `SetReadDeadline`
+  call at the link.go layer would silently overwrite (race against)
+  Ironwood's own deadline management on the exact same `net.Conn`, which
+  is a correctness risk (could tear down healthy connections, or defeat
+  Ironwood's own dead-peer detection) rather than a safety improvement.
+  Any change to these timeouts belongs behind Ironwood's own
+  `WithPeerTimeout`/`WithPeerKeepAliveDelay` options, tuned and tested
+  against real link conditions, not as a duplicate mechanism here.
+- **Residual risk:** a peer that keeps sending just enough keepalive
+  traffic to avoid the timeout, while contributing no useful throughput
+  (a "slowloris"-style connection-hoarding pattern), is not caught by
+  keepalive-based liveness alone. That requires per-connection traffic
+  accounting, which is real design work, not a one-line fix — tracked for
+  Phase 4 (Uqda Guard) as a resource-accounting item, not a timeout one.
 
 ### 3. Malicious or spoofed local-network host — multicast discovery
 
@@ -139,15 +159,21 @@ the Unix socket is created with mode `0660` (`src/admin/admin.go:118`).
 - **Mitigation today:** the default listen address is local-only, and the
   Unix socket's file permissions provide OS-level access control on
   Unix-likes. This is access control by *placement*, not by
-  *authentication*.
-- **Residual risk:** the Windows default (`tcp://localhost:9001`) has no
-  filesystem permission equivalent — any local process/user on a
-  multi-user Windows box can connect. And an operator who sets
-  `AdminListen` to a non-loopback address with no additional protection
-  exposes full node control to the network. Tracked for Phase 14 (Uqda
-  Control hardening) — the fix is authentication on the admin socket
-  itself, not just documentation, but that is a real behavior change
-  requiring its own design and is not implemented in this pass.
+  *authentication*. As of `AdminSocket.warnIfListeningPublicly`
+  (`src/admin/admin.go`, commit `48dd761`), an operator who binds the admin
+  socket to any non-loopback TCP address now gets an explicit warning
+  naming the exposed address and stating plainly that there is no
+  authentication — turning a silent gap into a visible, deliberate
+  decision. Verified by `TestWarnIfListeningPubliclyLoopback`,
+  `TestWarnIfListeningPubliclyUnspecified`, and
+  `TestWarnIfListeningPubliclyUnixSocket` in `src/admin/admin_test.go`.
+- **Residual risk:** the warning does not *prevent* the exposure, and the
+  Windows default (`tcp://localhost:9001`) still has no filesystem
+  permission equivalent — any local process/user on a multi-user Windows
+  box can connect with no warning at all, since that's still the intended
+  local-only configuration. Tracked for Phase 14 (Uqda Control hardening)
+  — actual authentication on the admin socket itself is a real behavior
+  change requiring its own design and is not implemented in this pass.
 
 ### 6. Compromised or malicious public gateway
 
@@ -177,13 +203,26 @@ process memory for the process lifetime).
 - **Threat:** if the config file (or `PrivateKeyPath` file) is readable by
   an unauthorized local user, or if it's ever logged, an attacker can fully
   impersonate the node (its network address is derived from this key).
-- **Mitigation today:** none enforced by this codebase — file permissions
-  on the config file are entirely the operator's responsibility today; the
-  code does not check or warn about permissive file modes.
-- **Residual risk:** open. Tracked for Phase 12 (Identity/key safety) —
-  candidate mitigation is warning (not silently failing) when the config
-  or key file is group/world-readable on platforms where that's
-  meaningful.
+- **Mitigation today:** `config.FilePermissionsAreUnsafe`
+  (`src/config/permissions.go`, commit `4bf1891`) checks the config file
+  (via `-useconffile`) and any `PrivateKeyPath` target for group/other
+  access on Unix-likes, and `cmd/yggdrasil/main.go` logs a warning naming
+  the path (never the key material) when either is unsafe. Deliberately a
+  warning, not a hard failure, so an operator's existing working setup
+  keeps working. On Windows this check is a documented no-op
+  (`permissionCheckMeaningful = false` in `src/config/permissions_windows.go`)
+  rather than a false positive, since `os.FileMode` there reflects the
+  read-only attribute, not real ACLs. Separately,
+  `contrib/ansible/genkeys.go`'s generated vault file (which contains the
+  raw private key) is now created at 0600 and has that mode enforced even
+  when regenerating an existing file (commit `4a8b113`). Verified by
+  `TestFilePermissionsAreUnsafe*` (`src/config`),
+  `TestWarnIfConfigFilePermissionsAreUnsafe` (`cmd/yggdrasil`), and
+  `TestWriteHostVars*` (`contrib/ansible`).
+- **Residual risk:** no equivalent check exists for Windows (ACL
+  inspection was judged out of scope for this pass — see the comment in
+  `permissions_windows.go`), and this only *warns*; it does not stop the
+  daemon from starting, or fix the permissions itself.
 
 ### 9. Malicious update source
 
