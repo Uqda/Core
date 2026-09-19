@@ -124,23 +124,20 @@ functionality. Do not rename Ironwood itself or present its functionality as
 an original Uqda invention — see [ARCHITECTURE.md](ARCHITECTURE.md#legal--attribution-state)
 for the current (currently minimal) state of legal files in this repo.
 
-## Open question — flag before Phase 4 (Uqda Guard) work
+## Resolved: hardened handshake — dropped
 
 Earlier drafts of the Uqda concept mentioned a "hardened handshake" that two
-Uqda peers could negotiate, gated by a `secure=required` option. If that
-negotiation adds any new wire message or field that a stock Yggdrasil peer
-would not recognize, it is a **wire-level protocol extension** — which
-conflicts with the non-negotiable rule above, even if it degrades gracefully.
+Uqda peers could negotiate, gated by a `secure=required` option. Any such
+negotiation would add a wire message or field a stock Yggdrasil peer would
+not recognize — a **wire-level protocol extension**, which conflicts with
+the non-negotiable rule above regardless of how gracefully it degrades.
 
-This needs an explicit decision before any Guard/handshake-hardening work
-starts:
-
-- Drop the feature entirely and rely only on implementation-side hardening
-  (connection admission control, resource limits, input validation,
-  timeouts) that touches nothing on the wire, **or**
-- Keep it, but treat it as a deliberate, clearly documented exception to the
-  "zero protocol changes" rule, with an explicit compatibility fallback
-  verified against real upstream Yggdrasil nodes.
-
-This document does not resolve that question — it only records that it must
-be resolved, and by whom, before Uqda Guard implementation begins.
+**Decision: this feature is dropped.** Uqda Guard (see [RESTRUCTURING.md](RESTRUCTURING.md),
+Phase 4) is implemented entirely through implementation-side hardening —
+safer parsing, stronger validation, resource/queue limits, connection
+admission control, rate limiting, and timeouts — none of which add, remove,
+or alter anything on the wire. No Uqda-only handshake, mandatory extension,
+or negotiated capability will be introduced. If any prototype code for the
+dropped handshake is found later in the source tree, it must be removed or
+fully isolated from the supported build unless independently proven to be
+byte-for-byte wire-compatible with stock Yggdrasil peers.
