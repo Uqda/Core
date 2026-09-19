@@ -7,7 +7,7 @@ A workstream is only marked **Tested** when there is an actual test, benchmark,
 or verification command backing the claim — not because code exists. See
 linked evidence in each row.
 
-Last updated: after commit `a60ac11` (Phase 2 baseline).
+Last updated: after the Phase 16 daemon interoperability harness commit (on top of `b74c506`).
 
 ## Phase tracker
 
@@ -33,7 +33,7 @@ Last updated: after commit `a60ac11` (Phase 2 baseline).
 | 13 | Configuration safety improvements | **Not started** | |
 | 14 | Admin API hardening | **Not started** | |
 | 15 | Logging/metrics standardization | **Not started** | |
-| 16 | Full automated test suite (unit/integration/interop/fuzz/stress) | **In progress** | Two-node interoperability harness is next (this session) |
+| 16 | Full automated test suite (unit/integration/interop/fuzz/stress) | **In progress** | [tests/interop/daemon_test.go](../tests/interop/daemon_test.go): black-box two-process daemon test (config file + admin socket, not the internal API) verifying peering and address-derivation correctness. Currently same-codebase only — becomes a true cross-implementation test once `cmd/uqda` exists (see that file's package doc). Fuzz/stress/chaos still not started |
 | 17 | Uqda Lab (network laboratory) | **Not started** | |
 | 18 | Performance engineering | **Not started** | Depends on Phase 2 performance baseline |
 | 19 | Verifiable builds/releases (SBOM, signing) | **Not started** | No git remote/CI configured yet on this checkout |
