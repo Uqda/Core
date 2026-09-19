@@ -2,11 +2,7 @@
 
 set -ef
 
-PKGSRC=${PKGSRC:-github.com/Uqda/Core/src/version}
-PKGNAME=${PKGNAME:-$(sh contrib/semver/name.sh)}
-PKGVER=${PKGVER:-$(sh contrib/semver/version.sh --bare)}
-
-LDFLAGS="-X $PKGSRC.buildName=$PKGNAME -X $PKGSRC.buildVersion=$PKGVER"
+LDFLAGS=""
 ARGS="-v"
 
 while getopts "utc:l:dro:p" option

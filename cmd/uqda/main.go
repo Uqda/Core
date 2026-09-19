@@ -95,9 +95,7 @@ func main() {
 	var err error
 	switch {
 	case *ver:
-		fmt.Println("Build name:", version.BuildName())
-		fmt.Println("Build version:", version.BuildVersion())
-		fmt.Printf("Yggdrasil network compatibility: %d.%d\n", core.ProtocolVersionMajor, core.ProtocolVersionMinor)
+		fmt.Println(version.DisplayName())
 		return
 
 	case *autoconf:

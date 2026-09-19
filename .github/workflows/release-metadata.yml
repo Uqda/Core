@@ -1,0 +1,24 @@
+name: Release metadata
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Prepare release metadata
+        run: |
+          python3 - <<'PYTHON'
+          import json, subprocess
+          def version(*args):
+              return subprocess.check_output(["sh", "contrib/semver/version.sh", *args], text=True).strip()
+          with open("release-metadata.json", "w") as out:
+              json.dump({"tag_name": version(), "name": version("--title"),
+                         "prerelease": version("--prerelease") == "true", "draft": True}, out, indent=2)
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-metadata
+          path: release-metadata.json

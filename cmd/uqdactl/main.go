@@ -51,10 +51,8 @@ func run() int {
 	cmdLineEnv := newCmdLineEnv()
 	cmdLineEnv.parseFlagsAndArgs()
 
-	if cmdLineEnv.ver {
-		fmt.Println("Build name:", version.BuildName())
-		fmt.Println("Build version:", version.BuildVersion())
-		fmt.Println("To get the version number of the running Uqda node, run", os.Args[0], "getSelf")
+	if cmdLineEnv.ver || (len(cmdLineEnv.args) == 1 && cmdLineEnv.args[0] == "version") {
+		fmt.Println(version.DisplayName())
 		return 0
 	}
 

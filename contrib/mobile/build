@@ -4,12 +4,8 @@ set -ef
 
 [ ! -d contrib/mobile ] && (echo "Must run ./contrib/mobile/build [-i] [-a] from the repository top level folder"; exit 1)
 
-PKGSRC=${PKGSRC:-github.com/Uqda/Core/src/version}
-PKGNAME=${PKGNAME:-$(sh contrib/semver/name.sh)}
-PKGVER=${PKGVER:-$(sh contrib/semver/version.sh --bare)}
 GOVER=$(go version | { read _ _ version _; echo ${version#go}; })
-
-LDFLAGS="-X $PKGSRC.buildName=$PKGNAME -X $PKGSRC.buildVersion=$PKGVER"
+LDFLAGS=""
 ARGS="-v"
 
 while getopts "aitc:l:d" option
@@ -31,6 +27,15 @@ fi
 
 if [ ! $IOS ] && [ ! $ANDROID ]; then 
   echo "Must specify -a (Android), -i (iOS) or both"
+  exit 1
+fi
+
+command -v gomobile >/dev/null || { echo "gomobile is required" >&2; exit 1; }
+if [ "$IOS" ]; then
+  command -v xcrun >/dev/null || { echo "Apple builds require Xcode on macOS" >&2; exit 1; }
+fi
+if [ "$ANDROID" ] && [ -z "${ANDROID_HOME:-}${ANDROID_SDK_ROOT:-}" ]; then
+  echo "Android builds require an SDK/NDK and ANDROID_HOME or ANDROID_SDK_ROOT" >&2
   exit 1
 fi
 

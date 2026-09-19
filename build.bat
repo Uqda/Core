@@ -1,9 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-set PKGSRC=github.com/Uqda/Core/src/version
-
-set LDFLAGS=-X %PKGSRC%.buildName=%PKGNAME% -X %PKGSRC%.buildVersion=%PKGVER%
+set LDFLAGS=
 set ARGS=-v
 
 :parse_args
@@ -36,6 +34,8 @@ if "%TABLES%"=="" if "%DEBUG%"=="" (
 for %%C in (uqda uqdactl) do (
   echo Building: %%C.exe
   go build %ARGS% -ldflags="%LDFLAGS%" -gcflags="%GCFLAGS%" ./cmd/%%C
+
+  if errorlevel 1 exit /b 1
 
   if "%UPX%"=="true" (
     upx --brute %%C.exe

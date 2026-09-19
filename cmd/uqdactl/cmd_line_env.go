@@ -33,13 +33,13 @@ func (cmdLineEnv *CmdLineEnv) parseFlagsAndArgs() {
 		fmt.Println()
 		fmt.Println("Please note that options must always specified BEFORE the command\non the command line or they will be ignored.")
 		fmt.Println()
-		fmt.Println("Commands:\n  - Use \"list\" for a list of available commands")
+		fmt.Println("Commands:\n  - version: print the local Uqda release\n  - Use \"list\" for a list of available commands")
 		fmt.Println()
 		fmt.Println("Examples:")
 		fmt.Println("  - ", os.Args[0], "list")
 		fmt.Println("  - ", os.Args[0], "getPeers")
 		fmt.Println("  - ", os.Args[0], "-endpoint=tcp://localhost:9001 getPeers")
-		fmt.Println("  - ", os.Args[0], "-endpoint=unix:///var/run/ygg.sock getPeers")
+		fmt.Println("  - ", os.Args[0], "-endpoint=unix:///run/uqda/admin.sock getPeers")
 	}
 
 	server := flag.String("endpoint", cmdLineEnv.endpoint, "Admin socket endpoint")
@@ -59,8 +59,8 @@ func (cmdLineEnv *CmdLineEnv) parseFlagsAndArgs() {
 func (cmdLineEnv *CmdLineEnv) setEndpoint(logger *log.Logger) {
 	if cmdLineEnv.server == cmdLineEnv.endpoint {
 		if cfg, err := os.ReadFile(config.GetDefaults().DefaultConfigFile); err == nil {
-			if bytes.Equal(cfg[0:2], []byte{0xFF, 0xFE}) ||
-				bytes.Equal(cfg[0:2], []byte{0xFE, 0xFF}) {
+			if len(cfg) >= 2 && (bytes.Equal(cfg[0:2], []byte{0xFF, 0xFE}) ||
+				bytes.Equal(cfg[0:2], []byte{0xFE, 0xFF})) {
 				utf := unicode.UTF16(unicode.BigEndian, unicode.UseBOM)
 				decoder := utf.NewDecoder()
 				cfg, err = decoder.Bytes(cfg)
