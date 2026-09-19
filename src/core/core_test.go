@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"runtime"
 	"testing"
 	"time"
 
@@ -231,6 +232,63 @@ func BenchmarkCore_Start_Transfer(b *testing.B) {
 		}
 	}
 	<-done
+}
+
+// waitForGoroutineCountAtMost polls runtime.NumGoroutine until it settles
+// at or below max, or fails the test after timeout. Goroutine counts are
+// inherently noisy (GC workers, finalizers, the test runner itself), so
+// this is a coarse regression guard against gross leaks (an entire link's
+// worth of goroutines failing to exit), not a precise leak detector for a
+// single stray goroutine.
+func waitForGoroutineCountAtMost(t testing.TB, max int, timeout time.Duration) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	var last int
+	for {
+		runtime.GC()
+		last = runtime.NumGoroutine()
+		if last <= max {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("goroutine count did not settle within %s: have %d, want <= %d", timeout, last, max)
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+}
+
+// TestCoreStopReleasesGoroutinesAndIsIdempotent characterizes two lifecycle
+// properties of Core.Stop that any future refactor (see
+// ../../RESTRUCTURING.md's peer/transport split) must preserve:
+//
+//  1. Stopping a node actually tears down the goroutines it started for
+//     its links and listeners, rather than leaking them.
+//  2. Stop is safe to call more than once - Core.Stop's own
+//     implementation relies on context.CancelFunc and net.Conn.Close
+//     both tolerating repeated calls, and callers (e.g. a future signal
+//     handler plus an explicit admin "shutdown" command racing each
+//     other) should be able to rely on that rather than tracking whether
+//     they're the first caller.
+func TestCoreStopReleasesGoroutinesAndIsIdempotent(t *testing.T) {
+	runtime.GC()
+	baseline := runtime.NumGoroutine()
+
+	nodeA, nodeB := CreateAndConnectTwo(t, false)
+	if !WaitConnected(nodeA, nodeB) {
+		t.Fatal("nodes did not connect")
+	}
+
+	nodeA.Stop()
+	nodeB.Stop()
+	// Calling Stop again must not panic.
+	nodeA.Stop()
+	nodeB.Stop()
+
+	// Small slack above baseline: this is deliberately loose to avoid
+	// flakiness from goroutines outside this package's control, while
+	// still catching a gross leak (e.g. an entire link handler or
+	// listener accept loop failing to exit on shutdown).
+	waitForGoroutineCountAtMost(t, baseline+4, 5*time.Second)
 }
 
 func TestAllowedPublicKeys(t *testing.T) {
