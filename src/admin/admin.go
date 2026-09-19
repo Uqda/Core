@@ -135,6 +135,7 @@ func New(c *core.Core, log core.Logger, opts ...SetupOption) (*AdminSocket, erro
 	a.log.Infof("%s admin socket listening on %s",
 		strings.ToUpper(a.listener.Addr().Network()),
 		a.listener.Addr().String())
+	a.warnIfListeningPublicly()
 
 	_ = a.AddHandler("list", "List available commands", []string{}, func(_ json.RawMessage) (interface{}, error) {
 		res := &ListResponse{}
@@ -254,6 +255,24 @@ func (a *AdminSocket) SetupAdminHandlers() {
 			return res, nil
 		},
 	)
+}
+
+// warnIfListeningPublicly logs a prominent warning if the admin socket is
+// bound to a TCP address other than loopback. The admin API has no
+// authentication of its own (see the TODO at the top of this file) - its
+// safety today comes entirely from listening locally by default (see
+// src/config/defaults_*.go) plus, on Unix-likes, the admin socket file's
+// own permissions. A non-loopback TCP bind means anyone who can reach that
+// address can fully control this node - add/remove peers, read routing and
+// session state - with no credential check at all, so an operator who
+// configures this deliberately should know exactly what they're accepting.
+func (a *AdminSocket) warnIfListeningPublicly() {
+	tcpAddr, ok := a.listener.Addr().(*net.TCPAddr)
+	if !ok || tcpAddr.IP.IsLoopback() {
+		return
+	}
+	a.log.Warnln("WARNING: the admin socket is listening on", tcpAddr.String(),
+		"which is not restricted to localhost. The admin API has no authentication of its own - anyone who can reach this address can fully control this node (add/remove peers, read peer and session state, etc.). Only do this if you have your own network-level protection (firewall, VPN, etc.) in place.")
 }
 
 // IsStarted returns true if the module has been started.
