@@ -7,7 +7,7 @@ A workstream is only marked **Tested** when there is an actual test, benchmark,
 or verification command backing the claim — not because code exists. See
 linked evidence in each row.
 
-Last updated: after the peer-removal race fix (on top of `31279fb`).
+Last updated: after adding backoff jitter and NOTICE.md (on top of `5ce4427`).
 
 ## Phase tracker
 
@@ -22,7 +22,7 @@ Last updated: after the peer-removal race fix (on top of `31279fb`).
 | 2 | Baseline: performance numbers (startup/memory/CPU/throughput/convergence) | **Not started** | Requires the interop/lab harness below to exist first — see BASELINE.md "Performance — not measured yet" |
 | 3 | Structural refactor (identity/peer/transport/routing/session/discovery/security/tun/admin/config/diagnostics boundaries) | **In progress** | First slice done: [src/identity/tls.go](../src/identity/tls.go) extracted from `src/core/tls.go` (commit `dd5d315`), tested, full suite green including the black-box daemon test. Peer/transport/routing/session/discovery/tun/admin/config/diagnostics boundaries not yet touched |
 | 4 | Uqda Guard (security boundary) | **Not started** | Blocked on the hardened-handshake decision — **now resolved**: no new wire messages, implementation-side hardening only (see NAMING.md "Open question", now closed) |
-| 5 | Peer lifecycle rebuild | **In progress** | Characterization tests added (`TestRepeatedConnectDisconnectCycles`, `TestImmediateReAddAfterRemove`, `src/core/core_test.go`) surfaced a real race in `links.remove` (`src/core/link.go`): the `_links` map entry was only deleted asynchronously by the dial goroutine's own cleanup, so an immediate double-`RemovePeer` or an `AddPeer` right after a `RemovePeer` could behave incorrectly. Fixed in commit `31279fb` (synchronous delete), both tests pass 3-5x repeated runs. Full lifecycle model (explicit connecting/connected/closing states, bounded+jittered backoff audit) not yet done |
+| 5 | Peer lifecycle rebuild | **In progress** | Characterization tests added (`TestRepeatedConnectDisconnectCycles`, `TestImmediateReAddAfterRemove`, `src/core/core_test.go`) surfaced a real race in `links.remove` (`src/core/link.go`): the `_links` map entry was only deleted asynchronously by the dial goroutine's own cleanup, so an immediate double-`RemovePeer` or an `AddPeer` right after a `RemovePeer` could behave incorrectly. Fixed in commit `31279fb` (synchronous delete), both tests pass 3-5x repeated runs. Reconnect backoff now jittered (commit `5ce4427`, `jitteredBackoffDuration` in `src/core/link.go`, tested via `TestJitteredBackoffDuration*` in `src/core/link_test.go`) to avoid lockstep reconnect storms after a shared outage. Full explicit connecting/connected/closing state model not yet done |
 | 6 | Transport layer reorganization | **Not started** | |
 | 7 | Routing improvements | **Not started** | High-risk; requires topology simulation before any change, per policy |
 | 8 | Reliability engineering (abnormal-condition matrix) | **Not started** | |
@@ -40,9 +40,9 @@ Last updated: after the peer-removal race fix (on top of `31279fb`).
 | 20 | Verified update subsystem | **Not started** | Net-new; no update mechanism exists upstream |
 | 21 | Platform support validation | **Not started** | |
 | 22 | Supply-chain security | **In progress** | Initial `govulncheck` pass done (see Phase 2 row); no dependency bumps made yet. `vulncheck` CI job authored (not yet run - no remote) |
-| 23 | Licensing/attribution (NOTICE.md) | **Not started** | |
+| 23 | Licensing/attribution (NOTICE.md) | **Implemented** | [NOTICE.md](../NOTICE.md): states LGPLv3 for this project, verified MPL-2.0 for Ironwood and phony (checked their vendored LICENSE files directly, not assumed), and explicitly declines to hand-transcribe the rest of the dependency tree's licenses (dozens of transitive deps) rather than guess - defers that to a mechanical SBOM/license-scan tool under Phase 22 |
 | 23 | Threat model | **Implemented** | [docs/THREAT_MODEL.md](THREAT_MODEL.md): 10 concrete threats mapped to actual file/line boundaries in this codebase. 3 of the identified gaps have since been addressed (admin socket exposure now warns, config/key file permissions now warn, ansible vault file now 0600) and the doc was updated in place with the actual fix + test reference for each rather than left stale. One entry (post-handshake connection deadlines) was corrected after checking Ironwood's source directly — it already enforces a 3s peer timeout with 1s keepalives, which the original entry had incorrectly called unmitigated |
-| 24 | Full documentation set | **In progress** | ARCHITECTURE.md, NAMING.md, RESTRUCTURING.md, BASELINE.md, [SECURITY.md](../SECURITY.md), [docs/THREAT_MODEL.md](THREAT_MODEL.md) exist; README rewrite, Arabic README, upstream-comparison doc still pending |
+| 24 | Full documentation set | **In progress** | ARCHITECTURE.md, NAMING.md, RESTRUCTURING.md, BASELINE.md, [SECURITY.md](../SECURITY.md), [docs/THREAT_MODEL.md](THREAT_MODEL.md), [NOTICE.md](../NOTICE.md) exist; README rewrite, Arabic README, upstream-comparison doc still pending |
 | 25 | Engineering rules | **Implemented** | Encoded in this repo's working process (small coherent commits, test-before-refactor, no wire changes) rather than as a separate document |
 
 ## Blockers requiring external input
