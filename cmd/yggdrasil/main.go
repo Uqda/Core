@@ -108,6 +108,7 @@ func main() {
 		}
 
 	case *useconffile != "":
+		warnIfConfigFilePermissionsAreUnsafe(*useconffile, logger)
 		f, err := os.Open(*useconffile)
 		if err != nil {
 			panic(err)
@@ -139,6 +140,10 @@ func main() {
 			fmt.Println("\nError: You need to specify some config data using -useconf or -useconffile.")
 		}
 		return
+	}
+
+	if cfg.PrivateKeyPath != "" {
+		warnIfConfigFilePermissionsAreUnsafe(cfg.PrivateKeyPath, logger)
 	}
 
 	privateKey := ed25519.PrivateKey(cfg.PrivateKey)
@@ -331,6 +336,23 @@ func main() {
 	_ = n.multicast.Stop()
 	_ = n.tun.Stop()
 	n.core.Stop()
+}
+
+// warnIfConfigFilePermissionsAreUnsafe logs a warning (never a fatal error -
+// an operator's existing working setup must keep working) when a file that
+// can contain a node's private key - the config file itself, or a
+// PrivateKeyPath target - is readable or writable by users other than its
+// owner. It is a no-op on platforms where this kind of check isn't
+// meaningful (see config.FilePermissionsAreUnsafe), and it never logs the
+// key material itself, only the path and the fact that it looks unsafe.
+func warnIfConfigFilePermissionsAreUnsafe(path string, logger *log.Logger) {
+	unsafe, checked, err := config.FilePermissionsAreUnsafe(path)
+	if err != nil || !checked {
+		return
+	}
+	if unsafe {
+		logger.Warnf("%s is readable or writable by other users on this system - it may contain your node's private key. Consider restricting it to your own user (e.g. chmod 600 %s).", path, path)
+	}
 }
 
 func setLogLevel(loglevel string, logger *log.Logger) {
