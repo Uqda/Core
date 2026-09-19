@@ -7,7 +7,7 @@ A workstream is only marked **Tested** when there is an actual test, benchmark,
 or verification command backing the claim — not because code exists. See
 linked evidence in each row.
 
-Last updated: after adding backoff jitter and NOTICE.md (on top of `5ce4427`).
+Last updated: after adding the `-checkconf` command (on top of `511ed94`).
 
 ## Phase tracker
 
@@ -30,7 +30,7 @@ Last updated: after adding backoff jitter and NOTICE.md (on top of `5ce4427`).
 | 10 | Uqda Gateway deployment profile | **Not started** | |
 | 11 | Privacy boundary documentation | **Not started** | |
 | 12 | Identity/key safety hardening | **In progress** | [contrib/ansible/genkeys.go](../contrib/ansible/genkeys.go) vault file now created at 0600 (commit `4a8b113`, tested). Daemon now warns on unsafe config/`PrivateKeyPath` file permissions on Unix, no-ops correctly on Windows ([src/config/permissions.go](../src/config/permissions.go), commit `4bf1891`, tested). Not yet done: corrupted/missing-identity handling audit, upgrade-preservation tests |
-| 13 | Configuration safety improvements | **Not started** | `-checkconf`-equivalent validation command not yet implemented |
+| 13 | Configuration safety improvements | **In progress** | `-checkconf` implemented (commit `511ed94`): validates private key length, every Listen/Peers/InterfacePeers URI scheme (against new `core.IsValidListenScheme`/`IsValidPeerScheme`), AdminListen's scheme, and MulticastInterfaces regexes (catches what would otherwise be a `regexp.MustCompile` panic at real startup). 8 tests in `cmd/yggdrasil/checkconf_test.go`, plus verified end-to-end against the real binary. Deprecated-field migration guidance and backup-before-destructive-migration not yet done |
 | 14 | Admin API hardening | **In progress** | [src/admin/admin.go](../src/admin/admin.go): warns when the admin socket binds to a non-loopback TCP address, explaining the lack of authentication (commit `48dd761`, tested: loopback/0.0.0.0/unix-socket cases). Actual authentication on the admin socket itself is still not implemented — the TODO in that file's header is still accurate |
 | 15 | Logging/metrics standardization | **Not started** | |
 | 16 | Full automated test suite (unit/integration/interop/fuzz/stress) | **In progress** | [tests/interop/daemon_test.go](../tests/interop/daemon_test.go): black-box two-process daemon test (config file + admin socket, not the internal API) verifying peering and address-derivation correctness. Currently same-codebase only — becomes a true cross-implementation test once `cmd/uqda` exists (see that file's package doc). Fuzz: `FuzzVersionMetadataDecode` and `FuzzMulticastAdvertisementUnmarshalBinary` added, both run 2.5M+/3.1M+ execs with zero crashes. Stress/chaos still not started |
