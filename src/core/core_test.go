@@ -291,6 +291,144 @@ func TestCoreStopReleasesGoroutinesAndIsIdempotent(t *testing.T) {
 	waitForGoroutineCountAtMost(t, baseline+4, 5*time.Second)
 }
 
+// TestRepeatedConnectDisconnectCycles characterizes current behavior of
+// AddPeer/RemovePeer under repeated cycling against the same peer, ahead
+// of the Phase 5 peer-lifecycle refactor (RESTRUCTURING.md). It checks
+// three things a rewritten peer-lifecycle manager must preserve:
+//
+//  1. Add -> wait connected -> Remove -> Add again works repeatedly
+//     without error - RemovePeer must actually clear the link-info entry
+//     so a later AddPeer for the same URI doesn't hit
+//     ErrLinkAlreadyConfigured forever.
+//  2. Removing a peer that was never added, or removing it twice, returns
+//     ErrLinkNotConfigured rather than panicking.
+//  3. Cycling connect/disconnect several times doesn't leak goroutines -
+//     the count after several cycles plus a final Stop should be no worse
+//     than after a single cycle, using the same loose-tolerance approach
+//     as TestCoreStopReleasesGoroutinesAndIsIdempotent.
+func TestRepeatedConnectDisconnectCycles(t *testing.T) {
+	nodeA, nodeB := CreateAndConnectTwoUnconnected(t)
+	defer nodeA.Stop()
+	defer nodeB.Stop()
+
+	listener, err := nodeA.Listen(mustParseURL(t, "tcp://localhost:0"), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	peerURL := mustParseURL(t, "tcp://"+listener.Addr().String())
+
+	// Removing a peer that was never configured must error cleanly.
+	if err := nodeB.RemovePeer(peerURL, ""); err != ErrLinkNotConfigured {
+		t.Fatalf("expected ErrLinkNotConfigured for an unconfigured peer, got %v", err)
+	}
+
+	runtime.GC()
+	baseline := runtime.NumGoroutine()
+
+	const cycles = 5
+	for i := 0; i < cycles; i++ {
+		if err := nodeB.AddPeer(peerURL, ""); err != nil {
+			t.Fatalf("cycle %d: AddPeer failed: %s", i, err)
+		}
+		if !waitForCondition(2*time.Second, func() bool {
+			return len(nodeB.GetPeers()) == 1 && nodeB.GetPeers()[0].Up
+		}) {
+			t.Fatalf("cycle %d: peer did not come up", i)
+		}
+		if err := nodeB.RemovePeer(peerURL, ""); err != nil {
+			t.Fatalf("cycle %d: RemovePeer failed: %s", i, err)
+		}
+		// Removing twice in a row must not panic and must report the
+		// same "not configured" error as removing something that was
+		// never added.
+		if err := nodeB.RemovePeer(peerURL, ""); err != ErrLinkNotConfigured {
+			t.Fatalf("cycle %d: expected ErrLinkNotConfigured on double-remove, got %v", i, err)
+		}
+		if !waitForCondition(2*time.Second, func() bool {
+			return len(nodeB.GetPeers()) == 0
+		}) {
+			t.Fatalf("cycle %d: peer did not disconnect", i)
+		}
+	}
+
+	waitForGoroutineCountAtMost(t, baseline+4, 5*time.Second)
+}
+
+// TestImmediateReAddAfterRemove is a narrower regression test for the race
+// TestRepeatedConnectDisconnectCycles's fix addresses: calling AddPeer for
+// the same URI immediately after RemovePeer - with no time for the dial
+// goroutine's own asynchronous cleanup to run in between - must not
+// spuriously fail with ErrLinkAlreadyConfigured.
+func TestImmediateReAddAfterRemove(t *testing.T) {
+	nodeA, nodeB := CreateAndConnectTwoUnconnected(t)
+	defer nodeA.Stop()
+	defer nodeB.Stop()
+
+	listener, err := nodeA.Listen(mustParseURL(t, "tcp://localhost:0"), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	peerURL := mustParseURL(t, "tcp://"+listener.Addr().String())
+
+	if err := nodeB.AddPeer(peerURL, ""); err != nil {
+		t.Fatalf("initial AddPeer failed: %s", err)
+	}
+	if err := nodeB.RemovePeer(peerURL, ""); err != nil {
+		t.Fatalf("RemovePeer failed: %s", err)
+	}
+	// No sleep here - this is exactly the race window under test.
+	if err := nodeB.AddPeer(peerURL, ""); err != nil {
+		t.Fatalf("AddPeer immediately after RemovePeer should succeed, got: %s", err)
+	}
+}
+
+// waitForCondition polls fn until it returns true or the timeout elapses,
+// then evaluates it one final time so the caller's failure reflects the
+// true final state rather than a stale poll.
+func waitForCondition(timeout time.Duration, fn func() bool) bool {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if fn() {
+			return true
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	return fn()
+}
+
+func mustParseURL(t testing.TB, raw string) *url.URL {
+	t.Helper()
+	u, err := url.Parse(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return u
+}
+
+// CreateAndConnectTwoUnconnected creates two nodes with fresh identities
+// but does not peer them together, unlike CreateAndConnectTwo - useful for
+// tests (like connect/disconnect cycling) that want to drive peering
+// explicitly rather than start from an already-connected pair.
+func CreateAndConnectTwoUnconnected(t testing.TB) (nodeA *Core, nodeB *Core) {
+	t.Helper()
+	cfgA, cfgB := config.GenerateConfig(), config.GenerateConfig()
+	if err := cfgA.GenerateSelfSignedCertificate(); err != nil {
+		t.Fatal(err)
+	}
+	if err := cfgB.GenerateSelfSignedCertificate(); err != nil {
+		t.Fatal(err)
+	}
+	logger := GetLoggerWithPrefix("", false)
+	var err error
+	if nodeA, err = New(cfgA.Certificate, logger); err != nil {
+		t.Fatal(err)
+	}
+	if nodeB, err = New(cfgB.Certificate, logger); err != nil {
+		t.Fatal(err)
+	}
+	return nodeA, nodeB
+}
+
 func TestAllowedPublicKeys(t *testing.T) {
 	logger := GetLoggerWithPrefix("", false)
 	cfgA, cfgB := config.GenerateConfig(), config.GenerateConfig()

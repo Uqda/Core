@@ -435,6 +435,19 @@ func (l *links) remove(u *url.URL, sintf string, _ linkType) error {
 			if conn := state._conn; conn != nil {
 				retErr = conn.Close()
 			}
+			// Delete the entry now rather than waiting for the dial
+			// goroutine's own deferred cleanup, which only runs once its
+			// connection handler notices the close and returns - an
+			// asynchronous step relative to this call. Leaving the stale
+			// entry in place until then means a second RemovePeer call
+			// issued right after this one would find it, try to close an
+			// already-closed connection, and return that error instead
+			// of ErrLinkNotConfigured; worse, an AddPeer for the same URI
+			// issued right after this RemovePeer would spuriously hit
+			// ErrLinkAlreadyConfigured. The goroutine's own cleanup
+			// becomes a no-op once this runs, since it only deletes the
+			// entry if it still points at this exact state value.
+			delete(l._links, info)
 			return
 		}
 
