@@ -1,7 +1,7 @@
 // Package interop tests the compiled Uqda daemon through configuration files,
 // admin sockets and peering. Both processes run the same source revision.
-// No independently built upstream Yggdrasil fixture is included; this harness
-// does not establish cross-implementation interoperability.
+// The independent upstream fixture lives in upstream.py; this Go harness
+// remains a separate same-source regression test.
 package interop
 
 import (
@@ -151,6 +151,9 @@ func adminCall(port int, name string) (json.RawMessage, error) {
 		return nil, err
 	}
 	defer conn.Close()
+	if err := conn.SetDeadline(time.Now().Add(2 * time.Second)); err != nil {
+		return nil, err
+	}
 
 	if err := json.NewEncoder(conn).Encode(admin.AdminSocketRequest{Name: name}); err != nil {
 		return nil, err

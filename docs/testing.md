@@ -26,11 +26,51 @@ go build -o uqda ./cmd/uqda
 python3 tests/packaging/config_test.py "$PWD/uqda"
 ```
 
-The black-box test builds the daemon and runs two local processes, checking
-peering and identity-derived addressing. Both processes use the same source.
-An independent upstream Yggdrasil fixture is not included. Cross-implementation
-validation requires a separately built pinned upstream revision and bidirectional
-traffic checks. Do not equate the existing harness with that validation.
+## Independent upstream interoperability
+
+```sh
+python3 tests/interop/upstream.py
+```
+
+Python 3, Go and network access to the pinned upstream module/dependencies are
+required. The pin and checksum verification are mandatory; no branch follows
+upstream development automatically. The harness builds separate daemon and packet
+adapter binaries, prints their hashes and source identities, and checks TCP/TLS
+peering, distinct node identities, Uqda address persistence, bidirectional IPv6
+frames, relay reconnect and multi-hop forwarding. Every wait/build has a timeout.
+See [compatibility](compatibility.md) for the test boundary and source pin.
+
+`go test ./tests/interop` covers the separate same-source daemon harness and
+both CLI version commands against the authoritative `src/version/VERSION`.
+
+## Unix privilege-switching tests
+
+`TestCurrentUserid` and `TestCommonUsername` belong to `cmd/uqda`, not a dependency.
+They exercise `chuser`, which replaces supplementary groups with the target group
+before dropping primary group and user privileges. UID 0 alone is insufficient
+on Linux: `setgroups` requires `CAP_SETGID` in the applicable user namespace.
+Restricted containers may deny it even to UID 0. Do not suppress such errors in
+product code or treat a skipped root-only test as successful execution.
+
+The Linux privilege job compiles the test binary and invokes each test separately
+with `sudo`, ensuring the credential change cannot affect another test process.
+The runner must have the `nobody` account. To reproduce on a normal Linux host:
+
+```sh
+go test -c -o /tmp/uqda-user.test ./cmd/uqda
+sudo timeout 30s /tmp/uqda-user.test -test.v -test.run '^TestCurrentUserid$'
+sudo timeout 30s /tmp/uqda-user.test -test.v -test.run '^TestCommonUsername$'
+```
+
+Compare syscall errors with effective capabilities and a direct `setgroups`
+probe when diagnosing an environment restriction. No sandbox-specific skip is used.
+
+## Container validation
+
+`python3 tests/docker/image_test.py` builds the image, checks both version commands,
+the `/etc/uqda/uqda.conf` path, identity persistence across containers, migration
+and rejection of an invalid legacy identity. It uses a disposable Docker volume,
+requires a Docker engine, and does not publish an image or require TUN privileges.
 
 ## Race detection and platforms
 

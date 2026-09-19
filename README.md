@@ -24,8 +24,8 @@ an acronym. A network node connects to other nodes and may forward traffic.
   non-local admin exposure warnings and jittered peer reconnect delays.
 
 Routing and encrypted sessions build on Ironwood. Wire compatibility is a
-requirement; the included two-process tests use Uqda at both ends and do not
-replace independent upstream interoperability testing. See [compatibility](docs/compatibility.md).
+requirement; the independent pinned-upstream gate checks real daemon peering and IPv6 packet
+delivery over TCP/TLS, including reconnect and multi-hop forwarding. See [compatibility](docs/compatibility.md).
 
 ## Installation
 

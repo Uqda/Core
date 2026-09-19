@@ -7,10 +7,29 @@ Ed25519 identity format and IPv6 address derivation. Ironwood owns routing and
 session framing. There is no separate Uqda wire protocol or mandatory extension.
 
 The product version is independent of protocol metadata in `src/core/version.go`.
-A product version does not certify interoperability with a particular upstream
-release. The repository's two-process daemon test uses the same Uqda source for
-both peers. No independently built, pinned upstream fixture is included, so it
-is not proof of Uqda-to-upstream interoperability.
+A product version does not certify compatibility with every upstream release.
+
+## Pinned upstream gate
+
+`tests/interop/upstream.json` pins Yggdrasil **v0.5.14**, commit
+`422836eeb21a99790caa286aa63d493bbc4766d7`, together with module and source archive
+checksums. `python3 tests/interop/upstream.py` downloads that exact Go module,
+extracts it into a separate temporary source directory and builds the unmodified
+upstream daemon independently from Uqda. The fixture checks source hashes,
+binary module metadata, distinct binary hashes and version output.
+
+The stock daemons peer in both initiating directions over TCP and TLS. The gate
+checks identities, address derivation and Uqda restart/reconnect. Separate
+packet-adapter processes are built against each implementation's own `core` and
+`ipv6rwc` packages. They inject and observe complete IPv6 frames through the
+same packet interface used by TUN, with real encrypted sessions and peer links.
+They verify bidirectional delivery, relay restart/reconnect and the topology
+Uqda A ↔ upstream B ↔ Uqda C, without a direct A–C peering.
+
+The adapter is test infrastructure, not a replacement routing implementation.
+This gate requires neither kernel TUN nor network namespaces; it does not certify
+OS TUN integration. The Go daemon test in `daemon_test.go` remains a separate
+same-source regression test and is not the independent interoperability gate.
 
 ## Configuration and identity migration
 
@@ -36,7 +55,7 @@ No compatibility alias is provided: an alias would retain the old public brand
 and would not reliably preserve generated Java/Objective-C binding names.
 See [mobile integration](mobile.md).
 
-Upstream authorship, dependency names, protocol identifiers, third-party tools
+Upstream authorship, dependency names, protocol identifiers
 and migration paths retain their original names. `contrib/ansible` uses the
 external `ansible-yggdrasil` role's variable schema intentionally. The standalone
-`contrib/yggdrasil-brute-simple` tool and its license retain their upstream names.
+`contrib/uqda-brute-simple` tool retains its upstream attribution and license.

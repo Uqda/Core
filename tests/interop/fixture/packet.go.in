@@ -1,0 +1,88 @@
+// Test-only packet adapter, built separately against each implementation.
+// stdin/stdout carry packet injection/observation, never peer traffic.
+package main
+
+import (
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"os"
+	"sync"
+
+	"__MODULE__/src/config"
+	"__MODULE__/src/core"
+	"__MODULE__/src/ipv6rwc"
+	"__MODULE__/src/version"
+	"github.com/gologme/log"
+)
+
+func main() {
+	f, err := os.Open(os.Args[1])
+	if err != nil {
+		panic(err)
+	}
+	cfg := config.GenerateConfig()
+	if _, err = cfg.ReadFrom(f); err != nil {
+		panic(err)
+	}
+	f.Close()
+	logger := log.New(os.Stderr, "", 0)
+	options := []core.SetupOption{}
+	for _, uri := range cfg.Listen {
+		options = append(options, core.ListenAddress(uri))
+	}
+	for _, uri := range cfg.Peers {
+		options = append(options, core.Peer{URI: uri})
+	}
+	c, err := core.New(cfg.Certificate, logger, options...)
+	if err != nil {
+		panic(err)
+	}
+	defer c.Stop()
+	packets := ipv6rwc.NewReadWriteCloser(c)
+	var mu sync.Mutex
+	emit := func(v any) {
+		mu.Lock()
+		defer mu.Unlock()
+		if err := json.NewEncoder(os.Stdout).Encode(v); err != nil {
+			panic(err)
+		}
+	}
+	emit(map[string]any{"event": "ready", "address": c.Address().String(), "key": hex.EncodeToString(c.PublicKey()), "version": version.BuildVersion()})
+	go func() {
+		buf := make([]byte, 65535)
+		for {
+			n, err := packets.Read(buf)
+			if err != nil {
+				return
+			}
+			emit(map[string]any{"event": "packet", "packet": append([]byte(nil), buf[:n]...)})
+		}
+	}()
+	dec := json.NewDecoder(os.Stdin)
+	for {
+		var req struct {
+			Command string
+			Packet  []byte
+		}
+		if err := dec.Decode(&req); err != nil {
+			return
+		}
+		switch req.Command {
+		case "send":
+			if n, err := packets.Write(req.Packet); err != nil || n != len(req.Packet) {
+				panic(fmt.Sprintf("packet write: %d %v", n, err))
+			}
+		case "peers":
+			keys := []string{}
+			for _, peer := range c.GetPeers() {
+				if peer.Up {
+					keys = append(keys, hex.EncodeToString(peer.Key))
+				}
+			}
+			emit(map[string]any{"event": "peers", "keys": keys})
+		default:
+			panic("unknown adapter command")
+		}
+	}
+}

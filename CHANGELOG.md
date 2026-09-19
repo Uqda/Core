@@ -41,13 +41,14 @@ This entry describes the intended first public beta and is not a publication not
 ### Developer Experience
 
 - Public architecture, security, compatibility, testing and packaging documentation.
-- Black-box two-process daemon tests and Linux race-check workflow.
+- Black-box daemon tests, pinned upstream v0.5.14 interoperability with real IPv6
+  packet delivery, TCP/TLS reconnect and multi-hop checks, and Linux race CI.
 
 ### Known Limitations
 
 - The admin API has no authentication; protect its socket and keep it local.
-- The included daemon harness uses the same Uqda source for both peers. An
-  independent upstream interoperability fixture is not included.
+- The independent packet gate uses the real IPv6 packet interface without kernel
+  TUN; native OS network integration requires separate platform validation.
 - Android/Apple binding artifacts and native installers require their platform
   toolchains and validation before release. Authored CI does not establish a pass.
 - No anonymity guarantee or independent external security audit is claimed.
