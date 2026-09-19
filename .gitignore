@@ -27,3 +27,6 @@ Thumbs.db
 /wintun/
 /wintun.zip
 /vendor/
+/contrib/uqda-brute-simple/util.o
+/contrib/uqda-brute-simple/uqda-brute-multi-curve25519
+/contrib/uqda-brute-simple/uqda-brute-multi-ed25519

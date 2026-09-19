@@ -1,4 +1,4 @@
-#include "yggdrasil-brute.h"
+#include "uqda-brute.h"
 
 int find_where(unsigned char hash[64], unsigned char besthashlist[NUMKEYS][64]) {
 	/* Where to insert hash into sorted hashlist */
