@@ -7,7 +7,7 @@ if [ -z "$BRANCH" ]; then
 fi
 
 if [ $? != 0 ] || [ -z "$BRANCH" ]; then
-  printf "yggdrasil"
+  printf "uqda"
   exit 0
 fi
 
@@ -16,9 +16,9 @@ BRANCH=$(echo $BRANCH | tr -d "/")
 
 # Check if the branch name is not master
 if [ "$BRANCH" = "master" ]; then
-  printf "yggdrasil"
+  printf "uqda"
   exit 0
 fi
 
 # If it is something other than master, append it
-printf "yggdrasil-%s" "$BRANCH"
+printf "uqda-%s" "$BRANCH"

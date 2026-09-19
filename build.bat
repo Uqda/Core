@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-set PKGSRC=github.com/yggdrasil-network/yggdrasil-go/src/version
+set PKGSRC=github.com/Uqda/Core/src/version
 
 set LDFLAGS=-X %PKGSRC%.buildName=%PKGNAME% -X %PKGSRC%.buildVersion=%PKGVER%
 set ARGS=-v
@@ -33,7 +33,7 @@ if "%TABLES%"=="" if "%DEBUG%"=="" (
   set LDFLAGS=%LDFLAGS% -s -w
 )
 
-for %%C in (yggdrasil yggdrasilctl) do (
+for %%C in (uqda uqdactl) do (
   echo Building: %%C.exe
   go build %ARGS% -ldflags="%LDFLAGS%" -gcflags="%GCFLAGS%" ./cmd/%%C
 

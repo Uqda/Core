@@ -1,9 +1,9 @@
 # Build artifacts produced by ./build, build.bat, and go build ./cmd/...
-/yggdrasil
-/yggdrasilctl
+/uqda
+/uqdactl
 /genkeys
-/yggdrasil.exe
-/yggdrasilctl.exe
+/uqda.exe
+/uqdactl.exe
 /genkeys.exe
 
 # Go

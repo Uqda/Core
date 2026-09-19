@@ -39,7 +39,7 @@ type node struct {
 	admin     *admin.AdminSocket
 }
 
-// The main function is responsible for configuring and starting Yggdrasil.
+// The main function is responsible for configuring and starting Uqda Core.
 func main() {
 	genconf := flag.Bool("genconf", false, "print a new config to stdout")
 	useconf := flag.Bool("useconf", false, "read HJSON/JSON config from stdin")
@@ -97,6 +97,7 @@ func main() {
 	case *ver:
 		fmt.Println("Build name:", version.BuildName())
 		fmt.Println("Build version:", version.BuildVersion())
+		fmt.Printf("Yggdrasil network compatibility: %d.%d\n", core.ProtocolVersionMajor, core.ProtocolVersionMinor)
 		return
 
 	case *autoconf:
@@ -209,7 +210,9 @@ func main() {
 
 	n := &node{}
 
-	// Set up the Yggdrasil node itself.
+	logger.Infoln("Starting Uqda Core")
+
+	// Set up the Uqda node itself.
 	{
 		iprange := net.IPNet{
 			IP:   net.ParseIP("200::"),
