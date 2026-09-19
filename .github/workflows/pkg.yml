@@ -131,39 +131,12 @@ jobs:
           path: "*.msi"
           if-no-files-found: error
 
-  build-packages-router:
-    strategy:
-      fail-fast: false
-      matrix:
-        pkgarch: ["edgerouter-x", "edgerouter-lite", "vyos-amd64", "vyos-i386"]
-
-    name: Package (Router, ${{ matrix.pkgarch }})
-
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          path: yggdrasil
-
-      - uses: actions/checkout@v6
-        with:
-          repository: neilalexander/vyatta-yggdrasil
-          path: vyatta-yggdrasil
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: "stable"
-
-      - name: Build package
-        env:
-          BUILDDIR_YGG: /home/runner/work/yggdrasil-go/yggdrasil-go/yggdrasil
-        run: cd /home/runner/work/yggdrasil-go/yggdrasil-go/vyatta-yggdrasil && ./build-${{ matrix.pkgarch }}
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Router package (${{ matrix.pkgarch }})
-          path: "/home/runner/work/yggdrasil-go/yggdrasil-go/vyatta-yggdrasil/*.deb"
-          if-no-files-found: error
+  # There is deliberately no router/EdgeRouter/VyOS packaging job here.
+  # Upstream Yggdrasil's router packages are built via a separate
+  # third-party repository (neilalexander/vyatta-yggdrasil) whose build
+  # scripts expect the original yggdrasil/yggdrasilctl binary names and
+  # BUILDDIR_YGG layout - they are not compatible with this repo's
+  # renamed uqda/uqdactl binaries, and Uqda does not yet have an
+  # equivalent router-packaging pipeline of its own. Tracked as a real
+  # gap under Phase 21 (platform support) in docs/IMPLEMENTATION_STATUS.md,
+  # not silently dropped.

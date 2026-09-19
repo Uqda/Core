@@ -1,4 +1,4 @@
-name: Yggdrasil
+name: Uqda Core
 
 on:
   push:
@@ -104,7 +104,7 @@ jobs:
         with:
           go-version: ${{ matrix.goversion }}
 
-      - name: Build Yggdrasil
+      - name: Build Uqda Core
         run: go build -v ./...
 
       - name: Unit tests
@@ -128,7 +128,7 @@ jobs:
         with:
           go-version: ${{ matrix.goversion }}
 
-      - name: Build Yggdrasil
+      - name: Build Uqda Core
         run: go build -v ./...
 
       - name: Unit tests
@@ -152,7 +152,7 @@ jobs:
         with:
           go-version: ${{ matrix.goversion }}
 
-      - name: Build Yggdrasil
+      - name: Build Uqda Core
         run: go build -v ./...
 
       - name: Unit tests
@@ -179,7 +179,7 @@ jobs:
         with:
           go-version: ${{ matrix.goversion }}
 
-      - name: Build Yggdrasil
+      - name: Build Uqda Core
         run: go build -v ./...
         env:
           GOOS: ${{ matrix.goos }}
