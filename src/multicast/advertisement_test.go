@@ -54,3 +54,30 @@ func TestMulticastAdvertisementRejectsTruncatedHash(t *testing.T) {
 		t.Fatal("expected truncated beacon to be rejected")
 	}
 }
+
+// FuzzMulticastAdvertisementUnmarshalBinary fuzzes the parser that runs
+// against every UDP multicast beacon received on the local network segment
+// (multicast.go reads a datagram from any source and passes it straight to
+// UnmarshalBinary with no authentication beforehand - anyone on the same
+// L2 segment can send arbitrary bytes here). As with the handshake decoder,
+// the only property under test is "never panics" - rejecting malformed
+// beacons with an error is correct.
+func FuzzMulticastAdvertisementUnmarshalBinary(f *testing.F) {
+	pk, sk, err := ed25519.GenerateKey(nil)
+	if err != nil {
+		f.Fatal(err)
+	}
+	valid := multicastAdvertisement{MajorVersion: 1, MinorVersion: 2, PublicKey: pk, Port: 3, Hash: sk}
+	validBytes, err := valid.MarshalBinary()
+	if err != nil {
+		f.Fatal(err)
+	}
+	f.Add(validBytes)
+	f.Add([]byte{})
+	f.Add(make([]byte, ed25519.PublicKeySize+8))
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		var adv multicastAdvertisement
+		_ = adv.UnmarshalBinary(data)
+	})
+}
