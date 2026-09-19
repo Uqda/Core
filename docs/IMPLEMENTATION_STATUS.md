@@ -33,7 +33,7 @@ Last updated: after the Phase 16 daemon interoperability harness commit (on top 
 | 13 | Configuration safety improvements | **Not started** | |
 | 14 | Admin API hardening | **Not started** | |
 | 15 | Logging/metrics standardization | **Not started** | |
-| 16 | Full automated test suite (unit/integration/interop/fuzz/stress) | **In progress** | [tests/interop/daemon_test.go](../tests/interop/daemon_test.go): black-box two-process daemon test (config file + admin socket, not the internal API) verifying peering and address-derivation correctness. Currently same-codebase only — becomes a true cross-implementation test once `cmd/uqda` exists (see that file's package doc). Fuzz/stress/chaos still not started |
+| 16 | Full automated test suite (unit/integration/interop/fuzz/stress) | **In progress** | [tests/interop/daemon_test.go](../tests/interop/daemon_test.go): black-box two-process daemon test (config file + admin socket, not the internal API) verifying peering and address-derivation correctness. Currently same-codebase only — becomes a true cross-implementation test once `cmd/uqda` exists (see that file's package doc). Fuzz: `FuzzVersionMetadataDecode` and `FuzzMulticastAdvertisementUnmarshalBinary` added, both run 2.5M+/3.1M+ execs with zero crashes. Stress/chaos still not started |
 | 17 | Uqda Lab (network laboratory) | **Not started** | |
 | 18 | Performance engineering | **Not started** | Depends on Phase 2 performance baseline |
 | 19 | Verifiable builds/releases (SBOM, signing) | **Not started** | No git remote/CI configured yet on this checkout |
@@ -41,7 +41,8 @@ Last updated: after the Phase 16 daemon interoperability harness commit (on top 
 | 21 | Platform support validation | **Not started** | |
 | 22 | Supply-chain security | **In progress** | Initial `govulncheck` pass done (see Phase 2 row); no dependency bumps made yet |
 | 23 | Licensing/attribution (NOTICE.md) | **Not started** | |
-| 24 | Full documentation set | **In progress** | ARCHITECTURE.md, NAMING.md, RESTRUCTURING.md, BASELINE.md exist; SECURITY.md, THREAT_MODEL.md, README rewrite pending |
+| 23 | Threat model | **Implemented** | [docs/THREAT_MODEL.md](THREAT_MODEL.md): 10 concrete threats mapped to actual file/line boundaries in this codebase, each with mitigation status and residual risk called out honestly (admin socket has no auth today; post-handshake connections have no read/write deadline; identity file permissions are unenforced) |
+| 24 | Full documentation set | **In progress** | ARCHITECTURE.md, NAMING.md, RESTRUCTURING.md, BASELINE.md, [SECURITY.md](../SECURITY.md), [docs/THREAT_MODEL.md](THREAT_MODEL.md) exist; README rewrite, Arabic README, upstream-comparison doc still pending |
 | 25 | Engineering rules | **Implemented** | Encoded in this repo's working process (small coherent commits, test-before-refactor, no wire changes) rather than as a separate document |
 
 ## Blockers requiring external input
