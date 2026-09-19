@@ -291,10 +291,8 @@ func TestCoreStopReleasesGoroutinesAndIsIdempotent(t *testing.T) {
 	waitForGoroutineCountAtMost(t, baseline+4, 5*time.Second)
 }
 
-// TestRepeatedConnectDisconnectCycles characterizes current behavior of
-// AddPeer/RemovePeer under repeated cycling against the same peer, ahead
-// of the Phase 5 peer-lifecycle refactor (RESTRUCTURING.md). It checks
-// three things a rewritten peer-lifecycle manager must preserve:
+// TestRepeatedConnectDisconnectCycles checks AddPeer/RemovePeer invariants
+// under repeated cycling against the same peer:
 //
 //  1. Add -> wait connected -> Remove -> Add again works repeatedly
 //     without error - RemovePeer must actually clear the link-info entry

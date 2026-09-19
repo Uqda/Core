@@ -12,13 +12,9 @@ void StartAWDLBrowsing() {
 		serviceBrowser = [[NSNetServiceBrowser alloc] init];
 		serviceBrowser.includesPeerToPeer = YES;
 	}
-	// This service type string is not part of the Yggdrasil wire protocol
-	// and nothing in this codebase ever publishes an NSNetService under
-	// it - searchForServicesOfType here exists purely to make macOS bring
-	// up the AWDL radio so the real peer discovery (the UDP multicast
-	// beacon in advertisement.go) can run over the resulting awdl0
-	// interface. Since no side needs this string to match another peer's
-	// Bonjour advertisement, it is safe to use a Uqda-specific value here.
+	// Browsing activates AWDL for UDP multicast discovery on awdl0.
+	// Uqda does not publish this Bonjour service; peers discover each other
+	// through multicast advertisements, not this service name.
 	[serviceBrowser searchForServicesOfType:@"_uqda._tcp" inDomain:@""];
 }
 void StopAWDLBrowsing() {

@@ -36,8 +36,7 @@ type Core struct {
 	proto  protoHandler
 	log    Logger
 	config struct {
-		tls *tls.Config // immutable after startup
-		//_peers             map[Peer]*linkInfo         // configurable after startup
+		tls                *tls.Config                // immutable after startup
 		_listeners         map[ListenAddress]struct{} // configurable after startup
 		peerFilter         func(ip net.IP) bool       // immutable after startup
 		nodeinfo           NodeInfo                   // immutable after startup

@@ -1,23 +1,7 @@
-// Package interop contains black-box compatibility tests that exercise the
-// compiled uqda daemon binary itself (config file, CLI flags, admin
-// socket, peering) rather than the internal Go API.
-//
-// This is deliberately a different layer than src/core's existing
-// CreateAndConnectTwo/TestCore_Start_Transfer tests: those validate the
-// in-process Core API, which is exactly what a future cmd/uqda would also
-// call, so they don't tell us anything about cross-binary compatibility.
-// This package treats each node as an opaque compiled artifact and only
-// interacts with it the way a real operator or a genuinely separate
-// implementation would: a config file on disk and the admin socket.
-//
-// Today there is only one implementation in this repository, so this test
-// builds and runs two instances of the *same* uqda binary — it is a
-// same-codebase compatibility harness, not yet a cross-implementation one.
-// Once cmd/uqda exists as a distinct binary (see ../../RESTRUCTURING.md),
-// this test is the intended place to extend coverage to run one process
-// built from a pinned upstream Yggdrasil revision and one built from this
-// repository's Uqda code, so that Uqda-vs-Yggdrasil interoperability is a
-// real, automated, release-gating check rather than a claim.
+// Package interop tests the compiled Uqda daemon through configuration files,
+// admin sockets and peering. Both processes run the same source revision.
+// No independently built upstream Yggdrasil fixture is included; this harness
+// does not establish cross-implementation interoperability.
 package interop
 
 import (
