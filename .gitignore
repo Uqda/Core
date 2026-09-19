@@ -1,0 +1,15 @@
+# Build artifacts produced by ./build, build.bat, and go build ./cmd/...
+/yggdrasil
+/yggdrasilctl
+/genkeys
+/yggdrasil.exe
+/yggdrasilctl.exe
+/genkeys.exe
+
+# Go
+*.test
+*.out
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db
