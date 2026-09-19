@@ -26,7 +26,7 @@ This entry describes the intended first public beta and is not a publication not
 
 - `-checkconf` validates keys, peer/listener schemes, admin endpoints and
   multicast interface patterns without starting a node.
-- Loaded configurations require an explicit valid identity; missing or invalid
+- Daemon-loaded configurations require an explicit valid identity; missing or invalid
   keys do not silently generate a replacement node.
 - Packaging uses Uqda paths, stops on invalid/ambiguous migration sources, and
   retains persistent configuration on uninstall.

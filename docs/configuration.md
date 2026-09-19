@@ -9,7 +9,7 @@ permissions. Never redirect generated output over an existing identity.
 validate it and back up the original before replacement.
 
 `PrivateKey` or `PrivateKeyPath` provides persistent identity. Missing identity
-in a loaded configuration is an error; `-autoconf` explicitly selects an ephemeral
+in a configuration loaded by the daemon is an error; `-autoconf` explicitly selects an ephemeral
 identity. External key paths must remain accessible to the service account.
 
 `Peers` specifies outbound peer URIs; `Listen` specifies inbound listeners.
