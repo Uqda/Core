@@ -53,6 +53,7 @@ func main() {
 	getaddr := flag.Bool("address", false, "use in combination with either -useconf or -useconffile, outputs your IPv6 address")
 	getsnet := flag.Bool("subnet", false, "use in combination with either -useconf or -useconffile, outputs your IPv6 subnet")
 	getpkey := flag.Bool("publickey", false, "use in combination with either -useconf or -useconffile, outputs your public key")
+	checkconf := flag.Bool("checkconf", false, "use in combination with either -useconf or -useconffile, validates the configuration and exits without starting the node")
 	loglevel := flag.String("loglevel", "info", "loglevel to enable")
 	chuserto := flag.String("user", "", "user (and, optionally, group) to set UID/GID to")
 	notifyFd := flag.Int("notifyfd", -1, "write a newline to this file-descriptor to indicate readiness to a service manager")
@@ -167,6 +168,17 @@ func main() {
 
 	case *getpkey:
 		fmt.Println(hex.EncodeToString(publicKey))
+		return
+
+	case *checkconf:
+		if problems := validateConfig(cfg); len(problems) > 0 {
+			fmt.Println("Configuration is invalid:")
+			for _, p := range problems {
+				fmt.Println(" -", p)
+			}
+			os.Exit(1)
+		}
+		fmt.Println("Configuration is valid.")
 		return
 
 	case *normaliseconf:
