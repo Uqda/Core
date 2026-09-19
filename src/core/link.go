@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net"
 	"net/url"
 	"strconv"
@@ -157,6 +158,27 @@ const ErrLinkSNINotSupported = linkError("SNI not supported on this link type")
 const ErrLinkNoSuitableIPs = linkError("peer has no suitable addresses")
 const ErrLinkToSelf = linkError("node cannot connect to self")
 
+// jitteredBackoffDuration caps duration at max, then applies "equal
+// jitter": half of the result is guaranteed, the other half is
+// randomized. A plain exponential backoff with no randomization means
+// every link that failed at close to the same moment (e.g. many peers
+// losing their connection together when a shared gateway restarts)
+// retries on the exact same cadence, arriving back at that gateway in
+// lockstep instead of spread out - jitter is the standard fix for that,
+// and equal jitter keeps the average wait close to the unjittered value
+// rather than allowing it to occasionally collapse to near zero the way
+// "full jitter" (random(0, duration)) would.
+func jitteredBackoffDuration(duration, max time.Duration) time.Duration {
+	if duration > max {
+		duration = max
+	}
+	if duration <= 0 {
+		return 0
+	}
+	half := duration / 2
+	return half + time.Duration(rand.Int63n(int64(half)+1))
+}
+
 func (l *links) add(u *url.URL, sintf string, linkType linkType) error {
 	if _, err := l.dialerFor(u); err != nil {
 		return err
@@ -275,10 +297,7 @@ func (l *links) add(u *url.URL, sintf string, linkType linkType) error {
 			if backoff < 0 {
 				timeout = make(chan time.Time)
 			} else {
-				duration := time.Second << backoff
-				if duration > options.maxBackoff {
-					duration = options.maxBackoff
-				}
+				duration := jitteredBackoffDuration(time.Second<<backoff, options.maxBackoff)
 				timeout = time.After(duration)
 			}
 			select {
