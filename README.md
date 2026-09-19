@@ -1,146 +1,86 @@
 # Uqda
 
-[![Build status](https://github.com/Uqda/Core/actions/workflows/ci.yml/badge.svg)](https://github.com/Uqda/Core/actions/workflows/ci.yml)
+[العربية](README.ar.md)
 
-اقرأ هذا الملف بالعربية: [README.ar.md](README.ar.md)
+**Uqda Core is an independently maintained implementation compatible with the
+existing Yggdrasil network, with security hardening and operational improvements.**
+It provides encrypted IPv6 connectivity over IPv4 or IPv6 peer connections.
+Uqda is derived from the open-source Yggdrasil implementation; it does not create
+a separate network and does not imply upstream endorsement.
 
-**Uqda Core is an independently maintained, hardened and modernized
-implementation compatible with the existing Yggdrasil network.**
+**Current development release: Uqda 26 Beta 1.** Beta 1 has not been published;
+the intended release tag is `v26.0-beta.1`. See [CHANGELOG](CHANGELOG.md).
 
-Uqda does not create a new network or a new protocol. It speaks the same
-Yggdrasil wire protocol as the original implementation and participates on
-the same, existing Yggdrasil network - a Uqda node and an upstream
-Yggdrasil node can peer with each other directly, with no configuration
-workaround required. What Uqda changes is the implementation itself:
-engineering quality, security hardening, reliability, diagnostics,
-packaging, and long-term maintainability. See [NAMING.md](NAMING.md) for
-the full naming policy this project holds itself to, and
-[docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) for exactly
-what has and hasn't been done yet.
+Uqda comes from **عُقدة**, meaning a knot, connection point or node. It is not
+an acronym. A network node connects to other nodes and may forward traffic.
 
-This project originated as a fork of `yggdrasil-go`
-(github.com/yggdrasil-network/yggdrasil-go) and remains derived from it -
-see [NOTICE.md](NOTICE.md) for upstream attribution. Uqda is independently
-maintained; nothing here implies endorsement by, or affiliation with, the
-Yggdrasil project's original authors or maintainers.
+## Capabilities
 
-## About the name
+- Public-key-derived IPv6 addresses and end-to-end encrypted sessions.
+- TCP, TLS, QUIC, WebSocket, SOCKS and Unix-socket peer connectivity.
+- Local multicast discovery and TUN integration.
+- Local administration through `uqdactl` and the admin socket.
+- Configuration validation with `-checkconf`, Unix key-permission warnings,
+  non-local admin exposure warnings and jittered peer reconnect delays.
 
-**Uqda** comes from the Arabic word **عُقدة**, meaning a knot, a
-connection point, or a node. In networking, a node is a participating
-point in a network - it connects to other nodes and may help forward
-traffic for the network as a whole. Uqda is not an acronym.
+Routing and encrypted sessions build on Ironwood. Wire compatibility is a
+requirement; the included two-process tests use Uqda at both ends and do not
+replace independent upstream interoperability testing. See [compatibility](docs/compatibility.md).
 
-## Introduction
+## Installation
 
-Yggdrasil - the network Uqda participates in - is an early-stage
-implementation of a fully end-to-end encrypted IPv6 network. It is
-lightweight, self-arranging, supported on multiple platforms and allows
-pretty much any IPv6-capable application to communicate securely with
-other nodes on the network. It does not require you to have IPv6 Internet
-connectivity - it also works over IPv4.
+Install Go 1.25 or newer, then build from source:
 
-## Supported Platforms
-
-Uqda Core targets Linux, macOS, Windows, FreeBSD and OpenBSD. See
-[docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) for exactly
-which platforms have actually been build-tested versus just targeted, and
-`contrib/` for platform-specific packaging and scripts.
-
-## Building
-
-If you want to build from source, as opposed to installing one of the
-pre-built packages:
-
-1. Install [Go](https://golang.org) (requires Go 1.22 or later)
-2. Clone this repository
-3. Run `./build`
-
-This produces two binaries: `uqda` (the daemon) and `uqdactl` (the local
-control CLI). Note that you can cross-compile for other platforms and
-architectures by specifying the `GOOS` and `GOARCH` environment variables,
-e.g. `GOOS=windows ./build` or `GOOS=linux GOARCH=mipsle ./build`.
-
-## Running
-
-### Generate configuration
-
-To generate static configuration, either generate a HJSON file (human-friendly,
-complete with comments):
-
-```
-./uqda -genconf > /path/to/uqda.conf
+```sh
+git clone https://github.com/Uqda/Core.git
+cd Core
+./build
+./uqda --version
+./uqdactl version
 ```
 
-... or generate a plain JSON file (which is easy to manipulate
-programmatically):
+On Windows use `build.bat`. The binaries are `uqda` and `uqdactl`. Packaging
+sources target Debian, Windows MSI, macOS and Docker; native package validation
+is required before distribution. See [installation](docs/installation.md).
 
-```
-./uqda -genconf -json > /path/to/uqda.conf
-```
+## Quick start
 
-You will need to edit the `uqda.conf` file to add or remove peers, modify
-other configuration such as listen addresses or multicast addresses, etc.
-You can validate a configuration file without starting the node using
-`-checkconf`:
+For a **new** node, create a protected configuration file once:
 
-```
-./uqda -useconffile /path/to/uqda.conf -checkconf
-```
-
-### Run Uqda
-
-To run with the generated static configuration:
-
-```
-./uqda -useconffile /path/to/uqda.conf
+```sh
+umask 077
+./uqda -genconf > uqda.conf
+./uqda -useconffile uqda.conf -checkconf
+./uqda -useconffile uqda.conf
 ```
 
-To run in auto-configuration mode (which will use sane defaults and random keys
-at each startup, instead of using a static configuration file):
+Do not overwrite an existing configuration: it contains your persistent identity.
+Add trusted peer URIs to `Peers`, or use multicast discovery on a trusted local
+network. Creating the TUN interface normally requires administrator privileges;
+Linux can use `CAP_NET_ADMIN`. See [configuration](docs/configuration.md).
 
+```sh
+./uqdactl getSelf
+./uqdactl getPeers
 ```
-./uqda -autoconf
-```
 
-You will likely need to run Uqda as a privileged user or under `sudo`,
-unless you have permission to create TUN/TAP adapters. On Linux this can be done
-by giving the `uqda` binary the `CAP_NET_ADMIN` capability.
+`uqda -autoconf` uses a new random identity on each startup. For migration,
+retain your existing key and follow [compatibility](docs/compatibility.md).
 
-Use `uqdactl` to inspect or control a running node locally, e.g.
-`uqdactl getSelf` or `uqdactl getPeers`.
+## Security and documentation
 
-## Documentation
+Uqda does not provide anonymity. The admin API has no authentication: keep it
+local and restrict access. Applications on the node still need their own security.
+Report vulnerabilities privately using [SECURITY](SECURITY.md).
 
-Uqda-specific documentation lives in this repository:
-[ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY.md](SECURITY.md),
-[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md), and
-[docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md).
+- [Architecture](docs/architecture.md)
+- [Configuration](docs/configuration.md) and [installation](docs/installation.md)
+- [Compatibility](docs/compatibility.md) and [mobile API](docs/mobile.md)
+- [Security model](docs/security.md)
+- [Testing](docs/testing.md) and [contributing](CONTRIBUTING.md)
+- [Packaging](docs/packaging.md) and [release conventions](docs/releasing.md)
 
-Because Uqda preserves the Yggdrasil wire protocol and configuration
-format unchanged, the upstream Yggdrasil project's own reference
-documentation for peer URIs, multicast configuration, and general network
-concepts remains accurate and directly applicable:
+## License and attribution
 
-- [Configuration reference](https://yggdrasil-network.github.io/configurationref.html)
-- [Yggdrasil network FAQ](https://yggdrasil-network.github.io/faq.html)
-- [Upstream version history](CHANGELOG.md) (inherited from `yggdrasil-go`; see that file's own entries for their original dates and authorship)
-
-## Communities
-
-Because Uqda nodes participate on the same Yggdrasil network, the
-existing Yggdrasil community resources are also relevant to Uqda
-operators: the `#yggdrasil` IRC channel on [libera.chat](https://libera.chat)
-and various others on [Yggdrasil-internal IRC networks](https://yggdrasil-network.github.io/services.html#irc).
-These are upstream community spaces, not run by this project.
-
-## License
-
-This code is released under the terms of the LGPLv3, but with an added exception
-that was shamelessly taken from [godeb](https://github.com/niemeyer/godeb).
-Under certain circumstances, this exception permits distribution of binaries
-that are (statically or dynamically) linked with this code, without requiring
-the distribution of Minimal Corresponding Source or Minimal Application Code.
-For more details, see: [LICENSE](LICENSE). For upstream and third-party
-attribution (Yggdrasil, Ironwood, and others this project depends on), see
-[NOTICE.md](NOTICE.md).
+Uqda Core is licensed under LGPLv3 with the linking exception in [LICENSE](LICENSE).
+See [NOTICE](NOTICE.md) for Yggdrasil, Ironwood and other upstream attribution.
