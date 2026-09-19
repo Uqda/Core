@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 
 	"github.com/cheggaaa/pb/v3"
 	"github.com/yggdrasil-network/yggdrasil-go/src/address"
@@ -46,28 +47,43 @@ func main() {
 		bar.Increment()
 	}
 
-	os.MkdirAll("host_vars", 0755)
+	_ = os.MkdirAll("host_vars", 0755)
 
 	for i := 1; i <= *numHosts; i++ {
-		os.MkdirAll(fmt.Sprintf("host_vars/%x", i), 0755)
-		file, err := os.Create(fmt.Sprintf("host_vars/%x/vars", i))
-		if err != nil {
+		if err := writeHostVars(fmt.Sprintf("host_vars/%x", i), keys[i]); err != nil {
+			fmt.Println("Error writing host_vars:", err)
 			return
 		}
-		defer file.Close()
-		file.WriteString(fmt.Sprintf("yggdrasil_public_key: %v\n", hex.EncodeToString(keys[i].pub)))
-		file.WriteString("yggdrasil_private_key: \"{{ vault_yggdrasil_private_key }}\"\n")
-		file.WriteString(fmt.Sprintf("ansible_host: %v\n", keys[i].ip))
-
-		file, err = os.Create(fmt.Sprintf("host_vars/%x/vault", i))
-		if err != nil {
-			return
-		}
-		defer file.Close()
-		file.WriteString(fmt.Sprintf("vault_yggdrasil_private_key: %v\n", hex.EncodeToString(keys[i].priv)))
 		bar.Increment()
 	}
 	bar.Finish()
+}
+
+// writeHostVars writes the ansible vars file (public key and IP - not
+// sensitive) and the vault file (the raw private key) for one host. The
+// vault file is created with 0600 permissions and explicitly chmod'd to
+// 0600 afterwards, since os.WriteFile's mode argument only applies when it
+// creates a brand new file - re-running this tool against an existing
+// world-readable vault file would otherwise leave its permissions
+// unchanged.
+func writeHostVars(dir string, key keySet) error {
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
+	vars := fmt.Sprintf(
+		"yggdrasil_public_key: %v\nyggdrasil_private_key: \"{{ vault_yggdrasil_private_key }}\"\nansible_host: %v\n",
+		hex.EncodeToString(key.pub), key.ip)
+	if err := os.WriteFile(filepath.Join(dir, "vars"), []byte(vars), 0644); err != nil {
+		return err
+	}
+
+	vault := fmt.Sprintf("vault_yggdrasil_private_key: %v\n", hex.EncodeToString(key.priv))
+	vaultPath := filepath.Join(dir, "vault")
+	if err := os.WriteFile(vaultPath, []byte(vault), 0600); err != nil {
+		return err
+	}
+	return os.Chmod(vaultPath, 0600)
 }
 
 func newKey() keySet {
