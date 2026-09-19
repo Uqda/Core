@@ -1,58 +1,45 @@
 #!/bin/sh
 
 # This script generates an MSI file for Uqda Core for a given architecture. It
-# needs to run on Windows within MSYS2 and Go 1.21 or later must be installed on
+# needs to run on Windows within MSYS2 and Go 1.25 or later must be installed on
 # the system and within the PATH. This is ran currently by GitHub Actions (see
 # the workflows in the repository).
 #
 # Originally authored for Yggdrasil by Neil Alexander
 # <neilalexander@users.noreply.github.com>; adapted for Uqda Core.
 
+set -eu
+
 # Get arch from command line if given
-PKGARCH=$1
-if [ "${PKGARCH}" == "" ];
+PKGARCH=${1:-}
+if [ "${PKGARCH}" = "" ];
 then
   echo "tell me the architecture: x86, x64 or arm64"
   exit 1
 fi
 
-# Download the wix tools!
-dotnet tool install --global wix --version 5.0.0
+# WiX v3 must be installed by the build environment.
+command -v candle >/dev/null
+command -v light >/dev/null
 
-# Build Uqda Core!
-[ "${PKGARCH}" == "x64" ] && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 ./build
-[ "${PKGARCH}" == "x86" ] && GOOS=windows GOARCH=386 CGO_ENABLED=0 ./build
-[ "${PKGARCH}" == "arm64" ] && GOOS=windows GOARCH=arm64 CGO_ENABLED=0 ./build
+case "$PKGARCH" in
+  x64) GOARCH=amd64 ;; x86) GOARCH=386 ;; arm64) GOARCH=arm64 ;;
+  *) echo "Unsupported MSI architecture" >&2; exit 1 ;;
+esac
+export GOARCH
+GOOS=windows CGO_ENABLED=0 ./build
 
 # Create the postinstall script. This also migrates an existing Yggdrasil
 # configuration on this machine if present and Uqda hasn't already been
 # configured - it never touches the Yggdrasil install itself, and never
 # overwrites an existing Uqda config.
-cat > updateconfig.bat << EOF
-if not exist %ALLUSERSPROFILE%\\Uqda (
-  mkdir %ALLUSERSPROFILE%\\Uqda
-)
-if not exist %ALLUSERSPROFILE%\\Uqda\\uqda.conf (
-  if exist %ALLUSERSPROFILE%\\Yggdrasil\\yggdrasil.conf (
-    if exist uqda.exe (
-      uqda.exe -useconffile %ALLUSERSPROFILE%\\Yggdrasil\\yggdrasil.conf -checkconf && (
-        copy %ALLUSERSPROFILE%\\Yggdrasil\\yggdrasil.conf %ALLUSERSPROFILE%\\Uqda\\uqda.conf
-      )
-    )
-  )
-)
-if not exist %ALLUSERSPROFILE%\\Uqda\\uqda.conf (
-  if exist uqda.exe (
-    uqda.exe -genconf > %ALLUSERSPROFILE%\\Uqda\\uqda.conf
-  )
-)
-EOF
+cp contrib/msi/updateconfig.bat updateconfig.bat
 
 # Work out metadata for the package info
 PKGNAME=$(sh contrib/semver/name.sh)
-PKGVERSION=$(sh contrib/msi/msversion.sh --bare)
-PKGVERSIONMS=$(echo $PKGVERSION | tr - .)
-([ "${PKGARCH}" == "x64" ] || [ "${PKGARCH}" == "arm64" ]) && \
+PKGVERSION=$(sh contrib/semver/version.sh --bare)
+PKGVERSIONMS=$(sh contrib/msi/msversion.sh)
+([ "${PKGARCH}" = "x64" ] || [ "${PKGARCH}" = "arm64" ]) && \
   PKGGUID="f1764223-fadb-499a-99d8-0e1bb119c1f5" PKGINSTFOLDER="ProgramFiles64Folder" || \
   PKGGUID="28b35855-6799-429f-9b77-1f4eb26c8dc8" PKGINSTFOLDER="ProgramFilesFolder"
 
@@ -78,11 +65,7 @@ else
   exit 1
 fi
 
-if [ $PKGNAME != "master" ]; then
-  PKGDISPLAYNAME="Uqda Core (${PKGNAME} branch)"
-else
-  PKGDISPLAYNAME="Uqda Core"
-fi
+PKGDISPLAYNAME=$(sh contrib/semver/version.sh --display)
 
 # Generate the wix.xml file
 #
@@ -117,7 +100,7 @@ cat > wix.xml << EOF
       SummaryCodepage="1252" />
 
     <MajorUpgrade
-      AllowDowngrades="yes" />
+      DowngradeErrorMessage="A newer Uqda Core version is already installed." />
 
     <Media
       Id="1"
@@ -153,7 +136,7 @@ cat > wix.xml << EOF
               Name="Uqda"
               Start="auto"
               Type="ownProcess"
-              Arguments='-useconffile "%ALLUSERSPROFILE%\\Uqda\\uqda.conf" -logto "%ALLUSERSPROFILE%\\Uqda\\uqda.log"'
+              Arguments='-useconffile "[CommonAppDataFolder]Uqda\\uqda.conf" -logto "[CommonAppDataFolder]Uqda\\uqda.log"'
               Vital="yes" />
 
             <ServiceControl
@@ -197,7 +180,7 @@ cat > wix.xml << EOF
       ExeCommand="cmd.exe /c updateconfig.bat"
       Execute="deferred"
       Return="check"
-      Impersonate="yes" />
+      Impersonate="no" />
 
     <InstallExecuteSequence>
       <Custom

@@ -96,10 +96,7 @@ func (cfg *NodeConfig) ReadFrom(r io.Reader) (int64, error) {
 		return 0, err
 	}
 	n := int64(len(conf))
-	// If there's a byte order mark - which Windows 10 is now incredibly fond of
-	// throwing everywhere when it's converting things into UTF-16 for the hell
-	// of it - remove it and decode back down into UTF-8. This is necessary
-	// because hjson doesn't know what to do with UTF-16 and will panic
+	// Decode UTF-16 configuration with a byte order mark before HJSON parsing.
 	if len(conf) >= 2 && (bytes.Equal(conf[0:2], []byte{0xFF, 0xFE}) ||
 		bytes.Equal(conf[0:2], []byte{0xFE, 0xFF})) {
 		utf := unicode.UTF16(unicode.BigEndian, unicode.UseBOM)
@@ -112,8 +109,9 @@ func (cfg *NodeConfig) ReadFrom(r io.Reader) (int64, error) {
 	// Generate a new configuration - this gives us a set of sane defaults -
 	// then parse the configuration we loaded above on top of it. The effect
 	// of this is that any configuration item that is missing from the provided
-	// configuration will use a sane default.
+	// configuration will use a sane default, except persistent identity.
 	*cfg = *GenerateConfig()
+	cfg.PrivateKey = nil
 	if err := cfg.UnmarshalHJSON(conf); err != nil {
 		return n, err
 	}
@@ -138,6 +136,10 @@ func (cfg *NodeConfig) postprocessConfig() error {
 			return err
 		}
 	}
+	if len(cfg.PrivateKey) != ed25519.PrivateKeySize {
+		return fmt.Errorf("configuration requires a valid PrivateKey or PrivateKeyPath; refusing to generate a replacement identity")
+	}
+
 	switch {
 	case cfg.Certificate == nil:
 		// No self-signed certificate has been generated yet.

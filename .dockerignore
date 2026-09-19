@@ -1,0 +1,12 @@
+.git
+uqda
+uqdactl
+genkeys
+*.exe
+*.deb
+*.msi
+*.pkg
+*.aar
+*.xcframework
+wintun
+vendor

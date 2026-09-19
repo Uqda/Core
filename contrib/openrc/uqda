@@ -13,13 +13,10 @@ depend() {
 
 start_pre() {
 	if [ ! -f "${CONFFILE}" ]; then
-		ebegin "Generating new configuration file into ${CONFFILE}"
-		mkdir -p "$(dirname "${CONFFILE}")"
-		if ! (umask 037 && eval ${command} -genconf > ${CONFFILE}); then
-			eerror "Failed to generate configuration file"
-			exit 1
-		fi
+		eerror "Missing ${CONFFILE}; create or migrate your persistent identity before starting Uqda"
+		return 1
 	fi
+	"${command}" -useconffile "${CONFFILE}" -checkconf || return 1
 
 	if [ ! -e /dev/net/tun ]; then
 		ebegin "Inserting TUN module"

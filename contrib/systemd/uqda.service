@@ -1,12 +1,12 @@
 [Unit]
 Description=Uqda Core
 Wants=network-online.target
-Wants=uqda-default-config.service
 After=network-online.target
-After=uqda-default-config.service
 
 [Service]
+ExecStartPre=/usr/bin/uqda -useconffile /etc/uqda/uqda.conf -checkconf
 Group=uqda
+RuntimeDirectory=uqda
 ProtectHome=true
 ProtectSystem=true
 SyslogIdentifier=uqda

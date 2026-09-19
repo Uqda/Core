@@ -2,12 +2,6 @@
 
 CONFFILE="/etc/uqda/uqda.conf"
 
-genconf() {
-	mkdir -p "$(dirname "$1")"
-	(umask 037 && /usr/bin/uqda -genconf > "$1")
-	return $?
-}
-
 probetun() {
 	modprobe tun
 	return $?
@@ -15,14 +9,10 @@ probetun() {
 
 start() {
 	if [ ! -f "$CONFFILE" ]; then
-		printf 'Generating configuration file: '
-		if genconf "$CONFFILE"; then
-			echo "OK"
-		else
-			echo "FAIL"
-			return 1
-		fi
+		echo "Missing $CONFFILE; create or migrate your persistent identity before starting Uqda" >&2
+		return 1
 	fi
+	/usr/bin/uqda -useconffile "$CONFFILE" -checkconf || return 1
 
 	if [ ! -e /dev/net/tun ]; then
 		printf 'Inserting TUN module: '

@@ -1,10 +1,10 @@
 #!/bin/sh
 #
 # Put the uqda and uqdactl binaries into /usr/local/bin
-# Then copy this script into /etc/rc.d/uqda
+# Then copy this script into /usr/local/etc/rc.d/uqda
 # Finally, run:
-#   1. chmod +x /etc/rc.d/uqda /usr/local/bin/{uqda,uqdactl}
-#   2. echo "uqda_enable=yes" >> /etc/rc.d
+#   1. chmod +x /usr/local/etc/rc.d/uqda /usr/local/bin/{uqda,uqdactl}
+#   2. echo "uqda_enable=yes" >> /etc/rc.conf
 #   3. service uqda start
 #
 # PROVIDE: uqda
@@ -22,29 +22,21 @@ stop_cmd="${name}_stop"
 CONFFILE="/usr/local/etc/uqda/uqda.conf"
 pidfile="/var/run/uqda/${name}.pid"
 command="/usr/sbin/daemon"
-command_args="-P ${pidfile} -r -f ${uqda_command}"
+command_args="-P ${pidfile} -r -f"
 
 uqda_start()
 {
-	test ! -x /usr/local/bin/uqda && (
+	if [ ! -x /usr/local/bin/uqda ]; then
 		logger -s -t uqda "Warning: /usr/local/bin/uqda is missing or not executable"
 		logger -s -t uqda "Copy the uqda binary into /usr/local/bin and then chmod +x /usr/local/bin/uqda"
 		return 1
-	)
+	fi
 
-	test ! -f "${CONFFILE}" && (
-		logger -s -t uqda "Generating new configuration file into ${CONFFILE}"
-		mkdir -p "$(dirname "${CONFFILE}")"
-		(umask 037 && /usr/local/bin/uqda -genconf > "${CONFFILE}")
-	)
-
-	tap_path="$(cat "${CONFFILE}" | egrep -o '/dev/tap[0-9]{1,2}$')"
-	tap_name="$(echo -n ${tap_path} | tr -d '/dev/')"
-
-	/sbin/ifconfig ${tap_name} >/dev/null 2>&1 || (
-		logger -s -t uqda "Creating ${tap_name} adapter"
-		/sbin/ifconfig ${tap_name} create || logger -s -t uqda "Failed to create ${tap_name} adapter"
-	)
+	if [ ! -f "$CONFFILE" ]; then
+		logger -s -t uqda "Missing $CONFFILE; create or migrate persistent identity before starting"
+		return 1
+	fi
+	/usr/local/bin/uqda -useconffile "$CONFFILE" -checkconf || return 1
 
 	test ! -d /var/run/uqda && mkdir -p /var/run/uqda
 
@@ -59,13 +51,6 @@ uqda_stop()
 	logger -s -t uqda "Stopping uqda"
 	test -f /var/run/uqda/${name}.pid && kill -TERM $(cat /var/run/uqda/${name}.pid)
 
-	tap_path="$(cat "${CONFFILE}" | grep /dev/tap | egrep -o '/dev/.*$')"
-        tap_name="$(echo -n ${tap_path} | tr -d '/dev/')"
-
-	/sbin/ifconfig ${tap_name} >/dev/null 2>&1 && (
-		logger -s -t uqda "Destroying ${tap_name} adapter"
-		/sbin/ifconfig ${tap_name} destroy || logger -s -t uqda "Failed to destroy ${tap_name} adapter"
-	)
 }
 
 load_rc_config $name

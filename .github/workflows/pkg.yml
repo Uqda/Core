@@ -118,8 +118,13 @@ jobs:
         with:
           go-version: "stable"
 
-      - name: Setup .NET Core SDK
-        uses: actions/setup-dotnet@v4
+      - name: Set up WiX v3
+        shell: pwsh
+        run: |
+          choco install wixtoolset --version=3.14.1 --no-progress -y
+          $wix = Get-ChildItem "${env:ProgramFiles(x86)}" -Directory -Filter 'WiX Toolset v3*' | Select-Object -First 1
+          if (-not $wix) { throw 'WiX v3 not found' }
+          "$($wix.FullName)\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Build package
         run: sh contrib/msi/build-msi.sh ${{ matrix.pkgarch }}
@@ -130,13 +135,3 @@ jobs:
           name: Windows package (${{ matrix.pkgarch }})
           path: "*.msi"
           if-no-files-found: error
-
-  # There is deliberately no router/EdgeRouter/VyOS packaging job here.
-  # Upstream Yggdrasil's router packages are built via a separate
-  # third-party repository (neilalexander/vyatta-yggdrasil) whose build
-  # scripts expect the original yggdrasil/yggdrasilctl binary names and
-  # BUILDDIR_YGG layout - they are not compatible with this repo's
-  # renamed uqda/uqdactl binaries, and Uqda does not yet have an
-  # equivalent router-packaging pipeline of its own. Tracked as a real
-  # gap under Phase 21 (platform support) in docs/IMPLEMENTATION_STATUS.md,
-  # not silently dropped.

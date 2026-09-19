@@ -13,3 +13,17 @@
 # OS/editor cruft
 .DS_Store
 Thumbs.db
+
+# Packaging and mobile outputs
+*.deb
+*.msi
+*.pkg
+*.aar
+*.xcframework/
+*.wixobj
+*.wixpdb
+/wix.xml
+/updateconfig.bat
+/wintun/
+/wintun.zip
+/vendor/

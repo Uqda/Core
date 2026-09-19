@@ -37,17 +37,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Release identity
+        id: identity
+        run: |
+          echo "version=$(sh contrib/semver/version.sh --bare)" >> "$GITHUB_OUTPUT"
+          echo "title=$(sh contrib/semver/version.sh --display)" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            test "$GITHUB_REF_NAME" = "$(sh contrib/semver/version.sh)"
+          fi
+
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: latest=false
+          labels: |
+            org.opencontainers.image.version=${{ steps.identity.outputs.version }}
+            org.opencontainers.image.title=${{ steps.identity.outputs.title }}
           tags: |
             type=ref,event=tag
             type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=raw,value=${{ steps.identity.outputs.version }},enable=${{ startsWith(github.ref, 'refs/tags/') }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -55,7 +66,7 @@ jobs:
         with:
           context: .
           file: ./contrib/docker/Dockerfile.multiarch
-          platforms: linux/amd64,linux/arm64,linux/armhf,linux/armel
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
