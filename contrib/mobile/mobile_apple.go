@@ -28,7 +28,7 @@ func (nsl MobileLogger) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func (m *Yggdrasil) TakeOverTUN(fd int32) error {
+func (m *Uqda) TakeOverTUN(fd int32) error {
 	options := []tun.SetupOption{
 		tun.FileDescriptor(fd),
 		tun.InterfaceMTU(m.iprwc.MTU()),

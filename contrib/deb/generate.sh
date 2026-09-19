@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # This is a lazy script to create a .deb for Debian/Ubuntu. It installs
-# yggdrasil and enables it in systemd. You can give it the PKGARCH= argument
+# uqda and enables it in systemd. You can give it the PKGARCH= argument
 # i.e. PKGARCH=i386 sh contrib/deb/generate.sh
 
 if [ `pwd` != `git rev-parse --show-toplevel` ]
@@ -15,14 +15,14 @@ PKGNAME=$(sh contrib/semver/name.sh)
 PKGVERSION=$(sh contrib/semver/version.sh --bare)
 PKGARCH=${PKGARCH-amd64}
 PKGFILE=$PKGNAME-$PKGVERSION-$PKGARCH.deb
-PKGREPLACES=yggdrasil
+PKGREPLACES=uqda
 
 if [ $PKGBRANCH = "master" ]; then
-  PKGREPLACES=yggdrasil-develop
+  PKGREPLACES=uqda-develop
 fi
 
-GOLDFLAGS="-X github.com/yggdrasil-network/yggdrasil-go/src/config.defaultConfig=/etc/yggdrasil/yggdrasil.conf"
-GOLDFLAGS="${GOLDFLAGS} -X github.com/yggdrasil-network/yggdrasil-go/src/config.defaultAdminListen=unix:///var/run/yggdrasil/yggdrasil.sock"
+GOLDFLAGS="-X github.com/Uqda/Core/src/config.defaultConfig=/etc/uqda/uqda.conf"
+GOLDFLAGS="${GOLDFLAGS} -X github.com/Uqda/Core/src/config.defaultAdminListen=unix:///run/uqda/admin.sock"
 
 if [ $PKGARCH = "amd64" ]; then GOARCH=amd64 GOOS=linux ./build -l "${GOLDFLAGS}"
 elif [ $PKGARCH = "i386" ]; then GOARCH=386 GOOS=linux ./build -l "${GOLDFLAGS}"
@@ -44,7 +44,7 @@ mkdir -p /tmp/$PKGNAME/usr/bin/
 mkdir -p /tmp/$PKGNAME/lib/systemd/system/
 
 cat > /tmp/$PKGNAME/debian/changelog << EOF
-Please see https://github.com/yggdrasil-network/yggdrasil-go/
+Please see https://github.com/Uqda/Core/
 EOF
 echo 9 > /tmp/$PKGNAME/debian/compat
 cat > /tmp/$PKGNAME/debian/control << EOF
@@ -56,22 +56,26 @@ Architecture: $PKGARCH
 Replaces: $PKGREPLACES
 Conflicts: $PKGREPLACES
 Depends: systemd
-Maintainer: Neil Alexander <neilalexander@users.noreply.github.com>
-Description: Yggdrasil Network
- Yggdrasil is an early-stage implementation of a fully end-to-end encrypted IPv6
- network. It is lightweight, self-arranging, supported on multiple platforms and
- allows pretty much any IPv6-capable application to communicate securely with
- other Yggdrasil nodes.
+Maintainer: Uqda Core maintainers
+Description: Uqda Core
+ Uqda Core is an independently maintained, hardened and modernized
+ implementation compatible with the existing Yggdrasil network - an
+ early-stage end-to-end encrypted IPv6 mesh network. It is lightweight,
+ self-arranging, supported on multiple platforms and allows pretty much
+ any IPv6-capable application to communicate securely with other nodes
+ on the Yggdrasil network, whether they run Uqda or the original
+ Yggdrasil implementation.
 EOF
 cat > /tmp/$PKGNAME/debian/copyright << EOF
-Please see https://github.com/yggdrasil-network/yggdrasil-go/
+Please see https://github.com/Uqda/Core/ and that repository's NOTICE.md
+for upstream Yggdrasil and Ironwood attribution.
 EOF
 cat > /tmp/$PKGNAME/debian/docs << EOF
-Please see https://github.com/yggdrasil-network/yggdrasil-go/
+Please see https://github.com/Uqda/Core/
 EOF
 cat > /tmp/$PKGNAME/debian/install << EOF
-usr/bin/yggdrasil usr/bin
-usr/bin/yggdrasilctl usr/bin
+usr/bin/uqda usr/bin
+usr/bin/uqdactl usr/bin
 lib/systemd/system/*.service lib/systemd/system
 EOF
 cat > /tmp/$PKGNAME/debian/postinst << EOF
@@ -79,65 +83,85 @@ cat > /tmp/$PKGNAME/debian/postinst << EOF
 
 systemctl daemon-reload
 
-if ! getent group yggdrasil 2>&1 > /dev/null; then
-  groupadd --system --force yggdrasil
+if ! getent group uqda 2>&1 > /dev/null; then
+  groupadd --system --force uqda
 fi
 
-if [ ! -d /etc/yggdrasil ];
+if [ ! -d /etc/uqda ];
 then
-    mkdir -p /etc/yggdrasil
-    chown root:yggdrasil /etc/yggdrasil
-    chmod 750 /etc/yggdrasil
+    mkdir -p /etc/uqda
+    chown root:uqda /etc/uqda
+    chmod 750 /etc/uqda
 fi
 
-if [ ! -f /etc/yggdrasil/yggdrasil.conf ];
+# Migrate from a previous Yggdrasil installation on this machine, if one
+# is present and Uqda hasn't already been configured. This never touches
+# the Yggdrasil install itself (Uqda and Yggdrasil can coexist during a
+# migration window) and never overwrites an existing Uqda config - it
+# only helps a first-time Uqda install pick up an existing node identity
+# instead of silently generating a new one.
+if [ ! -f /etc/uqda/uqda.conf ] && [ -f /etc/yggdrasil/yggdrasil.conf ];
 then
-    test -f /etc/yggdrasil.conf && mv /etc/yggdrasil.conf /etc/yggdrasil/yggdrasil.conf
+  echo "Found an existing Yggdrasil configuration at /etc/yggdrasil/yggdrasil.conf."
+  echo "Validating it before migrating your node identity to Uqda..."
+  if /usr/bin/uqda -useconffile /etc/yggdrasil/yggdrasil.conf -checkconf;
+  then
+    mkdir -p /var/backups
+    echo "Backing up the original to /var/backups/yggdrasil.conf.\`date +%Y%m%d\`"
+    cp /etc/yggdrasil/yggdrasil.conf /var/backups/yggdrasil.conf.\`date +%Y%m%d\`
+    echo "Copying it to /etc/uqda/uqda.conf (your private key and identity are preserved; the original file at /etc/yggdrasil/yggdrasil.conf is left in place, untouched)"
+    cp /etc/yggdrasil/yggdrasil.conf /etc/uqda/uqda.conf
+    chown root:uqda /etc/uqda/uqda.conf
+    chmod 640 /etc/uqda/uqda.conf
+  else
+    echo "The existing Yggdrasil configuration did not pass validation - not migrating it automatically."
+    echo "Generating a fresh Uqda configuration instead; your old identity is still intact at /etc/yggdrasil/yggdrasil.conf if you want to migrate it by hand."
+  fi
 fi
 
-if [ -f /etc/yggdrasil/yggdrasil.conf ];
+if [ ! -f /etc/uqda/uqda.conf ];
 then
-  mkdir -p /var/backups
-  echo "Backing up configuration file to /var/backups/yggdrasil.conf.`date +%Y%m%d`"
-  cp /etc/yggdrasil/yggdrasil.conf /var/backups/yggdrasil.conf.`date +%Y%m%d`
+  echo "Generating initial configuration file /etc/uqda/uqda.conf"
+  (umask 037 && /usr/bin/uqda -genconf > /etc/uqda/uqda.conf)
 
-  echo "Normalising and updating /etc/yggdrasil/yggdrasil.conf"
-  /usr/bin/yggdrasil -useconf -normaliseconf < /var/backups/yggdrasil.conf.`date +%Y%m%d` > /etc/yggdrasil/yggdrasil.conf
-
-  chown root:yggdrasil /etc/yggdrasil/yggdrasil.conf
-  chmod 640 /etc/yggdrasil/yggdrasil.conf
+  chown root:uqda /etc/uqda/uqda.conf
+  chmod 640 /etc/uqda/uqda.conf
 else
-  echo "Generating initial configuration file /etc/yggdrasil/yggdrasil.conf"
-  (umask 037 && /usr/bin/yggdrasil -genconf > /etc/yggdrasil/yggdrasil.conf)
+  mkdir -p /var/backups
+  echo "Backing up configuration file to /var/backups/uqda.conf.\`date +%Y%m%d\`"
+  cp /etc/uqda/uqda.conf /var/backups/uqda.conf.\`date +%Y%m%d\`
 
-  chown root:yggdrasil /etc/yggdrasil/yggdrasil.conf
-  chmod 640 /etc/yggdrasil/yggdrasil.conf
+  echo "Normalising and updating /etc/uqda/uqda.conf"
+  /usr/bin/uqda -useconf -normaliseconf < /var/backups/uqda.conf.\`date +%Y%m%d\` > /etc/uqda/uqda.conf
+
+  chown root:uqda /etc/uqda/uqda.conf
+  chmod 640 /etc/uqda/uqda.conf
 fi
 
-systemctl enable yggdrasil
-systemctl restart yggdrasil
+systemctl enable uqda
+systemctl restart uqda
 
 exit 0
 EOF
 cat > /tmp/$PKGNAME/debian/prerm << EOF
 #!/bin/sh
 if command -v systemctl >/dev/null; then
-  if systemctl is-active --quiet yggdrasil; then
-    systemctl stop yggdrasil || true
+  if systemctl is-active --quiet uqda; then
+    systemctl stop uqda || true
   fi
-  systemctl disable yggdrasil || true
+  systemctl disable uqda || true
 fi
 EOF
 
-cp yggdrasil /tmp/$PKGNAME/usr/bin/
-cp yggdrasilctl /tmp/$PKGNAME/usr/bin/
-cp contrib/systemd/yggdrasil-default-config.service.debian /tmp/$PKGNAME/lib/systemd/system/yggdrasil-default-config.service
-cp contrib/systemd/yggdrasil.service.debian /tmp/$PKGNAME/lib/systemd/system/yggdrasil.service
+cp uqda /tmp/$PKGNAME/usr/bin/
+cp uqdactl /tmp/$PKGNAME/usr/bin/
+cp contrib/systemd/uqda-default-config.service.debian /tmp/$PKGNAME/lib/systemd/system/uqda-default-config.service
+cp contrib/systemd/uqda.service.debian /tmp/$PKGNAME/lib/systemd/system/uqda.service
 
 tar --no-xattrs -czvf /tmp/$PKGNAME/data.tar.gz -C /tmp/$PKGNAME/ \
-  usr/bin/yggdrasil usr/bin/yggdrasilctl \
-  lib/systemd/system/yggdrasil.service \
-  lib/systemd/system/yggdrasil-default-config.service
+  usr/bin/uqda usr/bin/uqdactl \
+  lib/systemd/system/uqda.service \
+  lib/systemd/system/uqda-default-config.service
 tar --no-xattrs -czvf /tmp/$PKGNAME/control.tar.gz -C /tmp/$PKGNAME/debian .
 echo 2.0 > /tmp/$PKGNAME/debian-binary
 

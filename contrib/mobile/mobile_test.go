@@ -7,23 +7,23 @@ import (
 	"github.com/gologme/log"
 )
 
-func TestStartYggdrasil(t *testing.T) {
+func TestStartUqda(t *testing.T) {
 	logger := log.New(os.Stdout, "", 0)
 	logger.EnableLevel("error")
 	logger.EnableLevel("warn")
 	logger.EnableLevel("info")
 
-	ygg := &Yggdrasil{
+	ygg := &Uqda{
 		logger: logger,
 	}
 	if err := ygg.StartAutoconfigure(); err != nil {
-		t.Fatalf("Failed to start Yggdrasil: %s", err)
+		t.Fatalf("Failed to start Uqda: %s", err)
 	}
 	t.Log("Address:", ygg.GetAddressString())
 	t.Log("Subnet:", ygg.GetSubnetString())
 	t.Log("Routing entries:", ygg.GetRoutingEntries())
 	if err := ygg.Stop(); err != nil {
-		t.Fatalf("Failed to stop Yggdrasil: %s", err)
+		t.Fatalf("Failed to stop Uqda: %s", err)
 	}
 }
 
@@ -32,9 +32,9 @@ func TestStartYggdrasil(t *testing.T) {
 // payload reached writePC, which also panicked.
 func TestSendBufferRejectsBadLength(t *testing.T) {
 	logger := log.New(os.Stdout, "", 0)
-	ygg := &Yggdrasil{logger: logger}
+	ygg := &Uqda{logger: logger}
 	if err := ygg.StartAutoconfigure(); err != nil {
-		t.Fatalf("Failed to start Yggdrasil: %s", err)
+		t.Fatalf("Failed to start Uqda: %s", err)
 	}
 	defer func() { _ = ygg.Stop() }()
 	defer func() {

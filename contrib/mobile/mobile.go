@@ -18,12 +18,12 @@ import (
 	"github.com/Uqda/Core/src/version"
 )
 
-// Yggdrasil mobile package is meant to "plug the gap" for mobile support, as
+// Uqda mobile package is meant to "plug the gap" for mobile support, as
 // Gomobile will not create headers for Swift/Obj-C etc if they have complex
 // (non-native) types. Therefore for iOS we will expose some nice simple
 // functions. Note that in the case of iOS we handle reading/writing to/from TUN
 // in Swift therefore we use the "dummy" TUN interface instead.
-type Yggdrasil struct {
+type Uqda struct {
 	core      *core.Core
 	iprwc     *ipv6rwc.ReadWriteCloser
 	config    *config.NodeConfig
@@ -34,13 +34,13 @@ type Yggdrasil struct {
 }
 
 // StartAutoconfigure starts a node with a randomly generated config
-func (m *Yggdrasil) StartAutoconfigure() error {
+func (m *Uqda) StartAutoconfigure() error {
 	return m.StartJSON([]byte("{}"))
 }
 
 // StartJSON starts a node with the given JSON config. You can get JSON config
 // (rather than HJSON) by using the GenerateConfigJSON() function
-func (m *Yggdrasil) StartJSON(configjson []byte) error {
+func (m *Uqda) StartJSON(configjson []byte) error {
 	setMemLimitIfPossible()
 
 	logger := log.New(m.log, "", 0)
@@ -52,7 +52,7 @@ func (m *Yggdrasil) StartJSON(configjson []byte) error {
 	if err := m.config.UnmarshalHJSON(configjson); err != nil {
 		return err
 	}
-	// Set up the Yggdrasil node itself.
+	// Set up the Uqda node itself.
 	{
 		iprange := net.IPNet{
 			IP:   net.ParseIP("200::"),
@@ -123,9 +123,9 @@ func (m *Yggdrasil) StartJSON(configjson []byte) error {
 	return nil
 }
 
-// Send sends a packet to Yggdrasil. It should be a fully formed
+// Send sends a packet to Uqda. It should be a fully formed
 // IPv6 packet
-func (m *Yggdrasil) Send(p []byte) error {
+func (m *Uqda) Send(p []byte) error {
 	if m.iprwc == nil {
 		return nil
 	}
@@ -133,8 +133,8 @@ func (m *Yggdrasil) Send(p []byte) error {
 	return nil
 }
 
-// Send sends a packet from given buffer to Yggdrasil. From first byte up to length.
-func (m *Yggdrasil) SendBuffer(p []byte, length int) error {
+// Send sends a packet from given buffer to Uqda. From first byte up to length.
+func (m *Uqda) SendBuffer(p []byte, length int) error {
 	if m.iprwc == nil {
 		return nil
 	}
@@ -145,9 +145,9 @@ func (m *Yggdrasil) SendBuffer(p []byte, length int) error {
 	return nil
 }
 
-// Recv waits for and reads a packet coming from Yggdrasil. It
+// Recv waits for and reads a packet coming from Uqda. It
 // will be a fully formed IPv6 packet
-func (m *Yggdrasil) Recv() ([]byte, error) {
+func (m *Uqda) Recv() ([]byte, error) {
 	if m.iprwc == nil {
 		return nil, nil
 	}
@@ -156,8 +156,8 @@ func (m *Yggdrasil) Recv() ([]byte, error) {
 	return buf[:n], nil
 }
 
-// Recv waits for and reads a packet coming from Yggdrasil to given buffer, returning size of packet
-func (m *Yggdrasil) RecvBuffer(buf []byte) (int, error) {
+// Recv waits for and reads a packet coming from Uqda to given buffer, returning size of packet
+func (m *Uqda) RecvBuffer(buf []byte) (int, error) {
 	if m.iprwc == nil {
 		return 0, nil
 	}
@@ -165,11 +165,11 @@ func (m *Yggdrasil) RecvBuffer(buf []byte) (int, error) {
 	return n, nil
 }
 
-// Stop the mobile Yggdrasil instance
-func (m *Yggdrasil) Stop() error {
+// Stop the mobile Uqda instance
+func (m *Uqda) Stop() error {
 	logger := log.New(m.log, "", 0)
 	logger.EnableLevel("info")
-	logger.Infof("Stopping the mobile Yggdrasil instance %s", "")
+	logger.Infof("Stopping the mobile Uqda instance %s", "")
 	if m.multicast != nil {
 		logger.Infof("Stopping multicast %s", "")
 		if err := m.multicast.Stop(); err != nil {
@@ -182,13 +182,13 @@ func (m *Yggdrasil) Stop() error {
 			return err
 		}
 	}
-	logger.Infof("Stopping Yggdrasil core %s", "")
+	logger.Infof("Stopping Uqda core %s", "")
 	m.core.Stop()
 	return nil
 }
 
 // Retry resets the peer connection timer and tries to dial them immediately.
-func (m *Yggdrasil) RetryPeersNow() {
+func (m *Uqda) RetryPeersNow() {
 	m.core.RetryPeersNow()
 }
 
@@ -203,28 +203,28 @@ func GenerateConfigJSON() []byte {
 }
 
 // GetAddressString gets the node's IPv6 address
-func (m *Yggdrasil) GetAddressString() string {
+func (m *Uqda) GetAddressString() string {
 	ip := m.core.Address()
 	return ip.String()
 }
 
 // GetSubnetString gets the node's IPv6 subnet in CIDR notation
-func (m *Yggdrasil) GetSubnetString() string {
+func (m *Uqda) GetSubnetString() string {
 	subnet := m.core.Subnet()
 	return subnet.String()
 }
 
 // GetPublicKeyString gets the node's public key in hex form
-func (m *Yggdrasil) GetPublicKeyString() string {
+func (m *Uqda) GetPublicKeyString() string {
 	return hex.EncodeToString(m.core.GetSelf().Key)
 }
 
 // GetRoutingEntries gets the number of entries in the routing table
-func (m *Yggdrasil) GetRoutingEntries() int {
+func (m *Uqda) GetRoutingEntries() int {
 	return int(m.core.GetSelf().RoutingEntries)
 }
 
-func (m *Yggdrasil) GetPeersJSON() (result string) {
+func (m *Uqda) GetPeersJSON() (result string) {
 	peers := []struct {
 		core.PeerInfo
 		IP string
@@ -249,7 +249,7 @@ func (m *Yggdrasil) GetPeersJSON() (result string) {
 	}
 }
 
-func (m *Yggdrasil) GetPathsJSON() (result string) {
+func (m *Uqda) GetPathsJSON() (result string) {
 	if res, err := json.Marshal(m.core.GetPaths()); err == nil {
 		return string(res)
 	} else {
@@ -257,7 +257,7 @@ func (m *Yggdrasil) GetPathsJSON() (result string) {
 	}
 }
 
-func (m *Yggdrasil) GetTreeJSON() (result string) {
+func (m *Uqda) GetTreeJSON() (result string) {
 	if res, err := json.Marshal(m.core.GetTree()); err == nil {
 		return string(res)
 	} else {
@@ -266,7 +266,7 @@ func (m *Yggdrasil) GetTreeJSON() (result string) {
 }
 
 // GetMTU returns the configured node MTU. This must be called AFTER Start.
-func (m *Yggdrasil) GetMTU() int {
+func (m *Uqda) GetMTU() int {
 	return int(m.core.MTU())
 }
 

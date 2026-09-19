@@ -1,9 +1,10 @@
 #!/bin/sh
 
-CONFFILE="/etc/yggdrasil.conf"
+CONFFILE="/etc/uqda/uqda.conf"
 
 genconf() {
-	(umask 037 && /usr/bin/yggdrasil -genconf > "$1")
+	mkdir -p "$(dirname "$1")"
+	(umask 037 && /usr/bin/uqda -genconf > "$1")
 	return $?
 }
 
@@ -33,8 +34,8 @@ start() {
 		fi
 	fi
 
-	printf 'Starting yggdrasil: '
-	if start-stop-daemon -S -q -b -x /usr/bin/yggdrasil \
+	printf 'Starting uqda: '
+	if start-stop-daemon -S -q -b -x /usr/bin/uqda \
 		-- -useconffile "$CONFFILE"; then
 		echo "OK"
 	else
@@ -43,8 +44,8 @@ start() {
 }
 
 stop() {
-	printf "Stopping yggdrasil: "
-	if start-stop-daemon -K -q -x /usr/bin/yggdrasil; then
+	printf "Stopping uqda: "
+	if start-stop-daemon -K -q -x /usr/bin/uqda; then
 		echo "OK"
 	else
 		echo "FAIL"
@@ -52,8 +53,8 @@ stop() {
 }
 
 reload() {
-	printf "Reloading yggdrasil: "
-	if start-stop-daemon -K -q -s HUP -x /usr/bin/yggdrasil; then
+	printf "Reloading uqda: "
+	if start-stop-daemon -K -q -s HUP -x /usr/bin/uqda; then
 		echo "OK"
 	else
 		echo "FAIL"

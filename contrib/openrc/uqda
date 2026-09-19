@@ -1,11 +1,11 @@
 #!/sbin/openrc-run
 
-description="An experiment in scalable routing as an encrypted IPv6 overlay network."
+description="Uqda Core - an independently maintained, hardened and modernized implementation compatible with the existing Yggdrasil network."
 
-CONFFILE="/etc/yggdrasil.conf"
+CONFFILE="/etc/uqda/uqda.conf"
 pidfile="/run/${RC_SVCNAME}.pid"
 
-command="/usr/bin/yggdrasil"
+command="/usr/bin/uqda"
 
 depend() {
 	use net dns logger
@@ -14,6 +14,7 @@ depend() {
 start_pre() {
 	if [ ! -f "${CONFFILE}" ]; then
 		ebegin "Generating new configuration file into ${CONFFILE}"
+		mkdir -p "$(dirname "${CONFFILE}")"
 		if ! (umask 037 && eval ${command} -genconf > ${CONFFILE}); then
 			eerror "Failed to generate configuration file"
 			exit 1
@@ -35,8 +36,8 @@ start() {
 		--pidfile "${pidfile}" \
 		--make-pidfile \
 		--background \
-		--stdout /var/log/yggdrasil.stdout.log \
-		--stderr /var/log/yggdrasil.stderr.log \
+		--stdout /var/log/uqda.stdout.log \
+		--stderr /var/log/uqda.stderr.log \
 		--exec "${command}" -- -useconffile "${CONFFILE}"
 	eend $?
 }

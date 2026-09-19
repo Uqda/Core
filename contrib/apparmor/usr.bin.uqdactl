@@ -1,11 +1,11 @@
 # Last Modified: Mon Feb  3 22:19:45 2025
 include <tunables/global>
 
-/usr/bin/yggdrasilctl {
+/usr/bin/uqdactl {
   include <abstractions/base>
 
-  /etc/yggdrasil.conf rw,
-  /run/yggdrasil.sock rw,
+  /etc/uqda/uqda.conf rw,
+  /run/uqda/admin.sock rw,
   owner /sys/kernel/mm/transparent_hugepage/hpage_pmd_size r,
 
 }
