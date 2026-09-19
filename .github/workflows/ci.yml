@@ -71,7 +71,13 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
+      - name: Verify race toolchain
+        run: |
+          gcc --version
+          test "$(go env CGO_ENABLED)" = 1
       - name: go test -race
+        env:
+          CGO_ENABLED: '1'
         run: go test -race ./...
 
   vulncheck:
@@ -114,6 +120,49 @@ jobs:
         run: |
           go build -o uqda ./cmd/uqda
           python3 tests/packaging/config_test.py "$PWD/uqda"
+
+  privileged-user-tests:
+    name: Linux privilege switching
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+      - name: Build test binary
+        run: go test -c -o "$RUNNER_TEMP/uqda-user.test" ./cmd/uqda
+      - name: Run both user tests with real Linux privileges
+        run: |
+          getent passwd nobody
+          sudo timeout 30s "$RUNNER_TEMP/uqda-user.test" -test.v -test.run '^TestCurrentUserid$'
+          sudo timeout 30s "$RUNNER_TEMP/uqda-user.test" -test.v -test.run '^TestCommonUsername$'
+
+      - name: Build Uqda key-search utilities
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsodium-dev
+          make -C contrib/uqda-brute-simple
+
+  interoperability:
+    name: Interoperability
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+      - name: Pinned upstream daemon and dataplane gate
+        run: python3 tests/interop/upstream.py
+
+  docker-validation:
+    name: Docker validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - name: Image and persistent identity tests
+        run: python3 tests/docker/image_test.py
 
   build-windows:
     strategy:
@@ -191,7 +240,7 @@ jobs:
 
   tests-ok:
     name: All tests passed
-    needs: [lint, codeql, vet, race, vulncheck, build-linux, build-windows, build-macos, build-freebsd]
+    needs: [lint, codeql, vet, race, vulncheck, build-linux, build-windows, build-macos, build-freebsd, privileged-user-tests, interoperability, docker-validation]
     runs-on: ubuntu-latest
     if: ${{ !cancelled() }}
     steps:
