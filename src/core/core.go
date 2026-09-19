@@ -16,6 +16,7 @@ import (
 	"github.com/gologme/log"
 
 	"github.com/yggdrasil-network/yggdrasil-go/src/address"
+	"github.com/yggdrasil-network/yggdrasil-go/src/identity"
 	"github.com/yggdrasil-network/yggdrasil-go/src/version"
 )
 
@@ -89,9 +90,7 @@ func New(cert *tls.Certificate, logger Logger, opts ...SetupOption) (*Core, erro
 	}
 	c.public = c.secret.Public().(ed25519.PublicKey)
 
-	if c.config.tls, err = c.generateTLSConfig(cert); err != nil {
-		return nil, fmt.Errorf("error generating TLS config: %w", err)
-	}
+	c.config.tls = identity.GenerateTLSConfig(cert)
 	keyXform := func(key ed25519.PublicKey) ed25519.PublicKey {
 		return address.SubnetForKey(key).GetKey()
 	}
