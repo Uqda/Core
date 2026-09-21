@@ -1,11 +1,8 @@
+// Package tun bridges Uqda packet I/O to operating-system TUN devices.
 package tun
 
-// This manages the tun driver to send/recv packets to/from applications
-
-// TODO: Connection timeouts (call Conn.Close() when we want to time out)
-// TODO: Don't block in reader on writes that are pending searches
-
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -20,8 +17,23 @@ import (
 	"github.com/Uqda/Core/src/core"
 )
 
-type MTU uint16
+func nativeIPv6Words(cidr string) ([8]uint16, error) {
+	var words [8]uint16
+	ip, _, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return words, fmt.Errorf("invalid TUN address %q: %w", cidr, err)
+	}
+	if ip.To4() != nil {
+		return words, fmt.Errorf("TUN address %q is not IPv6", cidr)
+	}
+	ip = ip.To16()
+	for i := range words {
+		words[i] = binary.NativeEndian.Uint16(ip[i*2 : i*2+2])
+	}
+	return words, nil
+}
 
+// ReadWriteCloser is the packet interface consumed by a TunAdapter.
 type ReadWriteCloser interface {
 	io.ReadWriteCloser
 	Address() address.Address
@@ -29,6 +41,9 @@ type ReadWriteCloser interface {
 	MaxMTU() uint64
 	SetMTU(uint64)
 }
+
+// MTU represents a TUN maximum transmission unit.
+type MTU uint16
 
 // TunAdapter represents a running TUN interface, bridging a
 // ReadWriteCloser (typically ipv6rwc.NewReadWriteCloser wrapping a Uqda
@@ -40,7 +55,7 @@ type TunAdapter struct {
 	subnet      address.Subnet
 	mtu         uint64
 	iface       wgtun.Device
-	phony.Inbox // Currently only used for _handlePacket from the reader, TODO: all the stuff that currently needs a mutex below
+	phony.Inbox // Serializes lifecycle state changes and write-error handling.
 	isOpen      bool
 	isEnabled   bool // Used by the writer to drop sessionTraffic if not enabled
 	config      struct {
@@ -51,8 +66,7 @@ type TunAdapter struct {
 	ch chan []byte
 }
 
-// Gets the maximum supported MTU for the platform based on the defaults in
-// config.GetDefaults().
+// getSupportedMTU clamps mtu to the supported platform range.
 func getSupportedMTU(mtu uint64) uint64 {
 	if mtu < 1280 {
 		return 1280
@@ -165,8 +179,7 @@ func (tun *TunAdapter) IsStarted() bool {
 	return isOpen
 }
 
-// Start the setup process for the TUN adapter. If successful, starts the
-// read/write goroutines to handle packets on that interface.
+// Stop closes the TUN interface and stops accepting packets from it.
 func (tun *TunAdapter) Stop() error {
 	var err error
 	phony.Block(tun, func() {
@@ -177,10 +190,8 @@ func (tun *TunAdapter) Stop() error {
 
 func (tun *TunAdapter) _stop() error {
 	tun.isOpen = false
-	// by TUN, e.g. readers/writers, sessions
 	if tun.iface != nil {
-		// Just in case we failed to start up the iface for some reason, this can apparently happen on Windows
-		tun.iface.Close()
+		return tun.iface.Close()
 	}
 	return nil
 }
@@ -189,7 +200,6 @@ const bufPoolSize = TUN_OFFSET_BYTES + 65535
 
 var bufPool = sync.Pool{
 	New: func() any {
-		b := [bufPoolSize]byte{}
-		return b[:]
+		return new([bufPoolSize]byte)
 	},
 }

@@ -93,6 +93,7 @@ func (tun *TunAdapter) setupAddress(addr string) error {
 		tun.log.Printf("Create AF_INET6 socket failed: %v", err)
 		return err
 	}
+	defer func() { _ = unix.Close(sfd) }()
 
 	// Friendly output
 	tun.log.Infof("Interface name: %s", tun.Name())

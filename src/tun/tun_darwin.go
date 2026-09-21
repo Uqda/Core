@@ -2,14 +2,10 @@
 
 package tun
 
-// The darwin platform specific tun parts
-
 import (
 	"encoding/binary"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 	"unsafe"
 
 	"golang.org/x/sys/unix"
@@ -113,6 +109,12 @@ func (tun *TunAdapter) setupAddress(addr string) error {
 		tun.log.Errorf("Create AF_SYSTEM socket failed: %v.", err)
 		return fmt.Errorf("failed to open AF_SYSTEM: %w", err)
 	}
+	defer func() { _ = unix.Close(fd) }()
+
+	words, err := nativeIPv6Words(addr)
+	if err != nil {
+		return err
+	}
 
 	var ar in6_aliasreq
 	copy(ar.ifra_name[:], tun.Name())
@@ -124,13 +126,7 @@ func (tun *TunAdapter) setupAddress(addr string) error {
 
 	ar.ifra_addr.sin6_len = uint8(unsafe.Sizeof(ar.ifra_addr))
 	ar.ifra_addr.sin6_family = unix.AF_INET6
-	parts := strings.Split(strings.Split(addr, "/")[0], ":")
-	for i := 0; i < 8; i++ {
-		addr, _ := strconv.ParseUint(parts[i], 16, 16)
-		b := make([]byte, 16)
-		binary.LittleEndian.PutUint16(b, uint16(addr))
-		ar.ifra_addr.sin6_addr[i] = binary.BigEndian.Uint16(b)
-	}
+	ar.ifra_addr.sin6_addr = words
 
 	ar.ifra_flags |= darwin_IN6_IFF_NODAD
 	ar.ifra_flags |= darwin_IN6_IFF_SECURED

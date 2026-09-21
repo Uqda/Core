@@ -18,9 +18,7 @@ import (
 	"golang.zx2c4.com/wireguard/windows/tunnel/winipcfg"
 )
 
-// This is to catch Windows platforms
-
-// Configures the TUN adapter with the correct IPv6 address and MTU.
+// setup configures the Windows TUN adapter with its IPv6 address and MTU.
 func (tun *TunAdapter) setup(ifname string, addr string, mtu uint64) error {
 	if ifname == "auto" {
 		ifname = config.GetDefaults().DefaultIfName
@@ -34,9 +32,11 @@ func (tun *TunAdapter) setup(ifname string, addr string, mtu uint64) error {
 		}
 		iface, err = wgtun.CreateTUNWithRequestedGUID(ifname, &guid, int(mtu))
 		if err != nil {
-			// Very rare condition, it will purge the old device and create new
+			// A stale Wintun device can block creation; remove it before retrying.
 			tun.log.Printf("Error creating TUN: '%s'", err)
-			wintun.Uninstall()
+			if uninstallErr := wintun.Uninstall(); uninstallErr != nil {
+				tun.log.Warnln("Unable to remove stale Wintun device:", uninstallErr)
+			}
 			time.Sleep(3 * time.Second)
 			tun.log.Printf("Trying again")
 			iface, err = wgtun.CreateTUNWithRequestedGUID(ifname, &guid, int(mtu))
@@ -66,15 +66,15 @@ func (tun *TunAdapter) setup(ifname string, addr string, mtu uint64) error {
 	})
 }
 
-// Configures the "utun" adapter from an existing file descriptor.
+// setupFD is unsupported on Windows.
 func (tun *TunAdapter) setupFD(fd int32, addr string, mtu uint64) error {
 	return fmt.Errorf("setup via FD not supported on this platform")
 }
 
-// Sets the MTU of the TUN adapter.
+// setupMTU sets the TUN adapter MTU.
 func (tun *TunAdapter) setupMTU(mtu uint64) error {
 	if tun.iface == nil || tun.Name() == "" {
-		return errors.New("Can't configure MTU as TUN adapter is not present")
+		return errors.New("cannot configure MTU because the TUN adapter is not present")
 	}
 	if intf, ok := tun.iface.(*wgtun.NativeTun); ok {
 		luid := winipcfg.LUID(intf.LUID())
@@ -98,10 +98,10 @@ func (tun *TunAdapter) setupMTU(mtu uint64) error {
 	return nil
 }
 
-// Sets the IPv6 address of the TUN adapter.
+// setupAddress sets the TUN adapter's IPv6 address.
 func (tun *TunAdapter) setupAddress(addr string) error {
 	if tun.iface == nil || tun.Name() == "" {
-		return errors.New("Can't configure IPv6 address as TUN adapter is not present")
+		return errors.New("cannot configure IPv6 address because the TUN adapter is not present")
 	}
 	if intf, ok := tun.iface.(*wgtun.NativeTun); ok {
 		if ipnet, err := netip.ParsePrefix(addr); err == nil {
@@ -119,7 +119,7 @@ func (tun *TunAdapter) setupAddress(addr string) error {
 			return err
 		}
 	} else {
-		return errors.New("unable to get NativeTUN")
+		return errors.New("unable to access the native TUN adapter")
 	}
 	return nil
 }
@@ -149,7 +149,9 @@ func cleanupAddressesOnDisconnectedInterfaces(family winipcfg.AddressFamily, add
 			if ip, _ := netip.AddrFromSlice(address.Address.IP()); addrHash[ip] {
 				prefix := netip.PrefixFrom(ip, int(address.OnLinkPrefixLength))
 				log.Printf("Cleaning up stale address %s from interface ‘%s’", prefix.String(), iface.FriendlyName())
-				iface.LUID.DeleteIPAddress(prefix)
+				if err := iface.LUID.DeleteIPAddress(prefix); err != nil {
+					log.Printf("Unable to remove stale address %s from interface %q: %v", prefix, iface.FriendlyName(), err)
+				}
 			}
 		}
 	}

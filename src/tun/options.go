@@ -11,12 +11,18 @@ func (m *TunAdapter) _applyOption(opt SetupOption) {
 	}
 }
 
+// SetupOption configures a TunAdapter during construction.
 type SetupOption interface {
 	isSetupOption()
 }
 
+// InterfaceName selects the operating-system TUN interface.
 type InterfaceName string
+
+// InterfaceMTU sets the requested TUN MTU.
 type InterfaceMTU uint64
+
+// FileDescriptor supplies an existing TUN descriptor where supported.
 type FileDescriptor int32
 
 func (a InterfaceName) isSetupOption()  {}

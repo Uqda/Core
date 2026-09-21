@@ -3,10 +3,8 @@
 package tun
 
 import (
-	"encoding/binary"
 	"fmt"
 	"os/exec"
-	"strconv"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -100,25 +98,24 @@ func (tun *TunAdapter) setupAddress(addr string) error {
 		tun.log.Printf("Create AF_INET socket failed: %v.", err)
 		return err
 	}
+	defer func() { _ = unix.Close(sfd) }()
+
+	words, err := nativeIPv6Words(addr)
+	if err != nil {
+		return err
+	}
 
 	// Friendly output
 	tun.log.Infof("Interface name: %s", tun.Name())
 	tun.log.Infof("Interface IPv6: %s", addr)
 	tun.log.Infof("Interface MTU: %d", tun.mtu)
 
-	// Create the address request
-	// FIXME: I don't work!
+	// Create the address request.
 	var ar in6_ifreq_addr
 	copy(ar.ifr_name[:], tun.Name())
 	ar.ifru_addr.sin6_len = uint8(unsafe.Sizeof(ar.ifru_addr))
 	ar.ifru_addr.sin6_family = unix.AF_INET6
-	parts := strings.Split(strings.Split(addr, "/")[0], ":")
-	for i := 0; i < 8; i++ {
-		addr, _ := strconv.ParseUint(parts[i], 16, 16)
-		b := make([]byte, 16)
-		binary.LittleEndian.PutUint16(b, uint16(addr))
-		ar.ifru_addr.sin6_addr[i] = uint16(binary.BigEndian.Uint16(b))
-	}
+	ar.ifru_addr.sin6_addr = words
 
 	// Set the interface address
 	if _, _, errno := unix.Syscall(unix.SYS_IOCTL, uintptr(sfd), uintptr(SIOCSIFADDR_IN6), uintptr(unsafe.Pointer(&ar))); errno != 0 {

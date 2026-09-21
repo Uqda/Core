@@ -6,7 +6,8 @@ import (
 	wgtun "golang.zx2c4.com/wireguard/tun"
 )
 
-const TUN_OFFSET_BYTES = 80 // sizeof(virtio_net_hdr)
+// TUN_OFFSET_BYTES reserves space for the virtio network header.
+const TUN_OFFSET_BYTES = 80
 
 func (tun *TunAdapter) read() {
 	vs := tun.iface.BatchSize()
@@ -35,7 +36,7 @@ func (tun *TunAdapter) read() {
 
 func (tun *TunAdapter) queue() {
 	for {
-		p := bufPool.Get().([]byte)[:bufPoolSize]
+		p := bufPool.Get().(*[bufPoolSize]byte)[:]
 		n, err := tun.rwc.Read(p)
 		if err != nil {
 			tun.log.Errorln("Exiting TUN writer due to core read error:", err)
@@ -61,7 +62,7 @@ func (tun *TunAdapter) write() {
 		for i := 0; i < n; i++ {
 			msg := <-tun.ch
 			bufs[i] = append(bufs[i][:TUN_OFFSET_BYTES], msg...)
-			bufPool.Put(msg) // nolint:staticcheck
+			bufPool.Put((*[bufPoolSize]byte)(msg[:bufPoolSize]))
 		}
 		if !tun.isEnabled {
 			continue // Nothing to do, the tun isn't enabled
