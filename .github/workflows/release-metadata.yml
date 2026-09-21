@@ -7,7 +7,7 @@ jobs:
   metadata:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Prepare release metadata
         run: |
           python3 - <<'PYTHON'
@@ -18,7 +18,7 @@ jobs:
               json.dump({"tag_name": version(), "name": version("--title"),
                          "prerelease": version("--prerelease") == "true", "draft": True}, out, indent=2)
           PYTHON
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-metadata
           path: release-metadata.json
