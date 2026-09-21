@@ -24,6 +24,10 @@ jobs:
           go-version-file: "go.mod"
       - name: golangci-lint
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+      - name: Staticcheck
+        run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.1 ./...
+      - name: Actionlint
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
 
   codeql:
     name: Analyse
@@ -108,6 +112,18 @@ jobs:
         run: go test ./src/core -run '^$' -fuzz '^FuzzVersionMetadataDecode$' -fuzztime=10s
       - name: Multicast parser
         run: go test ./src/multicast -run '^$' -fuzz '^FuzzMulticastAdvertisementUnmarshalBinary$' -fuzztime=10s
+
+  lifecycle-stress:
+    name: Lifecycle stress
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: "go.mod"
+      - name: Repeat core, admin and configuration lifecycles
+        run: go test -count=3 ./src/core ./src/admin ./src/config
 
   build-linux:
     strategy:
@@ -229,6 +245,44 @@ jobs:
       - name: Unit tests
         run: go test -v ./...
 
+  mobile-android:
+    name: Mobile (Android AAR)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: stable
+      - name: Install pinned Go mobile tools
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20260908204917-8b95e45f8d3e
+          go install golang.org/x/mobile/cmd/gobind@v0.0.0-20260908204917-8b95e45f8d3e
+          gomobile init
+      - name: Build Android binding
+        run: |
+          ./contrib/mobile/build -a
+          test -s uqda.aar
+
+  mobile-apple:
+    name: Mobile (Apple XCFramework)
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: stable
+      - name: Install pinned Go mobile tools
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20260908204917-8b95e45f8d3e
+          go install golang.org/x/mobile/cmd/gobind@v0.0.0-20260908204917-8b95e45f8d3e
+          gomobile init
+      - name: Build Apple binding
+        run: |
+          ./contrib/mobile/build -i
+          test -d Uqda.xcframework
+
   build-freebsd:
     strategy:
       fail-fast: false
@@ -257,7 +311,7 @@ jobs:
 
   tests-ok:
     name: All tests passed
-    needs: [lint, codeql, vet, race, vulncheck, fuzz-smoke, build-linux, build-windows, build-macos, build-freebsd, privileged-user-tests, interoperability, docker-validation]
+    needs: [lint, codeql, vet, race, vulncheck, fuzz-smoke, lifecycle-stress, build-linux, build-windows, build-macos, mobile-android, mobile-apple, build-freebsd, privileged-user-tests, interoperability, docker-validation]
     runs-on: ubuntu-latest
     if: ${{ !cancelled() }}
     steps:
