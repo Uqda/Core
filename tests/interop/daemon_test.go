@@ -38,18 +38,23 @@ func freeTCPPort(t *testing.T) int {
 // directory and returns its path.
 func buildUqda(t *testing.T) string {
 	t.Helper()
+	return buildCommand(t, "uqda", "github.com/Uqda/Core/cmd/uqda")
+}
+
+func buildCommand(t *testing.T, name, packagePath string) string {
+	t.Helper()
 	dir := t.TempDir()
-	binName := "uqda-under-test"
+	binName := name + "-under-test"
 	if os.PathSeparator == '\\' {
 		binName += ".exe"
 	}
 	binPath := filepath.Join(dir, binName)
 
-	cmd := exec.Command("go", "build", "-o", binPath, "github.com/Uqda/Core/cmd/uqda")
+	cmd := exec.Command("go", "build", "-o", binPath, packagePath)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		t.Fatalf("failed to build uqda binary: %v\n%s", err, stderr.String())
+		t.Fatalf("failed to build %s binary: %v\n%s", name, err, stderr.String())
 	}
 	return binPath
 }

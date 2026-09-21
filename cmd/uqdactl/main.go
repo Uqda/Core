@@ -3,9 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/url"
@@ -26,12 +26,6 @@ import (
 )
 
 func main() {
-	// read config, speak DNS/TCP and/or over a UNIX socket
-	if err := protect.Pledge("stdio rpath inet unix dns"); err != nil {
-		panic(err)
-	}
-
-	// makes sure we can use defer and still return an error code to the OS
 	os.Exit(run())
 }
 
@@ -39,14 +33,9 @@ func run() int {
 	logbuffer := &bytes.Buffer{}
 	logger := log.New(logbuffer, "", log.Flags())
 
-	defer func() int {
-		if r := recover(); r != nil {
-			logger.Println("Fatal error:", r)
-			fmt.Print(logbuffer)
-			return 1
-		}
-		return 0
-	}()
+	if err := protect.Pledge("stdio rpath inet unix dns"); err != nil {
+		return fail(logger, logbuffer, "apply initial process restrictions: %v", err)
+	}
 
 	cmdLineEnv := newCmdLineEnv()
 	cmdLineEnv.parseFlagsAndArgs()
@@ -61,40 +50,28 @@ func run() int {
 		return 0
 	}
 
-	cmdLineEnv.setEndpoint(logger)
-
-	var conn net.Conn
-	u, err := url.Parse(cmdLineEnv.endpoint)
-	if err == nil {
-		switch strings.ToLower(u.Scheme) {
-		case "unix":
-			logger.Println("Connecting to UNIX socket", cmdLineEnv.endpoint[7:])
-			conn, err = net.Dial("unix", cmdLineEnv.endpoint[7:])
-		case "tcp":
-			logger.Println("Connecting to TCP socket", u.Host)
-			conn, err = net.Dial("tcp", u.Host)
-		default:
-			logger.Println("Unknown protocol or malformed address - check your endpoint")
-			err = errors.New("protocol not supported")
-		}
-	} else {
-		logger.Println("Connecting to TCP socket", u.Host)
-		conn, err = net.Dial("tcp", cmdLineEnv.endpoint)
+	if err := cmdLineEnv.setEndpoint(logger); err != nil {
+		return fail(logger, logbuffer, "%v", err)
 	}
+
+	conn, err := dialAdminEndpoint(cmdLineEnv.endpoint, logger)
 	if err != nil {
-		panic(err)
+		return fail(logger, logbuffer, "%v", err)
 	}
 
-	// config and socket are done, work without unprivileges
 	if err := protect.Pledge("stdio"); err != nil {
-		panic(err)
+		_ = conn.Close()
+		return fail(logger, logbuffer, "apply process restrictions after connecting: %v", err)
 	}
 
 	logger.Println("Connected")
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			logger.Println("Close admin connection:", err)
+		}
+	}()
 
 	decoder := json.NewDecoder(conn)
-	encoder := json.NewEncoder(conn)
 	send := &admin.AdminSocketRequest{}
 	recv := &admin.AdminSocketResponse{}
 	args := map[string]string{}
@@ -117,27 +94,33 @@ func run() int {
 		}
 	}
 	if send.Arguments, err = json.Marshal(args); err != nil {
-		panic(err)
+		return fail(logger, logbuffer, "encode command arguments: %v", err)
 	}
-	if err := encoder.Encode(&send); err != nil {
-		panic(err)
+	request, err := json.Marshal(send)
+	if err != nil {
+		return fail(logger, logbuffer, "encode admin request: %v", err)
+	}
+	if _, err := io.Copy(conn, bytes.NewReader(request)); err != nil {
+		return fail(logger, logbuffer, "send admin request: %v", err)
 	}
 	logger.Printf("Request sent")
 	if err := decoder.Decode(&recv); err != nil {
-		panic(err)
+		return fail(logger, logbuffer, "read admin response: %v", err)
 	}
 	if recv.Status == "error" {
-		if err := recv.Error; err != "" {
-			fmt.Println("Admin socket returned an error:", err)
+		if recv.Error != "" {
+			fmt.Fprintln(os.Stderr, "Admin socket returned an error:", recv.Error)
 		} else {
-			fmt.Println("Admin socket returned an error but didn't specify any error text")
+			fmt.Fprintln(os.Stderr, "Admin socket returned an error without details")
 		}
 		return 1
 	}
 	if cmdLineEnv.injson {
-		if json, err := json.MarshalIndent(recv.Response, "", "  "); err == nil {
-			fmt.Println(string(json))
+		output, err := json.MarshalIndent(recv.Response, "", "  ")
+		if err != nil {
+			return fail(logger, logbuffer, "format admin response as JSON: %v", err)
 		}
+		fmt.Println(string(output))
 		return 0
 	}
 
@@ -162,7 +145,7 @@ func run() int {
 	case "list":
 		var resp admin.ListResponse
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
-			panic(err)
+			return fail(logger, logbuffer, "decode list response: %v", err)
 		}
 		table.Header([]string{"Command", "Arguments", "Description"})
 		for _, entry := range resp.List {
@@ -176,7 +159,7 @@ func run() int {
 	case "getself":
 		var resp admin.GetSelfResponse
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
-			panic(err)
+			return fail(logger, logbuffer, "decode getSelf response: %v", err)
 		}
 		_ = table.Append([]string{"Build name:", resp.BuildName})
 		_ = table.Append([]string{"Build version:", resp.BuildVersion})
@@ -189,7 +172,7 @@ func run() int {
 	case "getpeers":
 		var resp admin.GetPeersResponse
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
-			panic(err)
+			return fail(logger, logbuffer, "decode getPeers response: %v", err)
 		}
 		table.Header([]string{"URI", "State", "Dir", "IP Address", "Uptime", "RTT", "RX", "TX", "Down", "Up", "Pr", "Cost", "Last Error"})
 		for _, peer := range resp.Peers {
@@ -236,7 +219,7 @@ func run() int {
 	case "gettree":
 		var resp admin.GetTreeResponse
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
-			panic(err)
+			return fail(logger, logbuffer, "decode getTree response: %v", err)
 		}
 		table.Header([]string{"Public Key", "IP Address", "Parent", "Sequence"})
 		for _, tree := range resp.Tree {
@@ -245,8 +228,6 @@ func run() int {
 				tree.IPAddress,
 				tree.Parent,
 				fmt.Sprintf("%d", tree.Sequence),
-				//fmt.Sprintf("%d", dht.Port),
-				//fmt.Sprintf("%d", dht.Rest),
 			})
 		}
 		_ = table.Render()
@@ -254,7 +235,7 @@ func run() int {
 	case "getpaths":
 		var resp admin.GetPathsResponse
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
-			panic(err)
+			return fail(logger, logbuffer, "decode getPaths response: %v", err)
 		}
 		table.Header([]string{"Public Key", "IP Address", "Path", "Seq"})
 		for _, p := range resp.Paths {
@@ -270,7 +251,7 @@ func run() int {
 	case "getsessions":
 		var resp admin.GetSessionsResponse
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
-			panic(err)
+			return fail(logger, logbuffer, "decode getSessions response: %v", err)
 		}
 		table.Header([]string{"Public Key", "IP Address", "Uptime", "RX", "TX"})
 		for _, p := range resp.Sessions {
@@ -287,7 +268,7 @@ func run() int {
 	case "getnodeinfo":
 		var resp core.GetNodeInfoResponse
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
-			panic(err)
+			return fail(logger, logbuffer, "decode getNodeInfo response: %v", err)
 		}
 		for _, v := range resp {
 			fmt.Println(string(v))
@@ -297,7 +278,7 @@ func run() int {
 	case "getmulticastinterfaces":
 		var resp multicast.GetMulticastInterfacesResponse
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
-			panic(err)
+			return fail(logger, logbuffer, "decode getMulticastInterfaces response: %v", err)
 		}
 		fmtBool := func(b bool) string {
 			if b {
@@ -320,7 +301,7 @@ func run() int {
 	case "gettun":
 		var resp tun.GetTUNResponse
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
-			panic(err)
+			return fail(logger, logbuffer, "decode getTUN response: %v", err)
 		}
 		_ = table.Append([]string{"TUN enabled:", fmt.Sprintf("%#v", resp.Enabled)})
 		if resp.Enabled {
@@ -336,4 +317,38 @@ func run() int {
 	}
 
 	return 0
+}
+
+func dialAdminEndpoint(endpoint string, logger *log.Logger) (net.Conn, error) {
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("parse admin endpoint %q: %w", endpoint, err)
+	}
+
+	var network, address string
+	switch strings.ToLower(u.Scheme) {
+	case "unix":
+		network, address = "unix", u.Path
+	case "tcp":
+		network, address = "tcp", u.Host
+	case "":
+		network, address = "tcp", endpoint
+	default:
+		return nil, fmt.Errorf("unsupported admin endpoint scheme %q", u.Scheme)
+	}
+	if address == "" {
+		return nil, fmt.Errorf("admin endpoint %q has no address", endpoint)
+	}
+	logger.Printf("Connecting to %s endpoint %s", strings.ToUpper(network), address)
+	conn, err := net.Dial(network, address)
+	if err != nil {
+		return nil, fmt.Errorf("connect to admin endpoint %q: %w", endpoint, err)
+	}
+	return conn, nil
+}
+
+func fail(logger *log.Logger, logbuffer *bytes.Buffer, format string, args ...interface{}) int {
+	logger.Printf("Error: "+format, args...)
+	_, _ = fmt.Fprint(os.Stderr, logbuffer.String())
+	return 1
 }

@@ -13,19 +13,19 @@ import (
 	"github.com/Uqda/Core/src/config"
 )
 
-type CmdLineEnv struct {
+type cmdLineEnv struct {
 	args                 []string
 	endpoint, server     string
 	injson, borders, ver bool
 }
 
-func newCmdLineEnv() CmdLineEnv {
-	var cmdLineEnv CmdLineEnv
+func newCmdLineEnv() cmdLineEnv {
+	var cmdLineEnv cmdLineEnv
 	cmdLineEnv.endpoint = config.GetDefaults().DefaultAdminListen
 	return cmdLineEnv
 }
 
-func (cmdLineEnv *CmdLineEnv) parseFlagsAndArgs() {
+func (cmdLineEnv *cmdLineEnv) parseFlagsAndArgs() {
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [options] command [key=value] [key=value] ...\n\n", os.Args[0])
 		fmt.Println("Options:")
@@ -56,7 +56,7 @@ func (cmdLineEnv *CmdLineEnv) parseFlagsAndArgs() {
 	cmdLineEnv.ver = *ver
 }
 
-func (cmdLineEnv *CmdLineEnv) setEndpoint(logger *log.Logger) {
+func (cmdLineEnv *cmdLineEnv) setEndpoint(logger *log.Logger) error {
 	if cmdLineEnv.server == cmdLineEnv.endpoint {
 		if cfg, err := os.ReadFile(config.GetDefaults().DefaultConfigFile); err == nil {
 			if len(cfg) >= 2 && (bytes.Equal(cfg[0:2], []byte{0xFF, 0xFE}) ||
@@ -65,12 +65,12 @@ func (cmdLineEnv *CmdLineEnv) setEndpoint(logger *log.Logger) {
 				decoder := utf.NewDecoder()
 				cfg, err = decoder.Bytes(cfg)
 				if err != nil {
-					panic(err)
+					return fmt.Errorf("decode configuration file %q: %w", config.GetDefaults().DefaultConfigFile, err)
 				}
 			}
 			var dat map[string]interface{}
 			if err := hjson.Unmarshal(cfg, &dat); err != nil {
-				panic(err)
+				return fmt.Errorf("parse configuration file %q: %w", config.GetDefaults().DefaultConfigFile, err)
 			}
 			if ep, ok := dat["AdminListen"].(string); ok && (ep != "none" && ep != "") {
 				cmdLineEnv.endpoint = ep
@@ -88,4 +88,5 @@ func (cmdLineEnv *CmdLineEnv) setEndpoint(logger *log.Logger) {
 		cmdLineEnv.endpoint = cmdLineEnv.server
 		logger.Println("Using endpoint", cmdLineEnv.endpoint, "from command line")
 	}
+	return nil
 }
