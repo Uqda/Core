@@ -1,9 +1,11 @@
+// Package mobile exposes a gomobile-compatible Uqda API.
 package mobile
 
 import (
 	"crypto/ed25519"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net"
 	"regexp"
 
@@ -18,11 +20,8 @@ import (
 	"github.com/Uqda/Core/src/version"
 )
 
-// Uqda mobile package is meant to "plug the gap" for mobile support, as
-// Gomobile will not create headers for Swift/Obj-C etc if they have complex
-// (non-native) types. Therefore for iOS we will expose some nice simple
-// functions. Note that in the case of iOS we handle reading/writing to/from TUN
-// in Swift therefore we use the "dummy" TUN interface instead.
+// Uqda manages a node through types that gomobile can export. Apple clients
+// handle TUN I/O natively and use the dummy TUN mode here.
 type Uqda struct {
 	core      *core.Core
 	iprwc     *ipv6rwc.ReadWriteCloser
@@ -33,13 +32,12 @@ type Uqda struct {
 	logger    *log.Logger
 }
 
-// StartAutoconfigure starts a node with a randomly generated config
+// StartAutoconfigure starts a node with a randomly generated configuration.
 func (m *Uqda) StartAutoconfigure() error {
 	return m.StartJSON([]byte("{}"))
 }
 
-// StartJSON starts a node with the given JSON config. You can get JSON config
-// (rather than HJSON) by using the GenerateConfigJSON() function
+// StartJSON starts a node with the supplied JSON configuration.
 func (m *Uqda) StartJSON(configjson []byte) error {
 	setMemLimitIfPossible()
 
@@ -50,7 +48,25 @@ func (m *Uqda) StartJSON(configjson []byte) error {
 	m.logger = logger
 	m.config = config.GenerateConfig()
 	if err := m.config.UnmarshalHJSON(configjson); err != nil {
-		return err
+		return fmt.Errorf("parse Uqda configuration: %w", err)
+	}
+	multicastOptions := []multicast.SetupOption{}
+	for _, intf := range m.config.MulticastInterfaces {
+		matcher, err := regexp.Compile(intf.Regex)
+		if err != nil {
+			return fmt.Errorf("invalid multicast interface regex %q: %w", intf.Regex, err)
+		}
+		if intf.Priority > 255 {
+			return fmt.Errorf("multicast priority %d is outside the supported range 0-255", intf.Priority)
+		}
+		multicastOptions = append(multicastOptions, multicast.MulticastInterface{
+			Regex:    matcher,
+			Beacon:   intf.Beacon,
+			Listen:   intf.Listen,
+			Port:     intf.Port,
+			Priority: uint8(intf.Priority),
+			Password: intf.Password,
+		})
 	}
 	// Set up the Uqda node itself.
 	{
@@ -74,7 +90,10 @@ func (m *Uqda) StartJSON(configjson []byte) error {
 		for _, allowed := range m.config.AllowedPublicKeys {
 			k, err := hex.DecodeString(allowed)
 			if err != nil {
-				panic(err)
+				return fmt.Errorf("invalid allowed public key %q: %w", allowed, err)
+			}
+			if len(k) != ed25519.PublicKeySize {
+				return fmt.Errorf("invalid allowed public key %q: got %d bytes, want %d", allowed, len(k), ed25519.PublicKeySize)
 			}
 			options = append(options, core.AllowedPublicKey(k[:]))
 		}
@@ -84,7 +103,7 @@ func (m *Uqda) StartJSON(configjson []byte) error {
 		var err error
 		m.core, err = core.New(m.config.Certificate, logger, options...)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("start Uqda core: %w", err)
 		}
 		address, subnet := m.core.Address(), m.core.Subnet()
 		logger.Infof("Your public key is %s", hex.EncodeToString(m.core.PublicKey()))
@@ -96,21 +115,12 @@ func (m *Uqda) StartJSON(configjson []byte) error {
 	if len(m.config.MulticastInterfaces) > 0 {
 		var err error
 		logger.Infof("Initializing multicast %s", "")
-		options := []multicast.SetupOption{}
-		for _, intf := range m.config.MulticastInterfaces {
-			options = append(options, multicast.MulticastInterface{
-				Regex:    regexp.MustCompile(intf.Regex),
-				Beacon:   intf.Beacon,
-				Listen:   intf.Listen,
-				Port:     intf.Port,
-				Priority: uint8(intf.Priority),
-				Password: intf.Password,
-			})
-		}
 		logger.Infof("Starting multicast %s", "")
-		m.multicast, err = multicast.New(m.core, m.logger, options...)
+		m.multicast, err = multicast.New(m.core, m.logger, multicastOptions...)
 		if err != nil {
-			logger.Errorln("An error occurred starting multicast:", err)
+			m.core.Stop()
+			m.core = nil
+			return fmt.Errorf("start multicast discovery: %w", err)
 		}
 	}
 
@@ -123,49 +133,46 @@ func (m *Uqda) StartJSON(configjson []byte) error {
 	return nil
 }
 
-// Send sends a packet to Uqda. It should be a fully formed
-// IPv6 packet
+// Send writes one complete IPv6 packet to Uqda.
 func (m *Uqda) Send(p []byte) error {
 	if m.iprwc == nil {
-		return nil
+		return fmt.Errorf("Uqda is not started")
 	}
-	_, _ = m.iprwc.Write(p)
-	return nil
+	_, err := m.iprwc.Write(p)
+	return err
 }
 
-// Send sends a packet from given buffer to Uqda. From first byte up to length.
+// SendBuffer writes the first length bytes of p as one IPv6 packet.
 func (m *Uqda) SendBuffer(p []byte, length int) error {
 	if m.iprwc == nil {
-		return nil
+		return fmt.Errorf("Uqda is not started")
 	}
 	if length < 0 || len(p) < length {
-		return nil
+		return fmt.Errorf("invalid packet length %d for buffer of %d bytes", length, len(p))
 	}
-	_, _ = m.iprwc.Write(p[:length])
-	return nil
+	_, err := m.iprwc.Write(p[:length])
+	return err
 }
 
-// Recv waits for and reads a packet coming from Uqda. It
-// will be a fully formed IPv6 packet
+// Recv waits for and returns one complete IPv6 packet from Uqda.
 func (m *Uqda) Recv() ([]byte, error) {
 	if m.iprwc == nil {
-		return nil, nil
+		return nil, fmt.Errorf("Uqda is not started")
 	}
 	var buf [65535]byte
-	n, _ := m.iprwc.Read(buf[:])
-	return buf[:n], nil
+	n, err := m.iprwc.Read(buf[:])
+	return buf[:n], err
 }
 
-// Recv waits for and reads a packet coming from Uqda to given buffer, returning size of packet
+// RecvBuffer waits for one IPv6 packet, writes it into buf and returns its size.
 func (m *Uqda) RecvBuffer(buf []byte) (int, error) {
 	if m.iprwc == nil {
-		return 0, nil
+		return 0, fmt.Errorf("Uqda is not started")
 	}
-	n, _ := m.iprwc.Read(buf)
-	return n, nil
+	return m.iprwc.Read(buf)
 }
 
-// Stop the mobile Uqda instance
+// Stop shuts down the mobile Uqda instance.
 func (m *Uqda) Stop() error {
 	logger := log.New(m.log, "", 0)
 	logger.EnableLevel("info")
@@ -183,16 +190,18 @@ func (m *Uqda) Stop() error {
 		}
 	}
 	logger.Infof("Stopping Uqda core %s", "")
-	m.core.Stop()
+	if m.core != nil {
+		m.core.Stop()
+	}
 	return nil
 }
 
-// Retry resets the peer connection timer and tries to dial them immediately.
+// RetryPeersNow resets peer backoff timers and dials immediately.
 func (m *Uqda) RetryPeersNow() {
 	m.core.RetryPeersNow()
 }
 
-// GenerateConfigJSON generates mobile-friendly configuration in JSON format
+// GenerateConfigJSON returns a mobile-friendly JSON configuration.
 func GenerateConfigJSON() []byte {
 	nc := config.GenerateConfig()
 	nc.IfName = "none"
@@ -202,28 +211,29 @@ func GenerateConfigJSON() []byte {
 	return nil
 }
 
-// GetAddressString gets the node's IPv6 address
+// GetAddressString returns the node's IPv6 address.
 func (m *Uqda) GetAddressString() string {
 	ip := m.core.Address()
 	return ip.String()
 }
 
-// GetSubnetString gets the node's IPv6 subnet in CIDR notation
+// GetSubnetString returns the node's IPv6 subnet in CIDR notation.
 func (m *Uqda) GetSubnetString() string {
 	subnet := m.core.Subnet()
 	return subnet.String()
 }
 
-// GetPublicKeyString gets the node's public key in hex form
+// GetPublicKeyString returns the node's hexadecimal public key.
 func (m *Uqda) GetPublicKeyString() string {
 	return hex.EncodeToString(m.core.GetSelf().Key)
 }
 
-// GetRoutingEntries gets the number of entries in the routing table
+// GetRoutingEntries returns the routing-table entry count.
 func (m *Uqda) GetRoutingEntries() int {
 	return int(m.core.GetSelf().RoutingEntries)
 }
 
+// GetPeersJSON returns current peer state as JSON.
 func (m *Uqda) GetPeersJSON() (result string) {
 	peers := []struct {
 		core.PeerInfo
@@ -244,25 +254,24 @@ func (m *Uqda) GetPeersJSON() (result string) {
 	}
 	if res, err := json.Marshal(peers); err == nil {
 		return string(res)
-	} else {
-		return "{}"
 	}
+	return "{}"
 }
 
+// GetPathsJSON returns current path state as JSON.
 func (m *Uqda) GetPathsJSON() (result string) {
 	if res, err := json.Marshal(m.core.GetPaths()); err == nil {
 		return string(res)
-	} else {
-		return "{}"
 	}
+	return "{}"
 }
 
+// GetTreeJSON returns the current routing tree as JSON.
 func (m *Uqda) GetTreeJSON() (result string) {
 	if res, err := json.Marshal(m.core.GetTree()); err == nil {
 		return string(res)
-	} else {
-		return "{}"
 	}
+	return "{}"
 }
 
 // GetMTU returns the configured node MTU. This must be called AFTER Start.
@@ -270,16 +279,19 @@ func (m *Uqda) GetMTU() int {
 	return int(m.core.MTU())
 }
 
+// GetVersion returns the machine-readable Uqda release version.
 func GetVersion() string {
 	return version.BuildVersion()
 }
 
+// ConfigSummary contains identity information derived from a configuration.
 type ConfigSummary struct {
 	PublicKey   string
 	IPv6Address string
 	IPv6Subnet  string
 }
 
+// SummaryForConfig validates a configuration and returns its public identity.
 func SummaryForConfig(b []byte) *ConfigSummary {
 	cfg := config.GenerateConfig()
 	if err := cfg.UnmarshalHJSON(b); err != nil {

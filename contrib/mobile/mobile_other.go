@@ -4,6 +4,7 @@ package mobile
 
 import "fmt"
 
+// MobileLogger forwards Uqda logs to the embedding application.
 type MobileLogger struct {
 }
 

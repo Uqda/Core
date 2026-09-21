@@ -22,6 +22,7 @@ type platformDefaultParameters struct {
 	DefaultIfName string
 }
 
+// GetDefaults returns configuration defaults for the target platform.
 func GetDefaults() platformDefaultParameters {
 	defaults := getDefaults()
 	if defaultConfig != "" {

@@ -18,6 +18,7 @@ import (
 	"github.com/Uqda/Core/src/tun"
 )
 
+// MobileLogger forwards Uqda logs to the Apple unified log.
 type MobileLogger struct {
 }
 

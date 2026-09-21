@@ -39,8 +39,26 @@ type node struct {
 	admin     *admin.AdminSocket
 }
 
-// The main function is responsible for configuring and starting Uqda Core.
+func (n *node) stop() {
+	if n.admin != nil {
+		_ = n.admin.Stop()
+	}
+	if n.multicast != nil {
+		_ = n.multicast.Stop()
+	}
+	if n.tun != nil {
+		_ = n.tun.Stop()
+	}
+	if n.core != nil {
+		n.core.Stop()
+	}
+}
+
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	genconf := flag.Bool("genconf", false, "print a new config to stdout")
 	useconf := flag.Bool("useconf", false, "read HJSON/JSON config from stdin")
 	useconffile := flag.String("useconffile", "", "read HJSON/JSON config from specified file path")
@@ -72,6 +90,7 @@ func main() {
 		logger = log.New(os.Stdout, "", log.Flags())
 
 	case "syslog":
+		//lint:ignore SA4023 go-syslog's Windows stub always returns an error; supported platforms return a usable logger.
 		if syslogger, err := gsyslog.NewLogger(gsyslog.LOG_NOTICE, "DAEMON", version.BuildName()); err == nil {
 			logger = log.New(syslogger, "", log.Flags()&^(log.Ldate|log.Ltime))
 		}
@@ -96,27 +115,33 @@ func main() {
 	switch {
 	case *ver:
 		fmt.Println(version.DisplayName())
-		return
+		return 0
 
 	case *autoconf:
-		// Use an autoconf-generated config, this will give us random keys and
-		// port numbers, and will use an automatically selected TUN interface.
+		// Generate an ephemeral identity and select ports and TUN defaults.
 
 	case *useconf:
 		if _, err := cfg.ReadFrom(os.Stdin); err != nil {
-			panic(err)
+			logger.Errorln("Unable to read configuration from standard input:", err)
+			return 1
 		}
 
 	case *useconffile != "":
 		warnIfConfigFilePermissionsAreUnsafe(*useconffile, logger)
 		f, err := os.Open(*useconffile)
 		if err != nil {
-			panic(err)
+			logger.Errorln("Unable to open configuration file:", err)
+			return 1
 		}
 		if _, err := cfg.ReadFrom(f); err != nil {
-			panic(err)
+			_ = f.Close()
+			logger.Errorln("Unable to read configuration file:", err)
+			return 1
 		}
-		_ = f.Close()
+		if err := f.Close(); err != nil {
+			logger.Errorln("Unable to close configuration file:", err)
+			return 1
+		}
 
 	case *genconf:
 		cfg.AdminListen = ""
@@ -127,10 +152,11 @@ func main() {
 			bs, err = hjson.Marshal(cfg)
 		}
 		if err != nil {
-			panic(err)
+			logger.Errorln("Unable to encode generated configuration:", err)
+			return 1
 		}
 		fmt.Println(string(bs))
-		return
+		return 0
 
 	default:
 		fmt.Println("Usage:")
@@ -139,7 +165,15 @@ func main() {
 		if *getaddr || *getsnet {
 			fmt.Println("\nError: You need to specify some config data using -useconf or -useconffile.")
 		}
-		return
+		return 0
+	}
+
+	if problems := validateConfig(cfg); len(problems) > 0 {
+		fmt.Fprintln(os.Stderr, "Configuration is invalid:")
+		for _, problem := range problems {
+			fmt.Fprintln(os.Stderr, " -", problem)
+		}
+		return 1
 	}
 
 	if cfg.PrivateKeyPath != "" {
@@ -154,7 +188,7 @@ func main() {
 		addr := address.AddrForKey(publicKey)
 		ip := net.IP(addr[:])
 		fmt.Println(ip.String())
-		return
+		return 0
 
 	case *getsnet:
 		snet := address.SubnetForKey(publicKey)
@@ -163,22 +197,15 @@ func main() {
 			Mask: net.CIDRMask(len(snet)*8, 128),
 		}
 		fmt.Println(ipnet.String())
-		return
+		return 0
 
 	case *getpkey:
 		fmt.Println(hex.EncodeToString(publicKey))
-		return
+		return 0
 
 	case *checkconf:
-		if problems := validateConfig(cfg); len(problems) > 0 {
-			fmt.Println("Configuration is invalid:")
-			for _, p := range problems {
-				fmt.Println(" -", p)
-			}
-			os.Exit(1)
-		}
 		fmt.Println("Configuration is valid.")
-		return
+		return 0
 
 	case *normaliseconf:
 		cfg.AdminListen = ""
@@ -192,18 +219,20 @@ func main() {
 			bs, err = hjson.Marshal(cfg)
 		}
 		if err != nil {
-			panic(err)
+			logger.Errorln("Unable to encode normalized configuration:", err)
+			return 1
 		}
 		fmt.Println(string(bs))
-		return
+		return 0
 
 	case *exportkey:
 		pem, err := cfg.MarshalPEMPrivateKey()
 		if err != nil {
-			panic(err)
+			logger.Errorln("Unable to export the private key:", err)
+			return 1
 		}
 		fmt.Println(string(pem))
-		return
+		return 0
 	}
 
 	n := &node{}
@@ -240,12 +269,14 @@ func main() {
 		for _, allowed := range cfg.AllowedPublicKeys {
 			k, err := hex.DecodeString(allowed)
 			if err != nil {
-				panic(err)
+				logger.Errorln("Invalid allowed public key:", err)
+				return 1
 			}
 			options = append(options, core.AllowedPublicKey(k[:]))
 		}
 		if n.core, err = core.New(cfg.Certificate, logger, options...); err != nil {
-			panic(err)
+			logger.Errorln("Unable to start Uqda core:", err)
+			return 1
 		}
 		address, subnet := n.core.Address(), n.core.Subnet()
 		logger.Printf("Your public key is %s", hex.EncodeToString(n.core.PublicKey()))
@@ -262,7 +293,9 @@ func main() {
 			options = append(options, admin.LogLookups{})
 		}
 		if n.admin, err = admin.New(n.core, logger, options...); err != nil {
-			panic(err)
+			n.stop()
+			logger.Errorln("Unable to start the admin listener:", err)
+			return 1
 		}
 		if n.admin != nil {
 			n.admin.SetupAdminHandlers()
@@ -273,17 +306,25 @@ func main() {
 	{
 		options := []multicast.SetupOption{}
 		for _, intf := range cfg.MulticastInterfaces {
+			matcher, err := regexp.Compile(intf.Regex)
+			if err != nil {
+				logger.Errorln("Invalid multicast interface regex:", err)
+				n.stop()
+				return 1
+			}
 			options = append(options, multicast.MulticastInterface{
-				Regex:    regexp.MustCompile(intf.Regex),
+				Regex:    matcher,
 				Beacon:   intf.Beacon,
 				Listen:   intf.Listen,
 				Port:     intf.Port,
-				Priority: uint8(intf.Priority),
+				Priority: uint8(intf.Priority), // #nosec G115 -- validateConfig rejects values above 255.
 				Password: intf.Password,
 			})
 		}
 		if n.multicast, err = multicast.New(n.core, logger, options...); err != nil {
-			panic(err)
+			n.stop()
+			logger.Errorln("Unable to start multicast discovery:", err)
+			return 1
 		}
 		if n.admin != nil && n.multicast != nil {
 			n.multicast.SetupAdminHandlers(n.admin)
@@ -297,26 +338,29 @@ func main() {
 			tun.InterfaceMTU(cfg.IfMTU),
 		}
 		if n.tun, err = tun.New(ipv6rwc.NewReadWriteCloser(n.core), logger, options...); err != nil {
-			panic(err)
+			n.stop()
+			logger.Errorln("Unable to start the TUN interface:", err)
+			return 1
 		}
 		if n.admin != nil && n.tun != nil {
 			n.tun.SetupAdminHandlers(n.admin)
 		}
 	}
 
-	//Windows service shutdown
+	// Windows services invoke this callback during shutdown.
 	minwinsvc.SetOnExit(func() {
 		logger.Infof("Shutting down service ...")
 		cancel()
-		// Wait for all parts to shutdown properly
+		// Wait until the main shutdown path completes.
 		<-done
 	})
 
-	// Change user if requested
 	if *chuserto != "" {
 		err = chuser(*chuserto, cfg.AdminListen)
 		if err != nil {
-			panic(err)
+			n.stop()
+			logger.Errorln("Unable to change process user:", err)
+			return 1
 		}
 	}
 
@@ -332,23 +376,27 @@ func main() {
 		promises = append(promises, "mcast")
 	}
 	if err := protect.Pledge(strings.Join(promises, " ")); err != nil {
-		panic(fmt.Sprintf("pledge: %v: %v", promises, err))
+		n.stop()
+		logger.Errorf("Unable to apply process restrictions %v: %v", promises, err)
+		return 1
 	}
 
 	if notifyFd != nil && *notifyFd > 0 {
 		f := os.NewFile(uintptr(*notifyFd), "notifyfd")
-		_, _ = f.Write([]byte{0x0a})
-		f.Close()
+		if _, err := f.Write([]byte{0x0a}); err != nil {
+			logger.Warnln("Unable to notify service manager:", err)
+		}
+		if err := f.Close(); err != nil {
+			logger.Warnln("Unable to close service-manager notification descriptor:", err)
+		}
 	}
 
 	// Block until we are told to shut down.
 	<-ctx.Done()
 
 	// Shut down the node.
-	_ = n.admin.Stop()
-	_ = n.multicast.Stop()
-	_ = n.tun.Stop()
-	n.core.Stop()
+	n.stop()
+	return 0
 }
 
 // warnIfConfigFilePermissionsAreUnsafe logs a warning (never a fatal error -

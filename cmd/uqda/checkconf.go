@@ -2,25 +2,39 @@ package main
 
 import (
 	"crypto/ed25519"
+	"encoding/hex"
 	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
 
+	"github.com/Uqda/Core/src/address"
 	"github.com/Uqda/Core/src/config"
 	"github.com/Uqda/Core/src/core"
 )
 
-// validateConfig checks a parsed configuration for problems that would
-// otherwise only surface at daemon startup - in the case of a malformed
-// MulticastInterfaces regex, as a panic (main() below compiles it with
-// regexp.MustCompile) rather than a clean error. It returns a
-// human-readable description of each problem found, or nil if none were.
+// validateConfig returns human-readable descriptions of configuration errors.
 func validateConfig(cfg *config.NodeConfig) []string {
 	var problems []string
 
 	if len(cfg.PrivateKey) != ed25519.PrivateKeySize {
 		problems = append(problems, fmt.Sprintf("private key is %d bytes, expected %d", len(cfg.PrivateKey), ed25519.PrivateKeySize))
+	} else {
+		publicKey := ed25519.PrivateKey(cfg.PrivateKey).Public().(ed25519.PublicKey)
+		if address.AddrForKey(publicKey) == nil {
+			problems = append(problems, "private key produces an unrepresentable network address")
+		}
+	}
+
+	for _, encoded := range cfg.AllowedPublicKeys {
+		key, err := hex.DecodeString(encoded)
+		if err != nil {
+			problems = append(problems, fmt.Sprintf("AllowedPublicKeys entry is not valid hexadecimal: %s", err))
+			continue
+		}
+		if len(key) != ed25519.PublicKeySize {
+			problems = append(problems, fmt.Sprintf("AllowedPublicKeys entry is %d bytes, expected %d", len(key), ed25519.PublicKeySize))
+		}
 	}
 
 	for _, raw := range cfg.Listen {
@@ -60,7 +74,11 @@ func validateConfig(cfg *config.NodeConfig) []string {
 	for _, intf := range cfg.MulticastInterfaces {
 		if _, err := regexp.Compile(intf.Regex); err != nil {
 			problems = append(problems, fmt.Sprintf(
-				"MulticastInterfaces regex %q: %s (this would panic at daemon startup via regexp.MustCompile, not just fail to match)", intf.Regex, err))
+				"MulticastInterfaces regex %q: %s", intf.Regex, err))
+		}
+		if intf.Priority > 255 {
+			problems = append(problems, fmt.Sprintf(
+				"MulticastInterfaces priority %d is outside the supported range 0-255", intf.Priority))
 		}
 	}
 

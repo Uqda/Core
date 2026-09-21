@@ -78,10 +78,30 @@ func TestValidateConfigRejectsInvalidMulticastRegex(t *testing.T) {
 	if len(problems) != 1 || !strings.Contains(problems[0], "MulticastInterfaces") {
 		t.Fatalf("expected exactly one MulticastInterfaces problem, got: %v", problems)
 	}
-	// This specific case matters because main() later does
-	// regexp.MustCompile(intf.Regex) unconditionally - an invalid regex
-	// here would otherwise be a panic at daemon startup, not a clean error.
-	if !strings.Contains(problems[0], "panic") {
-		t.Fatalf("expected the problem message to warn about the startup panic, got: %v", problems)
+}
+
+func TestValidateConfigRejectsOutOfRangeMulticastPriority(t *testing.T) {
+	cfg := config.GenerateConfig()
+	cfg.MulticastInterfaces = []config.MulticastInterfaceConfig{{Regex: ".*", Priority: 256}}
+	problems := validateConfig(cfg)
+	if len(problems) != 1 || !strings.Contains(problems[0], "0-255") {
+		t.Fatalf("expected an out-of-range priority error, got: %v", problems)
+	}
+}
+
+func TestValidateConfigRejectsInvalidAllowedPublicKeys(t *testing.T) {
+	cfg := config.GenerateConfig()
+	cfg.AllowedPublicKeys = []string{"not-hex", "abcd"}
+	problems := validateConfig(cfg)
+	if len(problems) != 2 {
+		t.Fatalf("expected two allowed-key errors, got: %v", problems)
+	}
+}
+
+func TestValidateConfigRejectsUnrepresentableIdentity(t *testing.T) {
+	cfg := config.GenerateConfig()
+	cfg.PrivateKey = make([]byte, 64)
+	if problems := validateConfig(cfg); len(problems) != 1 || !strings.Contains(problems[0], "unrepresentable") {
+		t.Fatalf("expected an unrepresentable identity error, got: %v", problems)
 	}
 }

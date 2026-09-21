@@ -1,19 +1,5 @@
-/*
-The config package contains structures related to the configuration of a
-Uqda node.
-
-The configuration contains, amongst other things, encryption keys which are used
-to derive a node's identity, information about peerings and node information
-that is shared with the network. There are also some module-specific options
-related to TUN, multicast and the admin socket.
-
-In order for a node to maintain the same identity across restarts, you should
-persist the configuration onto the filesystem or into some configuration storage
-so that the encryption keys (and therefore the node ID) do not change.
-
-Note that Uqda will automatically populate sane defaults for any
-configuration option that is not provided.
-*/
+// Package config parses and generates Uqda node configuration. Persistent
+// configurations must retain their private key to preserve node identity.
 package config
 
 import (
@@ -57,6 +43,7 @@ type NodeConfig struct {
 	NodeInfo            map[string]interface{}     `comment:"Optional nodeinfo. This must be a { \"key\": \"value\", ... } map\nor set as null. This is entirely optional but, if set, is visible\nto the whole network on request."`
 }
 
+// MulticastInterfaceConfig controls discovery on matching network interfaces.
 type MulticastInterfaceConfig struct {
 	Regex    string
 	Beacon   bool
@@ -66,13 +53,10 @@ type MulticastInterfaceConfig struct {
 	Password string
 }
 
-// Generates default configuration and returns a pointer to the resulting
-// NodeConfig. This is used when outputting the -genconf parameter and also when
-// using -autoconf.
+// GenerateConfig returns a configuration populated with platform defaults and
+// a new identity.
 func GenerateConfig() *NodeConfig {
-	// Get the defaults for the platform.
 	defaults := GetDefaults()
-	// Create a node configuration and populate it.
 	cfg := new(NodeConfig)
 	cfg.NewPrivateKey()
 	cfg.Listen = []string{}
@@ -90,6 +74,8 @@ func GenerateConfig() *NodeConfig {
 	return cfg
 }
 
+// ReadFrom replaces cfg with configuration parsed from r. Missing settings use
+// platform defaults, but persistent identity is always required.
 func (cfg *NodeConfig) ReadFrom(r io.Reader) (int64, error) {
 	conf, err := io.ReadAll(r)
 	if err != nil {
@@ -118,6 +104,7 @@ func (cfg *NodeConfig) ReadFrom(r io.Reader) (int64, error) {
 	return n, nil
 }
 
+// UnmarshalHJSON parses HJSON or JSON into cfg and validates its identity.
 func (cfg *NodeConfig) UnmarshalHJSON(b []byte) error {
 	if err := hjson.Unmarshal(b, cfg); err != nil {
 		return err
@@ -158,6 +145,8 @@ func (cfg *NodeConfig) postprocessConfig() error {
 // RFC5280 section 4.1.2.5
 var notAfterNeverExpires = time.Date(9999, time.December, 31, 23, 59, 59, 0, time.UTC)
 
+// GenerateSelfSignedCertificate derives the transport certificate from cfg's
+// persistent identity key.
 func (cfg *NodeConfig) GenerateSelfSignedCertificate() error {
 	key, err := cfg.MarshalPEMPrivateKey()
 	if err != nil {
@@ -175,6 +164,7 @@ func (cfg *NodeConfig) GenerateSelfSignedCertificate() error {
 	return nil
 }
 
+// MarshalPEMCertificate encodes cfg's self-signed certificate as PEM.
 func (cfg *NodeConfig) MarshalPEMCertificate() ([]byte, error) {
 	privateKey := ed25519.PrivateKey(cfg.PrivateKey)
 	publicKey := privateKey.Public().(ed25519.PublicKey)
@@ -203,6 +193,7 @@ func (cfg *NodeConfig) MarshalPEMCertificate() ([]byte, error) {
 	return pem.EncodeToMemory(block), nil
 }
 
+// NewPrivateKey replaces cfg's identity with a newly generated Ed25519 key.
 func (cfg *NodeConfig) NewPrivateKey() {
 	_, spriv, err := ed25519.GenerateKey(nil)
 	if err != nil {
@@ -211,6 +202,7 @@ func (cfg *NodeConfig) NewPrivateKey() {
 	cfg.PrivateKey = KeyBytes(spriv)
 }
 
+// MarshalPEMPrivateKey encodes cfg's identity key as PKCS#8 PEM.
 func (cfg *NodeConfig) MarshalPEMPrivateKey() ([]byte, error) {
 	b, err := x509.MarshalPKCS8PrivateKey(ed25519.PrivateKey(cfg.PrivateKey))
 	if err != nil {
@@ -223,6 +215,7 @@ func (cfg *NodeConfig) MarshalPEMPrivateKey() ([]byte, error) {
 	return pem.EncodeToMemory(block), nil
 }
 
+// UnmarshalPEMPrivateKey loads an Ed25519 PKCS#8 PEM identity into cfg.
 func (cfg *NodeConfig) UnmarshalPEMPrivateKey(b []byte) error {
 	p, _ := pem.Decode(b)
 	if p == nil {
@@ -246,12 +239,15 @@ func (cfg *NodeConfig) UnmarshalPEMPrivateKey(b []byte) error {
 	return nil
 }
 
+// KeyBytes marshals private-key bytes as hexadecimal JSON text.
 type KeyBytes []byte
 
+// MarshalJSON implements json.Marshaler.
 func (k KeyBytes) MarshalJSON() ([]byte, error) {
 	return json.Marshal(hex.EncodeToString(k))
 }
 
+// UnmarshalJSON implements json.Unmarshaler.
 func (k *KeyBytes) UnmarshalJSON(b []byte) error {
 	var s string
 	var err error

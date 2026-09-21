@@ -4,6 +4,7 @@ package mobile
 
 import "log"
 
+// MobileLogger forwards Uqda logs to Android logging.
 type MobileLogger struct{}
 
 func (nsl MobileLogger) Write(p []byte) (n int, err error) {
