@@ -17,7 +17,6 @@ import (
 	"suah.dev/protect"
 
 	"github.com/gologme/log"
-	gsyslog "github.com/hashicorp/go-syslog"
 	"github.com/hjson/hjson-go/v4"
 	"github.com/kardianos/minwinsvc"
 
@@ -90,10 +89,7 @@ func run() int {
 		logger = log.New(os.Stdout, "", log.Flags())
 
 	case "syslog":
-		//lint:ignore SA4023 go-syslog's Windows stub always returns an error; supported platforms return a usable logger.
-		if syslogger, err := gsyslog.NewLogger(gsyslog.LOG_NOTICE, "DAEMON", version.BuildName()); err == nil {
-			logger = log.New(syslogger, "", log.Flags()&^(log.Ldate|log.Ltime))
-		}
+		logger = newSystemLogger()
 
 	default:
 		if logfd, err := os.OpenFile(*logto, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil {
