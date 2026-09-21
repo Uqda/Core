@@ -5,11 +5,13 @@ import (
 	"net/url"
 )
 
+// AddPeerRequest describes a persistent peer to add.
 type AddPeerRequest struct {
 	Uri   string `json:"uri"`
 	Sintf string `json:"interface,omitempty"`
 }
 
+// AddPeerResponse is returned after a peer is added.
 type AddPeerResponse struct{}
 
 func (a *AdminSocket) addPeerHandler(req *AddPeerRequest, _ *AddPeerResponse) error {

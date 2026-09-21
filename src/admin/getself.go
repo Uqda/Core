@@ -6,8 +6,10 @@ import (
 	"github.com/Uqda/Core/src/version"
 )
 
+// GetSelfRequest requests local node state.
 type GetSelfRequest struct{}
 
+// GetSelfResponse describes local node state.
 type GetSelfResponse struct {
 	BuildName      string `json:"build_name"`
 	BuildVersion   string `json:"build_version"`

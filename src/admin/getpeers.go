@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"cmp"
 	"encoding/hex"
 	"net"
 	"slices"
@@ -10,14 +11,17 @@ import (
 	"github.com/Uqda/Core/src/address"
 )
 
+// GetPeersRequest requests peer state with an optional sort order.
 type GetPeersRequest struct {
 	SortBy string `json:"sort"`
 }
 
+// GetPeersResponse contains the peer-state snapshot.
 type GetPeersResponse struct {
 	Peers []PeerEntry `json:"peers"`
 }
 
+// PeerEntry describes one configured or inbound peer.
 type PeerEntry struct {
 	URI           string        `json:"remote,omitempty"`
 	Up            bool          `json:"up"`
@@ -88,46 +92,46 @@ func sortByDefault(a, b PeerEntry) int {
 	if d := strings.Compare(a.PublicKey, b.PublicKey); d != 0 {
 		return d
 	}
-	if d := a.Priority - b.Priority; d != 0 {
-		return int(d)
+	if d := cmp.Compare(a.Priority, b.Priority); d != 0 {
+		return d
 	}
-	if d := a.Cost - b.Cost; d != 0 {
-		return int(d)
+	if d := cmp.Compare(a.Cost, b.Cost); d != 0 {
+		return d
 	}
-	if d := a.Uptime - b.Uptime; d != 0 {
-		return int(d)
+	if d := cmp.Compare(a.Uptime, b.Uptime); d != 0 {
+		return d
 	}
 	return 0
 }
 
 func sortByCost(a, b PeerEntry) int {
-	if d := a.Cost - b.Cost; d != 0 {
-		return int(d)
+	if d := cmp.Compare(a.Cost, b.Cost); d != 0 {
+		return d
 	}
 	if d := strings.Compare(a.PublicKey, b.PublicKey); d != 0 {
 		return d
 	}
-	if d := a.Priority - b.Priority; d != 0 {
-		return int(d)
+	if d := cmp.Compare(a.Priority, b.Priority); d != 0 {
+		return d
 	}
-	if d := a.Uptime - b.Uptime; d != 0 {
-		return int(d)
+	if d := cmp.Compare(a.Uptime, b.Uptime); d != 0 {
+		return d
 	}
 	return 0
 }
 
 func sortByUptime(a, b PeerEntry) int {
-	if d := a.Uptime - b.Uptime; d != 0 {
-		return int(d)
+	if d := cmp.Compare(a.Uptime, b.Uptime); d != 0 {
+		return d
 	}
 	if d := strings.Compare(a.PublicKey, b.PublicKey); d != 0 {
 		return d
 	}
-	if d := a.Priority - b.Priority; d != 0 {
-		return int(d)
+	if d := cmp.Compare(a.Priority, b.Priority); d != 0 {
+		return d
 	}
-	if d := a.Cost - b.Cost; d != 0 {
-		return int(d)
+	if d := cmp.Compare(a.Cost, b.Cost); d != 0 {
+		return d
 	}
 	return 0
 }

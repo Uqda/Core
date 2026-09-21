@@ -9,13 +9,16 @@ import (
 	"github.com/Uqda/Core/src/address"
 )
 
+// GetPathsRequest requests the routing-path snapshot.
 type GetPathsRequest struct {
 }
 
+// GetPathsResponse contains the routing-path snapshot.
 type GetPathsResponse struct {
 	Paths []PathEntry `json:"paths"`
 }
 
+// PathEntry describes a route to one public key.
 type PathEntry struct {
 	IPAddress string   `json:"address"`
 	PublicKey string   `json:"key"`

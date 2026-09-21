@@ -9,12 +9,15 @@ import (
 	"github.com/Uqda/Core/src/address"
 )
 
+// GetTreeRequest requests the routing-tree snapshot.
 type GetTreeRequest struct{}
 
+// GetTreeResponse contains the routing-tree snapshot.
 type GetTreeResponse struct {
 	Tree []TreeEntry `json:"tree"`
 }
 
+// TreeEntry describes one routing-tree entry.
 type TreeEntry struct {
 	IPAddress string `json:"address"`
 	PublicKey string `json:"key"`

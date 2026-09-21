@@ -8,15 +8,14 @@ import (
 	"net/url"
 	"os"
 	"sort"
-
 	"strings"
 	"time"
 
 	"github.com/Uqda/Core/src/core"
 )
 
-// TODO: Add authentication
-
+// AdminSocket serves the unauthenticated administrative API. Its listener must
+// be restricted to trusted local users or protected by an external control.
 type AdminSocket struct {
 	core     *core.Core
 	log      core.Logger
@@ -28,12 +27,14 @@ type AdminSocket struct {
 	}
 }
 
+// AdminSocketRequest is one JSON command submitted to the admin API.
 type AdminSocketRequest struct {
 	Name      string          `json:"request"`
 	Arguments json.RawMessage `json:"arguments,omitempty"`
 	KeepAlive bool            `json:"keepalive,omitempty"`
 }
 
+// AdminSocketResponse is one JSON response returned by the admin API.
 type AdminSocketResponse struct {
 	Status   string             `json:"status"`
 	Error    string             `json:"error,omitempty"`
@@ -47,10 +48,12 @@ type handler struct {
 	handler core.AddHandlerFunc // First is input map, second is output
 }
 
+// ListResponse contains the registered admin commands.
 type ListResponse struct {
 	List []ListEntry `json:"list"`
 }
 
+// ListEntry documents one registered admin command.
 type ListEntry struct {
 	Command     string   `json:"command"`
 	Description string   `json:"description"`
@@ -70,7 +73,7 @@ func (a *AdminSocket) AddHandler(name, desc string, args []string, handlerfunc c
 	return nil
 }
 
-// Init runs the initial admin setup.
+// New starts an AdminSocket for c. It returns nil when the listener is disabled.
 func New(c *core.Core, log core.Logger, opts ...SetupOption) (*AdminSocket, error) {
 	a := &AdminSocket{
 		core:     c,
@@ -156,6 +159,7 @@ func New(c *core.Core, log core.Logger, opts ...SetupOption) (*AdminSocket, erro
 	return a, a.core.SetAdmin(a)
 }
 
+// SetupAdminHandlers registers the built-in node administration commands.
 func (a *AdminSocket) SetupAdminHandlers() {
 	_ = a.AddHandler(
 		"getSelf", "Show details about this node", []string{},
@@ -257,15 +261,8 @@ func (a *AdminSocket) SetupAdminHandlers() {
 	)
 }
 
-// warnIfListeningPublicly logs a prominent warning if the admin socket is
-// bound to a TCP address other than loopback. The admin API has no
-// authentication of its own (see the TODO at the top of this file) - its
-// safety today comes entirely from listening locally by default (see
-// src/config/defaults_*.go) plus, on Unix-likes, the admin socket file's
-// own permissions. A non-loopback TCP bind means anyone who can reach that
-// address can fully control this node - add/remove peers, read routing and
-// session state - with no credential check at all, so an operator who
-// configures this deliberately should know exactly what they're accepting.
+// warnIfListeningPublicly warns when network reachability, rather than the
+// loopback boundary or Unix socket permissions, controls admin API access.
 func (a *AdminSocket) warnIfListeningPublicly() {
 	tcpAddr, ok := a.listener.Addr().(*net.TCPAddr)
 	if !ok || tcpAddr.IP.IsLoopback() {
@@ -279,10 +276,8 @@ func (a *AdminSocket) warnIfListeningPublicly() {
 func (a *AdminSocket) IsStarted() bool {
 	select {
 	case <-a.done:
-		// Not blocking, so we're not currently running
 		return false
 	default:
-		// Blocked, so we must have started
 		return true
 	}
 }
@@ -305,7 +300,7 @@ func (a *AdminSocket) Stop() error {
 
 // listen is run by start and manages API connections.
 func (a *AdminSocket) listen() {
-	defer a.listener.Close()
+	defer func() { _ = a.listener.Close() }()
 	for {
 		conn, err := a.listener.Accept()
 		if err == nil {
@@ -313,10 +308,8 @@ func (a *AdminSocket) listen() {
 		} else {
 			select {
 			case <-a.done:
-				// Not blocked, so we havent started or already stopped
 				return
 			default:
-				// Blocked, so we're supposed to keep running
 			}
 		}
 	}
@@ -378,6 +371,7 @@ func (a *AdminSocket) handleRequest(conn net.Conn) {
 	}
 }
 
+// DataUnit formats byte counts for human-readable control output.
 type DataUnit uint64
 
 func (d DataUnit) String() string {

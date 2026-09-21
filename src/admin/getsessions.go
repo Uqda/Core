@@ -9,12 +9,15 @@ import (
 	"github.com/Uqda/Core/src/address"
 )
 
+// GetSessionsRequest requests the encrypted-session snapshot.
 type GetSessionsRequest struct{}
 
+// GetSessionsResponse contains the encrypted-session snapshot.
 type GetSessionsResponse struct {
 	Sessions []SessionEntry `json:"sessions"`
 }
 
+// SessionEntry describes one encrypted session.
 type SessionEntry struct {
 	IPAddress string   `json:"address"`
 	PublicKey string   `json:"key"`
