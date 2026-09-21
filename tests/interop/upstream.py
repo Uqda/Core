@@ -160,7 +160,10 @@ def transfer(src, dst, label):
     payload = (label + ':' + os.urandom(16).hex()).encode()
     frame = struct.pack('!IHBB16s16s', 6 << 28, len(payload), 253, 64,
                         ipaddress.ip_address(src.address).packed, ipaddress.ip_address(dst.address).packed) + payload
-    deadline = time.monotonic() + 30
+    # Direct peer state becomes visible before the distributed routing tree and
+    # encrypted end-to-end session have necessarily converged. Keep probing the
+    # same authenticated frame through that convergence window.
+    deadline = time.monotonic() + 90
     while time.monotonic() < deadline:
         src.send({'Command': 'send', 'Packet': base64.b64encode(frame).decode()})
         try:

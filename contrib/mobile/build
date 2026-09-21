@@ -5,6 +5,7 @@ set -ef
 [ ! -d contrib/mobile ] && (echo "Must run ./contrib/mobile/build [-i] [-a] from the repository top level folder"; exit 1)
 
 GOVER=$(go version | { read _ _ version _; echo ${version#go}; })
+MOBILE_VERSION=${UQDA_MOBILE_VERSION:-latest}
 LDFLAGS=""
 ARGS="-v"
 
@@ -50,7 +51,7 @@ fi
 
 if [ $IOS ]; then
   echo "Building framework for iOS"
-  go get golang.org/x/mobile/bind
+  go get "golang.org/x/mobile/bind@$MOBILE_VERSION"
   gomobile bind \
     -target ios,macos -tags mobile -o Uqda.xcframework \
     -ldflags="$LDFLAGS $STRIP" -gcflags="$GCFLAGS" \
@@ -59,7 +60,7 @@ fi
 
 if [ $ANDROID ]; then
   echo "Building aar for Android"
-  go get golang.org/x/mobile/bind
+  go get "golang.org/x/mobile/bind@$MOBILE_VERSION"
   gomobile bind \
     -target android -androidapi 21 -tags mobile -o uqda.aar \
     -ldflags="$LDFLAGS $STRIP" -gcflags="$GCFLAGS" \
