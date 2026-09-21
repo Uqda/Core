@@ -15,7 +15,7 @@ import (
 // This is the version-specific metadata exchanged at the start of a connection.
 // It begins with the four-byte "meta" preamble and a uint16 payload length.
 // Length-delimited fields carry protocol versions, the public key and priority.
-type version_metadata struct {
+type versionMetadata struct {
 	majorVer  uint16
 	minorVer  uint16
 	publicKey ed25519.PublicKey
@@ -23,7 +23,9 @@ type version_metadata struct {
 }
 
 const (
+	// ProtocolVersionMajor identifies the major Yggdrasil wire protocol version.
 	ProtocolVersionMajor uint16 = 0
+	// ProtocolVersionMinor identifies the minor Yggdrasil wire protocol version.
 	ProtocolVersionMinor uint16 = 5
 )
 
@@ -40,22 +42,25 @@ type handshakeError string
 
 func (e handshakeError) Error() string { return string(e) }
 
-const ErrHandshakeInvalidPreamble = handshakeError("invalid handshake: remote peer did not send a Yggdrasil protocol preamble")
-const ErrHandshakeInvalidLength = handshakeError("invalid handshake length, possible version mismatch")
-const ErrHandshakeInvalidPassword = handshakeError("invalid password supplied, check your config")
-const ErrHandshakeHashFailure = handshakeError("invalid hash length")
-const ErrHandshakeIncorrectPassword = handshakeError("password does not match remote side")
+// Handshake errors describe rejected peer metadata.
+const (
+	ErrHandshakeInvalidPreamble   = handshakeError("invalid handshake: remote peer did not send a Yggdrasil protocol preamble")
+	ErrHandshakeInvalidLength     = handshakeError("invalid handshake length, possible version mismatch")
+	ErrHandshakeInvalidPassword   = handshakeError("invalid password supplied, check your config")
+	ErrHandshakeHashFailure       = handshakeError("invalid hash length")
+	ErrHandshakeIncorrectPassword = handshakeError("password does not match remote side")
+)
 
-// Gets a base metadata with no keys set, but with the correct version numbers.
-func version_getBaseMetadata() version_metadata {
-	return version_metadata{
+// versionGetBaseMetadata returns metadata with the supported protocol version.
+func versionGetBaseMetadata() versionMetadata {
+	return versionMetadata{
 		majorVer: ProtocolVersionMajor,
 		minorVer: ProtocolVersionMinor,
 	}
 }
 
-// Encodes version metadata into its wire format.
-func (m *version_metadata) encode(privateKey ed25519.PrivateKey, password []byte) ([]byte, error) {
+// encode serializes version metadata in its wire format.
+func (m *versionMetadata) encode(privateKey ed25519.PrivateKey, password []byte) ([]byte, error) {
 	bs := make([]byte, 0, 64)
 	bs = append(bs, 'm', 'e', 't', 'a')
 	bs = append(bs, 0, 0) // Remaining message length
@@ -94,8 +99,8 @@ func (m *version_metadata) encode(privateKey ed25519.PrivateKey, password []byte
 	return bs, nil
 }
 
-// Decodes version metadata from its wire format into the struct.
-func (m *version_metadata) decode(r io.Reader, password []byte) error {
+// decode parses version metadata from its wire format.
+func (m *versionMetadata) decode(r io.Reader, password []byte) error {
 	bh := [6]byte{}
 	if _, err := io.ReadFull(r, bh[:]); err != nil {
 		return err
@@ -168,8 +173,8 @@ func (m *version_metadata) decode(r io.Reader, password []byte) error {
 	return nil
 }
 
-// Checks that the "meta" bytes and the version numbers are the expected values.
-func (m *version_metadata) check() bool {
+// check reports whether the peer metadata is compatible and complete.
+func (m *versionMetadata) check() bool {
 	switch {
 	case m.majorVer != ProtocolVersionMajor:
 		return false

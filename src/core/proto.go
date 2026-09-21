@@ -129,7 +129,7 @@ func (p *protoHandler) _handleGetSelfRequest(key keyArray) {
 		"key":             hex.EncodeToString(self.Key[:]),
 		"routing_entries": fmt.Sprintf("%v", self.RoutingEntries),
 	}
-	bs, err := json.Marshal(res) // FIXME this puts keys in base64, not hex
+	bs, err := json.Marshal(res)
 	if err != nil {
 		return
 	}
@@ -232,12 +232,12 @@ func (p *protoHandler) _handleGetTreeResponse(key keyArray, bs []byte) {
 	}
 }
 
-// Admin socket stuff for "Get self"
-
+// DebugGetSelfRequest identifies the remote node to query.
 type DebugGetSelfRequest struct {
 	Key string `json:"key"`
 }
 
+// DebugGetSelfResponse maps a node address to its self response.
 type DebugGetSelfResponse map[string]interface{}
 
 func (p *protoHandler) getSelfHandler(in json.RawMessage) (interface{}, error) {
@@ -267,18 +267,22 @@ func (p *protoHandler) getSelfHandler(in json.RawMessage) (interface{}, error) {
 		if err := msg.UnmarshalJSON(info); err != nil {
 			return nil, err
 		}
-		ip := net.IP(address.AddrForKey(kbs)[:])
+		addr := address.AddrForKey(kbs)
+		if addr == nil {
+			return nil, fmt.Errorf("public key cannot be represented as a network address")
+		}
+		ip := net.IP(addr[:])
 		res := DebugGetSelfResponse{ip.String(): msg}
 		return res, nil
 	}
 }
 
-// Admin socket stuff for "Get peers"
-
+// DebugGetPeersRequest identifies the remote node to query.
 type DebugGetPeersRequest struct {
 	Key string `json:"key"`
 }
 
+// DebugGetPeersResponse maps a node address to its peer response.
 type DebugGetPeersResponse map[string]interface{}
 
 func (p *protoHandler) getPeersHandler(in json.RawMessage) (interface{}, error) {
@@ -318,18 +322,22 @@ func (p *protoHandler) getPeersHandler(in json.RawMessage) (interface{}, error) 
 		if err := msg.UnmarshalJSON(js); err != nil {
 			return nil, err
 		}
-		ip := net.IP(address.AddrForKey(kbs)[:])
+		addr := address.AddrForKey(kbs)
+		if addr == nil {
+			return nil, fmt.Errorf("public key cannot be represented as a network address")
+		}
+		ip := net.IP(addr[:])
 		res := DebugGetPeersResponse{ip.String(): msg}
 		return res, nil
 	}
 }
 
-// Admin socket stuff for "Get Tree"
-
+// DebugGetTreeRequest identifies the remote node to query.
 type DebugGetTreeRequest struct {
 	Key string `json:"key"`
 }
 
+// DebugGetTreeResponse maps a node address to its tree response.
 type DebugGetTreeResponse map[string]interface{}
 
 func (p *protoHandler) getTreeHandler(in json.RawMessage) (interface{}, error) {
@@ -369,7 +377,11 @@ func (p *protoHandler) getTreeHandler(in json.RawMessage) (interface{}, error) {
 		if err := msg.UnmarshalJSON(js); err != nil {
 			return nil, err
 		}
-		ip := net.IP(address.AddrForKey(kbs)[:])
+		addr := address.AddrForKey(kbs)
+		if addr == nil {
+			return nil, fmt.Errorf("public key cannot be represented as a network address")
+		}
+		ip := net.IP(addr[:])
 		res := DebugGetTreeResponse{ip.String(): msg}
 		return res, nil
 	}

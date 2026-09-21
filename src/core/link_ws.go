@@ -67,7 +67,7 @@ func (s *wsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if c.Subprotocol() != "ygg-ws" {
-		c.Close(websocket.StatusPolicyViolation, "client must speak the ygg-ws subprotocol")
+		_ = c.Close(websocket.StatusPolicyViolation, "client must speak the ygg-ws subprotocol")
 		return
 	}
 
@@ -121,7 +121,6 @@ func (l *linkWS) dial(ctx context.Context, url *url.URL, info linkInfo, options 
 			HTTPClient: &http.Client{
 				Transport: &http.Transport{
 					Proxy:       http.ProxyFromEnvironment,
-					Dial:        dialer.Dial,
 					DialContext: dialer.DialContext,
 				},
 			},

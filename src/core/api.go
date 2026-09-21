@@ -14,11 +14,13 @@ import (
 	"github.com/Uqda/Core/src/address"
 )
 
+// SelfInfo describes the local node identity and routing-table size.
 type SelfInfo struct {
 	Key            ed25519.PublicKey
 	RoutingEntries uint64
 }
 
+// PeerInfo describes one configured or inbound peer connection.
 type PeerInfo struct {
 	URI           string
 	Up            bool
@@ -39,20 +41,21 @@ type PeerInfo struct {
 	Latency       time.Duration
 }
 
+// TreeEntryInfo describes one routing-tree entry.
 type TreeEntryInfo struct {
 	Key      ed25519.PublicKey
 	Parent   ed25519.PublicKey
 	Sequence uint64
-	//Port uint64
-	//Rest uint64
 }
 
+// PathEntryInfo describes a known path to a remote key.
 type PathEntryInfo struct {
 	Key      ed25519.PublicKey
 	Path     []uint64
 	Sequence uint64
 }
 
+// SessionInfo describes traffic counters for an encrypted session.
 type SessionInfo struct {
 	Key     ed25519.PublicKey
 	RXBytes uint64
@@ -60,6 +63,7 @@ type SessionInfo struct {
 	Uptime  time.Duration
 }
 
+// GetSelf returns local node state.
 func (c *Core) GetSelf() SelfInfo {
 	var self SelfInfo
 	s := c.PacketConn.PacketConn.Debug.GetSelf()
@@ -68,6 +72,7 @@ func (c *Core) GetSelf() SelfInfo {
 	return self
 }
 
+// GetPeers returns a snapshot of peer state.
 func (c *Core) GetPeers() []PeerInfo {
 	peers := []PeerInfo{}
 	conns := map[net.Conn]network.DebugPeerInfo{}
@@ -108,6 +113,7 @@ func (c *Core) GetPeers() []PeerInfo {
 	return peers
 }
 
+// GetTree returns a snapshot of the routing tree.
 func (c *Core) GetTree() []TreeEntryInfo {
 	var trees []TreeEntryInfo
 	ts := c.PacketConn.PacketConn.Debug.GetTree()
@@ -116,13 +122,12 @@ func (c *Core) GetTree() []TreeEntryInfo {
 		info.Key = t.Key
 		info.Parent = t.Parent
 		info.Sequence = t.Sequence
-		//info.Port = d.Port
-		//info.Rest = d.Rest
 		trees = append(trees, info)
 	}
 	return trees
 }
 
+// GetPaths returns a snapshot of known routing paths.
 func (c *Core) GetPaths() []PathEntryInfo {
 	var paths []PathEntryInfo
 	ps := c.PacketConn.PacketConn.Debug.GetPaths()
@@ -136,6 +141,7 @@ func (c *Core) GetPaths() []PathEntryInfo {
 	return paths
 }
 
+// GetSessions returns a snapshot of encrypted-session state.
 func (c *Core) GetSessions() []SessionInfo {
 	var sessions []SessionInfo
 	ss := c.Debug.GetSessions()
@@ -222,16 +228,17 @@ func (c *Core) CallPeer(u *url.URL, sintf string) error {
 	return c.links.add(u, sintf, linkTypeEphemeral)
 }
 
+// PublicKey returns the node's Ed25519 public key.
 func (c *Core) PublicKey() ed25519.PublicKey {
 	return c.public
 }
 
-// Hack to get the admin stuff working, TODO something cleaner
-
+// AddHandler is the admin-handler surface required by Core.
 type AddHandler interface {
 	AddHandler(name, desc string, args []string, handlerfunc AddHandlerFunc) error
 }
 
+// AddHandlerFunc handles one admin request.
 type AddHandlerFunc func(json.RawMessage) (interface{}, error)
 
 // SetAdmin must be called after Init and before Start.

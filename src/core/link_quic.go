@@ -87,7 +87,7 @@ func (l *linkQUIC) listen(ctx context.Context, url *url.URL, _ string) (net.List
 			qc, err := ql.Accept(ctx)
 			switch err {
 			case context.Canceled, context.DeadlineExceeded:
-				ql.Close()
+				_ = ql.Close()
 				fallthrough
 			case quic.ErrServerClosed:
 				return

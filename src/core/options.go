@@ -17,8 +17,7 @@ func (c *Core) _applyOption(opt SetupOption) (err error) {
 		err = c.links.add(u, v.SourceInterface, linkTypePersistent)
 		switch err {
 		case ErrLinkAlreadyConfigured:
-			// Don't return this error, otherwise we'll panic at startup
-			// if there are multiple of the same peer configured
+			// Repeated configuration entries are idempotent.
 			return nil
 		default:
 			return err
@@ -41,19 +40,33 @@ func (c *Core) _applyOption(opt SetupOption) (err error) {
 	return
 }
 
+// SetupOption configures a Core during construction.
 type SetupOption interface {
 	isSetupOption()
 }
 
+// ListenAddress adds an inbound listener URI.
 type ListenAddress string
+
+// Peer configures a persistent outbound peer.
 type Peer struct {
 	URI             string
 	SourceInterface string
 }
+
+// NodeInfo contains metadata shared with remote nodes.
 type NodeInfo map[string]interface{}
+
+// NodeInfoPrivacy controls whether default node metadata is shared.
 type NodeInfoPrivacy bool
+
+// AllowedPublicKey permits an inbound peer identity.
 type AllowedPublicKey ed25519.PublicKey
+
+// PeerFilter decides whether a remote IP is eligible for peering.
 type PeerFilter func(net.IP) bool
+
+// GroupPassword separates encrypted session traffic into a private group.
 type GroupPassword string
 
 func (a ListenAddress) isSetupOption()    {}

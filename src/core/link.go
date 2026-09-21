@@ -78,12 +78,14 @@ type linkOptions struct {
 	maxBackoff        time.Duration
 }
 
+// Listener wraps an active peer listener.
 type Listener struct {
 	listener net.Listener
 	ctx      context.Context
 	Cancel   context.CancelFunc
 }
 
+// Addr returns the listener's network address.
 func (l *Listener) Addr() net.Addr {
 	return l.listener.Addr()
 }
@@ -147,16 +149,19 @@ type linkError string
 
 func (e linkError) Error() string { return string(e) }
 
-const ErrLinkAlreadyConfigured = linkError("peer is already configured")
-const ErrLinkNotConfigured = linkError("peer is not configured")
-const ErrLinkPriorityInvalid = linkError("priority value is invalid")
-const ErrLinkPinnedKeyInvalid = linkError("pinned public key is invalid")
-const ErrLinkPasswordInvalid = linkError("invalid password supplied")
-const ErrLinkUnrecognisedSchema = linkError("link schema unknown")
-const ErrLinkMaxBackoffInvalid = linkError("max backoff duration invalid")
-const ErrLinkSNINotSupported = linkError("SNI not supported on this link type")
-const ErrLinkNoSuitableIPs = linkError("peer has no suitable addresses")
-const ErrLinkToSelf = linkError("node cannot connect to self")
+// Link configuration errors returned by peer and listener operations.
+const (
+	ErrLinkAlreadyConfigured  = linkError("peer is already configured")
+	ErrLinkNotConfigured      = linkError("peer is not configured")
+	ErrLinkPriorityInvalid    = linkError("priority value is invalid")
+	ErrLinkPinnedKeyInvalid   = linkError("pinned public key is invalid")
+	ErrLinkPasswordInvalid    = linkError("invalid password supplied")
+	ErrLinkUnrecognisedSchema = linkError("link schema unknown")
+	ErrLinkMaxBackoffInvalid  = linkError("max backoff duration invalid")
+	ErrLinkSNINotSupported    = linkError("SNI not supported on this link type")
+	ErrLinkNoSuitableIPs      = linkError("peer has no suitable addresses")
+	ErrLinkToSelf             = linkError("node cannot connect to self")
+)
 
 // jitteredBackoffDuration caps duration at max, then applies "equal
 // jitter": half of the result is guaranteed, the other half is
@@ -329,9 +334,8 @@ func (l *links) add(u *url.URL, sintf string, linkType linkType) error {
 				}
 			})
 
-			// This loop will run each and every time we want to attempt
-			// a connection to this peer.
-			// TODO get rid of this loop, this is *exactly* what time.AfterFunc is for, we should just send a signal to the links actor to kick off a goroutine as needed
+			// Persistent links retry here so cancellation and backoff remain
+			// owned by this connection goroutine.
 			for {
 				select {
 				case <-state.ctx.Done():
@@ -685,7 +689,7 @@ func (l *links) dialerFor(u *url.URL) (linkProtocol, error) {
 }
 
 func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, success func(), local bool) error {
-	meta := version_getBaseMetadata()
+	meta := versionGetBaseMetadata()
 	meta.publicKey = l.core.public
 	meta.priority = options.priority
 	metaBytes, err := meta.encode(l.core.secret, options.password)
@@ -702,8 +706,8 @@ func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, s
 	case n != len(metaBytes):
 		return fmt.Errorf("incomplete handshake send")
 	}
-	meta = version_metadata{}
-	base := version_getBaseMetadata()
+	meta = versionMetadata{}
+	base := versionGetBaseMetadata()
 	if err := meta.decode(conn, options.password); err != nil {
 		_ = conn.Close()
 		return err

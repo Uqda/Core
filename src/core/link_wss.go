@@ -50,7 +50,6 @@ func (l *linkWSS) dial(ctx context.Context, url *url.URL, info linkInfo, options
 			HTTPClient: &http.Client{
 				Transport: &http.Transport{
 					Proxy:           http.ProxyFromEnvironment,
-					Dial:            dialer.Dial,
 					DialContext:     dialer.DialContext,
 					TLSClientConfig: tlsconfig,
 				},

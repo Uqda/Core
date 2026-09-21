@@ -17,10 +17,11 @@ import (
 	"golang.org/x/net/ipv6"
 )
 
+// ICMPv6 is retained for source compatibility with earlier integrations.
 type ICMPv6 struct{}
 
 // Marshal returns the binary encoding of h.
-func ipv6Header_Marshal(h *ipv6.Header) ([]byte, error) {
+func ipv6HeaderMarshal(h *ipv6.Header) ([]byte, error) {
 	b := make([]byte, 40)
 	b[0] |= byte(h.Version) << 4
 	b[0] |= byte(h.TrafficClass) >> 4
@@ -36,10 +37,8 @@ func ipv6Header_Marshal(h *ipv6.Header) ([]byte, error) {
 	return b, nil
 }
 
-// Creates an ICMPv6 packet based on the given icmp.MessageBody and other
-// parameters, complete with IP headers only, which can be written directly to
-// a TUN adapter, or called directly by the CreateICMPv6L2 function when
-// generating a message for TAP adapters.
+// CreateICMPv6 returns a complete IPv6 packet containing the supplied ICMPv6
+// message body and header parameters.
 func CreateICMPv6(dst net.IP, src net.IP, mtype ipv6.ICMPType, mcode int, mbody icmp.MessageBody) ([]byte, error) {
 	// Create the ICMPv6 message
 	icmpMessage := icmp.Message{
@@ -65,7 +64,7 @@ func CreateICMPv6(dst net.IP, src net.IP, mtype ipv6.ICMPType, mcode int, mbody 
 	}
 
 	// Convert the IPv6 header into []byte
-	ipv6HeaderBuf, err := ipv6Header_Marshal(&ipv6Header)
+	ipv6HeaderBuf, err := ipv6HeaderMarshal(&ipv6Header)
 	if err != nil {
 		return nil, err
 	}

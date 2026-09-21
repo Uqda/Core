@@ -6,6 +6,11 @@ import (
 	"crypto/ed25519"
 )
 
+const (
+	prefixLength          = 1
+	maxAddressLeadingOnes = 255
+)
+
 // Address represents an IPv6 address in the Yggdrasil network address range.
 type Address [16]byte
 
@@ -16,7 +21,7 @@ type Subnet [8]byte
 // The current implementation requires this to be a multiple of 8 bits + 7 bits.
 // The 8th bit of the last byte is used to signal nodes (0) or /64 prefixes (1).
 // Nodes that configure this differently will be unable to communicate with each other using IP packets, though routing and the DHT machinery *should* still work.
-func GetPrefix() [1]byte {
+func GetPrefix() [prefixLength]byte {
 	return [...]byte{0x02}
 }
 
@@ -43,18 +48,12 @@ func (s *Subnet) IsValid() bool {
 	return (*s)[l-1] == prefix[l-1]|0x01
 }
 
-// AddrForKey takes an ed25519.PublicKey as an argument and returns an *Address.
-// This function returns nil if the key length is not ed25519.PublicKeySize.
+// AddrForKey derives an Address from an Ed25519 public key. It returns nil if
+// the key length or its leading-bit encoding cannot be represented.
 // This address begins with the contents of GetPrefix(), with the last bit set to 0 to indicate an address.
 // The following 8 bits are set to the number of leading 1 bits in the bitwise inverse of the public key.
 // The bitwise inverse of the key, excluding the leading 1 bits and the first leading 0 bit, is truncated to the appropriate length and makes up the remainder of the address.
 func AddrForKey(publicKey ed25519.PublicKey) *Address {
-	// 128 bit address
-	// Begins with prefix
-	// Next bit is a 0
-	// Next 7 bits, interpreted as a uint, are # of leading 1s in the NodeID
-	// Leading 1s and first leading 0 of the NodeID are truncated off
-	// The rest is appended to the IPv6 address (truncated to 128 bits total)
 	if len(publicKey) != ed25519.PublicKeySize {
 		return nil
 	}
@@ -64,20 +63,23 @@ func AddrForKey(publicKey ed25519.PublicKey) *Address {
 		buf[idx] = ^buf[idx]
 	}
 	var addr Address
-	var temp = make([]byte, 0, 32)
+	temp := make([]byte, 0, 32)
 	done := false
-	ones := byte(0)
+	ones := 0
 	bits := byte(0)
 	nBits := 0
 	for idx := 0; idx < 8*len(buf); idx++ {
 		bit := (buf[idx/8] & (0x80 >> byte(idx%8))) >> byte(7-(idx%8))
 		if !done && bit != 0 {
+			if ones == maxAddressLeadingOnes {
+				return nil
+			}
 			ones++
 			continue
 		}
 		if !done && bit == 0 {
 			done = true
-			continue // FIXME? this assumes that ones <= 127, probably only worth changing by using a variable length uint64, but that would require changes to the addressing scheme, and I'm not sure ones > 127 is realistic
+			continue
 		}
 		bits = (bits << 1) | bit
 		nBits++
@@ -88,7 +90,7 @@ func AddrForKey(publicKey ed25519.PublicKey) *Address {
 	}
 	prefix := GetPrefix()
 	copy(addr[:], prefix[:])
-	addr[len(prefix)] = ones
+	addr[len(prefix)] = byte(ones)
 	copy(addr[len(prefix)+1:], temp)
 	return &addr
 }
@@ -108,8 +110,7 @@ func SubnetForKey(publicKey ed25519.PublicKey) *Subnet {
 	}
 	var snet Subnet
 	copy(snet[:], addr[:])
-	prefix := GetPrefix() // nolint:staticcheck
-	snet[len(prefix)-1] |= 0x01
+	snet[prefixLength-1] |= 0x01
 	return &snet
 }
 
@@ -117,13 +118,12 @@ func SubnetForKey(publicKey ed25519.PublicKey) *Subnet {
 // This is used for key lookup.
 func (a *Address) GetKey() ed25519.PublicKey {
 	var key [ed25519.PublicKeySize]byte
-	prefix := GetPrefix() // nolint:staticcheck
-	ones := int(a[len(prefix)])
+	ones := int(a[prefixLength])
 	for idx := 0; idx < ones; idx++ {
 		key[idx/8] |= 0x80 >> byte(idx%8)
 	}
 	keyOffset := ones + 1
-	addrOffset := 8*len(prefix) + 8
+	addrOffset := 8*prefixLength + 8
 	for idx := addrOffset; idx < 8*len(a); idx++ {
 		bits := a[idx/8] & (0x80 >> byte(idx%8))
 		bits <<= byte(idx % 8)

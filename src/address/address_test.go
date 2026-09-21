@@ -68,6 +68,12 @@ func TestAddress_AddrForKey(t *testing.T) {
 	}
 }
 
+func TestAddress_AddrForKeyRejectsUnrepresentableKey(t *testing.T) {
+	if addr := AddrForKey(make(ed25519.PublicKey, ed25519.PublicKeySize)); addr != nil {
+		t.Fatalf("expected an all-zero key to be rejected, got %v", addr)
+	}
+}
+
 func TestAddress_SubnetForKey(t *testing.T) {
 	publicKey := ed25519.PublicKey{
 		189, 186, 207, 216, 34, 64, 222, 61, 205, 18, 57, 36, 203, 181, 82, 86,

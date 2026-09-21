@@ -28,7 +28,7 @@ func TestVersionPasswordAuth(t *testing.T) {
 			t.Fatalf("Node 1 failed to generate key: %s", err)
 		}
 
-		metadata1 := &version_metadata{
+		metadata1 := &versionMetadata{
 			publicKey: pk1,
 		}
 		encoded, err := metadata1.encode(sk1, tt.password1)
@@ -36,7 +36,7 @@ func TestVersionPasswordAuth(t *testing.T) {
 			t.Fatalf("Node 1 failed to encode metadata: %s", err)
 		}
 
-		var decoded version_metadata
+		var decoded versionMetadata
 		if allowed := decoded.decode(bytes.NewBuffer(encoded), tt.password2) == nil; allowed != tt.allowed {
 			t.Fatalf("Permutation %q -> %q should have been %v but was %v", tt.password1, tt.password2, tt.allowed, allowed)
 		}
@@ -47,7 +47,7 @@ func TestVersionRoundtrip(t *testing.T) {
 	for _, password := range [][]byte{
 		nil, []byte(""), []byte("foo"),
 	} {
-		for _, test := range []*version_metadata{
+		for _, test := range []*versionMetadata{
 			{majorVer: 1},
 			{majorVer: 256},
 			{majorVer: 2, minorVer: 4},
@@ -69,7 +69,7 @@ func TestVersionRoundtrip(t *testing.T) {
 				t.Fatal(err)
 			}
 			encoded := bytes.NewBuffer(meta)
-			decoded := &version_metadata{}
+			decoded := &versionMetadata{}
 			if err := decoded.decode(encoded, password); err != nil {
 				t.Fatalf("failed to decode: %s", err)
 			}
@@ -94,7 +94,7 @@ func TestVersionDecodeRejectsMalformedFieldLengths(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			msg := malformedVersionHandshake(t, tt.op, tt.field, password)
-			var decoded version_metadata
+			var decoded versionMetadata
 			if err := decoded.decode(bytes.NewReader(msg), password); err != ErrHandshakeInvalidLength {
 				t.Fatalf("expected %q, got %v", ErrHandshakeInvalidLength, err)
 			}
@@ -121,7 +121,7 @@ func TestVersionDecodeRejectsTrailingBytes(t *testing.T) {
 	body := append([]byte{1, 2, 3}, sig...)
 	msg := append([]byte{'m', 'e', 't', 'a', 0, 0}, body...)
 	binary.BigEndian.PutUint16(msg[4:6], uint16(len(body)))
-	var decoded version_metadata
+	var decoded versionMetadata
 	if err := decoded.decode(bytes.NewReader(msg), password); err != ErrHandshakeInvalidLength {
 		t.Fatalf("expected %q, got %v", ErrHandshakeInvalidLength, err)
 	}
@@ -142,7 +142,7 @@ func FuzzVersionMetadataDecode(f *testing.F) {
 		f.Fatal(err)
 	}
 	for _, password := range [][]byte{nil, []byte("pw")} {
-		valid := &version_metadata{majorVer: ProtocolVersionMajor, minorVer: ProtocolVersionMinor, publicKey: pk, priority: 3}
+		valid := &versionMetadata{majorVer: ProtocolVersionMajor, minorVer: ProtocolVersionMinor, publicKey: pk, priority: 3}
 		encoded, err := valid.encode(sk, password)
 		if err != nil {
 			f.Fatal(err)
@@ -155,7 +155,7 @@ func FuzzVersionMetadataDecode(f *testing.F) {
 	f.Add([]byte("not-yggdrasil-at-all"))
 
 	f.Fuzz(func(t *testing.T, data []byte) {
-		var decoded version_metadata
+		var decoded versionMetadata
 		_ = decoded.decode(bytes.NewReader(data), nil)
 	})
 }

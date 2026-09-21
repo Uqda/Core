@@ -29,28 +29,28 @@ func GetLoggerWithPrefix(prefix string, verbose bool) *log.Logger {
 	return l
 }
 
-func require_NoError(t *testing.T, err error) {
+func requireNoError(t *testing.T, err error) {
 	t.Helper()
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
-func require_Error(t *testing.T, err error) {
+func requireError(t *testing.T, err error) {
 	t.Helper()
 	if err == nil {
 		t.Fatal("expected error")
 	}
 }
 
-func require_Equal[T comparable](t *testing.T, a, b T) {
+func requireEqual[T comparable](t *testing.T, a, b T) {
 	t.Helper()
 	if a != b {
 		t.Fatalf("%v != %v", a, b)
 	}
 }
 
-func require_True(t *testing.T, a bool) {
+func requireTrue(t *testing.T, a bool) {
 	t.Helper()
 	if !a {
 		t.Fatal("expected true")
@@ -108,18 +108,14 @@ func CreateAndConnectTwo(t testing.TB, verbose bool) (nodeA *Core, nodeB *Core) 
 	return nodeA, nodeB
 }
 
-// WaitConnected blocks until either nodes negotiated DHT or 5 seconds passed.
+// WaitConnected waits up to five seconds for both nodes to join the routing tree.
 func WaitConnected(nodeA, nodeB *Core) bool {
-	// It may take up to 3 seconds, but let's wait 5.
 	for i := 0; i < 50; i++ {
 		time.Sleep(100 * time.Millisecond)
-		/*
-			if len(nodeA.GetPeers()) > 0 && len(nodeB.GetPeers()) > 0 {
-				return true
-			}
-		*/
 		if len(nodeA.GetTree()) > 1 && len(nodeB.GetTree()) > 1 {
-			time.Sleep(3 * time.Second) // FIXME hack, there's still stuff happening internally
+			// Routing-tree visibility precedes session readiness; allow the
+			// encrypted-session state to converge before sending test traffic.
+			time.Sleep(3 * time.Second)
 			return true
 		}
 	}
@@ -430,86 +426,86 @@ func CreateAndConnectTwoUnconnected(t testing.TB) (nodeA *Core, nodeB *Core) {
 func TestAllowedPublicKeys(t *testing.T) {
 	logger := GetLoggerWithPrefix("", false)
 	cfgA, cfgB := config.GenerateConfig(), config.GenerateConfig()
-	require_NoError(t, cfgA.GenerateSelfSignedCertificate())
-	require_NoError(t, cfgB.GenerateSelfSignedCertificate())
+	requireNoError(t, cfgA.GenerateSelfSignedCertificate())
+	requireNoError(t, cfgB.GenerateSelfSignedCertificate())
 
 	nodeA, err := New(cfgA.Certificate, logger, AllowedPublicKey("abcdef"))
-	require_NoError(t, err)
+	requireNoError(t, err)
 	defer nodeA.Stop()
 
 	nodeB, err := New(cfgB.Certificate, logger)
-	require_NoError(t, err)
+	requireNoError(t, err)
 	defer nodeB.Stop()
 
 	u, err := url.Parse("tcp://localhost:0")
-	require_NoError(t, err)
+	requireNoError(t, err)
 
 	l, err := nodeA.Listen(u, "")
-	require_NoError(t, err)
+	requireNoError(t, err)
 
 	u, err = url.Parse("tcp://" + l.Addr().String())
-	require_NoError(t, err)
+	requireNoError(t, err)
 
-	require_NoError(t, nodeB.AddPeer(u, ""))
+	requireNoError(t, nodeB.AddPeer(u, ""))
 
 	time.Sleep(time.Second)
 
 	peers := nodeB.GetPeers()
-	require_Equal(t, len(peers), 1)
-	require_True(t, !peers[0].Up)
-	require_True(t, peers[0].LastError != nil)
+	requireEqual(t, len(peers), 1)
+	requireTrue(t, !peers[0].Up)
+	requireTrue(t, peers[0].LastError != nil)
 }
 
 func TestAllowedPublicKeysLocal(t *testing.T) {
 	logger := GetLoggerWithPrefix("", false)
 	cfgA, cfgB := config.GenerateConfig(), config.GenerateConfig()
-	require_NoError(t, cfgA.GenerateSelfSignedCertificate())
-	require_NoError(t, cfgB.GenerateSelfSignedCertificate())
+	requireNoError(t, cfgA.GenerateSelfSignedCertificate())
+	requireNoError(t, cfgB.GenerateSelfSignedCertificate())
 
 	nodeA, err := New(cfgA.Certificate, logger, AllowedPublicKey("abcdef"))
-	require_NoError(t, err)
+	requireNoError(t, err)
 	defer nodeA.Stop()
 
 	nodeB, err := New(cfgB.Certificate, logger)
-	require_NoError(t, err)
+	requireNoError(t, err)
 	defer nodeB.Stop()
 
 	u, err := url.Parse("tcp://localhost:0")
-	require_NoError(t, err)
+	requireNoError(t, err)
 
 	l, err := nodeA.ListenLocal(u, "")
-	require_NoError(t, err)
+	requireNoError(t, err)
 
 	u, err = url.Parse("tcp://" + l.Addr().String())
-	require_NoError(t, err)
+	requireNoError(t, err)
 
-	require_NoError(t, nodeB.AddPeer(u, ""))
+	requireNoError(t, nodeB.AddPeer(u, ""))
 
 	time.Sleep(time.Second)
 
 	peers := nodeB.GetPeers()
-	require_Equal(t, len(peers), 1)
-	require_True(t, peers[0].Up)
-	require_True(t, peers[0].LastError == nil)
+	requireEqual(t, len(peers), 1)
+	requireTrue(t, peers[0].Up)
+	requireTrue(t, peers[0].LastError == nil)
 }
 
 func TestGroupPassword(t *testing.T) {
 	logger := GetLoggerWithPrefix("", false)
 	cfgA, cfgB, cfgC := config.GenerateConfig(), config.GenerateConfig(), config.GenerateConfig()
-	require_NoError(t, cfgA.GenerateSelfSignedCertificate())
-	require_NoError(t, cfgB.GenerateSelfSignedCertificate())
-	require_NoError(t, cfgC.GenerateSelfSignedCertificate())
+	requireNoError(t, cfgA.GenerateSelfSignedCertificate())
+	requireNoError(t, cfgB.GenerateSelfSignedCertificate())
+	requireNoError(t, cfgC.GenerateSelfSignedCertificate())
 
 	nodeA, err := New(cfgA.Certificate, logger, GroupPassword("test-group-password"))
-	require_NoError(t, err)
+	requireNoError(t, err)
 	defer nodeA.Stop()
 
 	nodeB, err := New(cfgB.Certificate, logger, GroupPassword("test-group-password"))
-	require_NoError(t, err)
+	requireNoError(t, err)
 	defer nodeB.Stop()
 
 	nodeC, err := New(cfgC.Certificate, logger, GroupPassword("different-test-group-password"))
-	require_NoError(t, err)
+	requireNoError(t, err)
 	defer nodeC.Stop()
 
 	pathFound := map[string]chan struct{}{
@@ -521,19 +517,19 @@ func TestGroupPassword(t *testing.T) {
 	})
 
 	u, err := url.Parse("tcp://localhost:0")
-	require_NoError(t, err)
+	requireNoError(t, err)
 
 	l, err := nodeA.Listen(u, "")
-	require_NoError(t, err)
+	requireNoError(t, err)
 
 	u, err = url.Parse("tcp://" + l.Addr().String())
-	require_NoError(t, err)
+	requireNoError(t, err)
 
-	require_NoError(t, nodeB.AddPeer(u, ""))
-	require_NoError(t, nodeC.AddPeer(u, ""))
+	requireNoError(t, nodeB.AddPeer(u, ""))
+	requireNoError(t, nodeC.AddPeer(u, ""))
 
-	require_True(t, WaitConnected(nodeA, nodeB))
-	require_True(t, WaitConnected(nodeA, nodeC))
+	requireTrue(t, WaitConnected(nodeA, nodeB))
+	requireTrue(t, WaitConnected(nodeA, nodeC))
 
 	var connA net.PacketConn = nodeA.PacketConn
 	var connB net.PacketConn = nodeB.PacketConn
@@ -551,24 +547,24 @@ func TestGroupPassword(t *testing.T) {
 	differentPasswordMessage := []byte("different group password")
 
 	_, err = connA.WriteTo(matchingPasswordMessage, connB.LocalAddr())
-	require_NoError(t, err)
+	requireNoError(t, err)
 
 	_, err = connA.WriteTo(differentPasswordMessage, connC.LocalAddr())
-	require_NoError(t, err)
+	requireNoError(t, err)
 
 	<-pathFound[nodeB.LocalAddr().String()]
 	<-pathFound[nodeC.LocalAddr().String()]
 
 	var buf [1024]byte
 	deadline := time.Now().Add(3 * time.Second)
-	require_NoError(t, connB.SetReadDeadline(deadline))
-	require_NoError(t, connC.SetReadDeadline(deadline))
+	requireNoError(t, connB.SetReadDeadline(deadline))
+	requireNoError(t, connC.SetReadDeadline(deadline))
 
 	n, from, err := connB.ReadFrom(buf[:])
-	require_NoError(t, err)
-	require_Equal(t, from.String(), connA.LocalAddr().String())
-	require_True(t, bytes.Equal(buf[:n], matchingPasswordMessage))
+	requireNoError(t, err)
+	requireEqual(t, from.String(), connA.LocalAddr().String())
+	requireTrue(t, bytes.Equal(buf[:n], matchingPasswordMessage))
 
 	_, _, err = connC.ReadFrom(buf[:])
-	require_Error(t, err)
+	requireError(t, err)
 }

@@ -9,11 +9,15 @@ import (
 	"github.com/Uqda/Core/src/admin"
 )
 
+// GetMulticastInterfacesRequest requests multicast interface state.
 type GetMulticastInterfacesRequest struct{}
+
+// GetMulticastInterfacesResponse contains multicast interface state.
 type GetMulticastInterfacesResponse struct {
 	Interfaces []MulticastInterfaceState `json:"multicast_interfaces"`
 }
 
+// MulticastInterfaceState describes discovery state on one interface.
 type MulticastInterfaceState struct {
 	Name     string `json:"name"`
 	Address  string `json:"address"`
@@ -46,6 +50,7 @@ func (m *Multicast) getMulticastInterfacesHandler(_ *GetMulticastInterfacesReque
 	return nil
 }
 
+// SetupAdminHandlers registers multicast administration commands.
 func (m *Multicast) SetupAdminHandlers(a *admin.AdminSocket) {
 	_ = a.AddHandler(
 		"getMulticastInterfaces", "Show which interfaces multicast is enabled on", []string{},

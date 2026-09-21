@@ -19,15 +19,6 @@ import (
 
 const keyStoreTimeout = 2 * time.Minute
 
-/*
-// Out-of-band packet types
-const (
-	typeKeyDummy = iota // nolint:deadcode,varcheck
-	typeKeyLookup
-	typeKeyResponse
-)
-*/
-
 type keyArray [ed25519.PublicKeySize]byte
 
 type keyStore struct {
@@ -182,48 +173,9 @@ func (k *keyStore) resetTimeout(info *keyInfo) {
 	})
 }
 
-/*
-func (k *keyStore) oobHandler(fromKey, toKey ed25519.PublicKey, data []byte) { // nolint:unused
-	if len(data) != 1+ed25519.SignatureSize {
-		return
-	}
-	sig := data[1:]
-	switch data[0] {
-	case typeKeyLookup:
-		snet := *address.SubnetForKey(toKey)
-		if snet == k.subnet && ed25519.Verify(fromKey, toKey[:], sig) {
-			// This is looking for at least our subnet (possibly our address)
-			// Send a response
-			k.sendKeyResponse(fromKey)
-		}
-	case typeKeyResponse:
-		// TODO keep a list of something to match against...
-		// Ignore the response if it doesn't match anything of interest...
-		if ed25519.Verify(fromKey, toKey[:], sig) {
-			k.update(fromKey)
-		}
-	}
-}
-*/
-
 func (k *keyStore) sendKeyLookup(partial ed25519.PublicKey) {
-	/*
-		sig := ed25519.Sign(k.core.PrivateKey(), partial[:])
-		bs := append([]byte{typeKeyLookup}, sig...)
-		//_ = k.core.SendOutOfBand(partial, bs)
-		_ = bs
-	*/
 	k.core.SendLookup(partial)
 }
-
-/*
-func (k *keyStore) sendKeyResponse(dest ed25519.PublicKey) { // nolint:unused
-	sig := ed25519.Sign(k.core.PrivateKey(), dest[:])
-	bs := append([]byte{typeKeyResponse}, sig...)
-	//_ = k.core.SendOutOfBand(dest, bs)
-	_ = bs
-}
-*/
 
 func (k *keyStore) readPC(p []byte) (int, error) {
 	buf := make([]byte, k.core.MTU(), 65535)
@@ -313,8 +265,6 @@ func (k *keyStore) writePC(bs []byte) (int, error) {
 	return len(bs), nil
 }
 
-// Exported API
-
 func (k *keyStore) MaxMTU() uint64 {
 	return k.core.MTU()
 }
@@ -338,20 +288,24 @@ func (k *keyStore) MTU() uint64 {
 	return mtu
 }
 
+// ReadWriteCloser carries IPv6 packets over a Core.
 type ReadWriteCloser struct {
 	keyStore
 }
 
+// NewReadWriteCloser creates an IPv6 packet adapter for c.
 func NewReadWriteCloser(c *core.Core) *ReadWriteCloser {
 	rwc := new(ReadWriteCloser)
 	rwc.init(c)
 	return rwc
 }
 
+// Address returns the local Yggdrasil-compatible IPv6 address.
 func (rwc *ReadWriteCloser) Address() address.Address {
 	return rwc.address
 }
 
+// Subnet returns the local Yggdrasil-compatible IPv6 subnet.
 func (rwc *ReadWriteCloser) Subnet() address.Subnet {
 	return rwc.subnet
 }
@@ -364,6 +318,7 @@ func (rwc *ReadWriteCloser) Write(p []byte) (n int, err error) {
 	return rwc.writePC(p)
 }
 
+// Close stops packet I/O and the underlying Core.
 func (rwc *ReadWriteCloser) Close() error {
 	err := rwc.core.Close()
 	rwc.core.Stop()

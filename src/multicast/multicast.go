@@ -57,9 +57,7 @@ type listenerInfo struct {
 	port     uint16
 }
 
-// Start starts the multicast interface. This launches goroutines which will
-// listen for multicast beacons from other hosts and will advertise multicast
-// beacons out to the network.
+// New starts multicast discovery and advertisement.
 func New(core *core.Core, log core.Logger, opts ...SetupOption) (*Multicast, error) {
 	m := &Multicast{
 		core:        core,
@@ -140,7 +138,7 @@ func (m *Multicast) _stop() error {
 	}
 	m.log.Infoln("Stopping multicast module")
 	if m.sock != nil {
-		m.sock.Close()
+		return m.sock.Close()
 	}
 	return nil
 }
@@ -168,6 +166,7 @@ func (m *Multicast) _updateInterfaces() {
 	m._interfaces = interfaces
 }
 
+// Interfaces returns the active multicast interfaces by name.
 func (m *Multicast) Interfaces() map[string]net.Interface {
 	interfaces := make(map[string]net.Interface)
 	phony.Block(m, func() {
@@ -235,6 +234,7 @@ func (m *Multicast) _getAllowedInterfaces() map[string]*interfaceInfo {
 	return interfaces
 }
 
+// AnnounceNow schedules an immediate multicast announcement.
 func (m *Multicast) AnnounceNow() {
 	phony.Block(m, func() {
 		if m._timer != nil && !m._timer.Stop() {
@@ -396,9 +396,8 @@ func (m *Multicast) listen() {
 			continue
 		}
 		if rcm != nil {
-			// Windows can't set the flag needed to return a non-nil value here
-			// So only make these checks if we get something useful back
-			// TODO? Skip them always, I'm not sure if they're really needed...
+			// Windows cannot provide this control-message metadata. When it is
+			// available, reject packets not addressed to the configured group.
 			if !rcm.Dst.IsLinkLocalMulticast() {
 				continue
 			}

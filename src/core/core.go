@@ -20,12 +20,8 @@ import (
 	"github.com/Uqda/Core/src/version"
 )
 
-// The Core object represents the Uqda node. You should create a Core
-// object for each Uqda node you plan to run.
+// Core represents one Uqda node.
 type Core struct {
-	// This is the main data structure that holds everything else for a node
-	// We're going to keep our own copy of the provided config - that way we can
-	// guarantee that it will be covered by the mutex
 	phony.Inbox
 	*iwe.PacketConn
 	ctx    context.Context
@@ -47,6 +43,7 @@ type Core struct {
 	pathNotify func(ed25519.PublicKey)
 }
 
+// New creates and starts a Core using cert as its persistent identity.
 func New(cert *tls.Certificate, logger Logger, opts ...SetupOption) (*Core, error) {
 	c := &Core{
 		log: logger,
@@ -88,10 +85,17 @@ func New(cert *tls.Certificate, logger Logger, opts ...SetupOption) (*Core, erro
 		return nil, fmt.Errorf("private key is incorrect length")
 	}
 	c.public = c.secret.Public().(ed25519.PublicKey)
+	if address.AddrForKey(c.public) == nil {
+		return nil, fmt.Errorf("public key cannot be represented as a Yggdrasil network address")
+	}
 
 	c.config.tls = identity.GenerateTLSConfig(cert)
 	keyXform := func(key ed25519.PublicKey) ed25519.PublicKey {
-		return address.SubnetForKey(key).GetKey()
+		subnet := address.SubnetForKey(key)
+		if subnet == nil {
+			return nil
+		}
+		return subnet.GetKey()
 	}
 	if c.PacketConn, err = iwe.NewPacketConnWithPassword(
 		c.secret,
@@ -133,6 +137,7 @@ func New(cert *tls.Certificate, logger Logger, opts ...SetupOption) (*Core, erro
 	return c, nil
 }
 
+// RetryPeersNow interrupts configured-peer backoff timers.
 func (c *Core) RetryPeersNow() {
 	phony.Block(&c.links, func() {
 		for _, l := range c.links._links {
@@ -153,7 +158,7 @@ func (c *Core) Stop() {
 	})
 }
 
-// This function is unsafe and should only be ran by the core actor.
+// _close mutates actor-owned state and must run on the Core inbox.
 func (c *Core) _close() error {
 	c.cancel()
 	c.links.shutdown()
@@ -161,6 +166,7 @@ func (c *Core) _close() error {
 	return err
 }
 
+// MTU returns the maximum session payload size.
 func (c *Core) MTU() uint64 {
 	const sessionTypeOverhead = 1
 	MTU := c.PacketConn.MTU() - sessionTypeOverhead
@@ -170,6 +176,7 @@ func (c *Core) MTU() uint64 {
 	return MTU
 }
 
+// ReadFrom reads one IPv6 packet and its remote node address.
 func (c *Core) ReadFrom(p []byte) (n int, from net.Addr, err error) {
 	buf := allocBytes(int(c.PacketConn.MTU()))
 	defer freeBytes(buf)
@@ -184,7 +191,6 @@ func (c *Core) ReadFrom(p []byte) (n int, from net.Addr, err error) {
 		}
 		switch bs[0] {
 		case typeSessionTraffic:
-			// This is what we want to handle here
 		case typeSessionProto:
 			var key keyArray
 			copy(key[:], from.(iwt.Addr))
@@ -205,6 +211,7 @@ func (c *Core) ReadFrom(p []byte) (n int, from net.Addr, err error) {
 	}
 }
 
+// WriteTo writes one IPv6 packet to a remote node address.
 func (c *Core) WriteTo(p []byte, addr net.Addr) (n int, err error) {
 	buf := allocBytes(0)
 	defer func() { freeBytes(buf) }()
@@ -212,7 +219,7 @@ func (c *Core) WriteTo(p []byte, addr net.Addr) (n int, err error) {
 	buf = append(buf, p...)
 	n, err = c.PacketConn.WriteTo(buf, addr)
 	if n > 0 {
-		n -= 1
+		n--
 	}
 	return
 }
@@ -225,12 +232,14 @@ func (c *Core) doPathNotify(key ed25519.PublicKey) {
 	})
 }
 
+// SetPathNotify installs a callback for path changes.
 func (c *Core) SetPathNotify(notify func(ed25519.PublicKey)) {
 	c.Act(nil, func() {
 		c.pathNotify = notify
 	})
 }
 
+// Logger is the logging surface used by Core and its modules.
 type Logger interface {
 	Printf(string, ...interface{})
 	Println(...interface{})

@@ -131,11 +131,12 @@ func (m *nodeinfo) _sendRes(key keyArray) {
 	_, _ = m.proto.core.PacketConn.WriteTo(bs, iwt.Addr(key[:]))
 }
 
-// Admin socket stuff
-
+// GetNodeInfoRequest identifies a remote node by public key.
 type GetNodeInfoRequest struct {
 	Key string `json:"key"`
 }
+
+// GetNodeInfoResponse maps the requested key to its node metadata.
 type GetNodeInfoResponse map[string]json.RawMessage
 
 func (m *nodeinfo) nodeInfoAdminHandler(in json.RawMessage) (interface{}, error) {

@@ -11,10 +11,12 @@ func (m *Multicast) _applyOption(opt SetupOption) {
 	}
 }
 
+// SetupOption configures multicast discovery during construction.
 type SetupOption interface {
 	isSetupOption()
 }
 
+// MulticastInterface controls discovery on interfaces matching Regex.
 type MulticastInterface struct {
 	Regex    *regexp.Regexp
 	Beacon   bool
@@ -24,6 +26,7 @@ type MulticastInterface struct {
 	Password string
 }
 
+// GroupAddress sets the IPv6 multicast discovery group.
 type GroupAddress string
 
 func (a MulticastInterface) isSetupOption() {}
