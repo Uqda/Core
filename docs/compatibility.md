@@ -49,11 +49,9 @@ See [installation](installation.md) and [packaging](packaging.md).
 
 ## Mobile API
 
-The exported Go binding type is `mobile.Uqda`. This replaces the upstream
-`mobile.Yggdrasil` API and requires client changes and regenerated bindings.
-No compatibility alias is provided: an alias would retain the old public brand
-and would not reliably preserve generated Java/Objective-C binding names.
-See [mobile integration](mobile.md).
+The exported Go binding type is `mobile.Uqda`. Generated Java and
+Objective-C/Swift bindings use the same product name. See
+[mobile integration](mobile.md).
 
 Upstream authorship, dependency names, protocol identifiers
 and migration paths retain their original names. `contrib/ansible` uses the

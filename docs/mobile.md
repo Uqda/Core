@@ -12,9 +12,8 @@ if err := node.StartJSON(savedConfig); err != nil {
 defer node.Stop()
 ```
 
-The type rename from `Yggdrasil` is an API break. Rebuild generated Java and
-Objective-C/Swift bindings, update client type names and remove cached old binding
-artifacts. No legacy alias is exported. `GetVersion()` exposes the machine version.
+Generated Java and Objective-C/Swift bindings expose the Uqda type name.
+`GetVersion()` returns the machine-readable release version.
 
 From the root, `./contrib/mobile/build -a` builds `uqda.aar` using gomobile and
 the Android SDK/NDK. On macOS, `./contrib/mobile/build -i` builds
@@ -24,4 +23,4 @@ builds; the script's Go mobile dependency resolution can update module files.
 
 `go test ./contrib/mobile` exercises Go behavior, but does not validate generated
 binding consumers. Release validation must compile both AAR/framework artifacts
-and consuming applications with the new API. Generated bindings are not committed.
+and consuming applications. Generated bindings are not committed.

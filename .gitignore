@@ -9,10 +9,26 @@
 # Go
 *.test
 *.out
+*.coverprofile
+*.prof
+*.pprof
+/coverage/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
 
 # OS/editor cruft
 .DS_Store
 Thumbs.db
+.idea/
+.vscode/
+*.bak
+*.old
+*.orig
+*.rej
+*.tmp
 
 # Packaging and mobile outputs
 *.deb

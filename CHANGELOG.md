@@ -33,8 +33,7 @@ This entry describes the intended first public beta and is not a publication not
 
 ### Compatibility
 
-- Mobile API breaking change: exported `mobile.Yggdrasil` becomes `mobile.Uqda`.
-  Regenerate bindings and update clients; no legacy type alias is provided.
+- Mobile bindings export `mobile.Uqda` and use Uqda product naming.
 - Windows MSI uses a distinct Uqda product identity. Configuration migration is
   separate from Windows Installer upgrades; no in-place upstream MSI upgrade is claimed.
 

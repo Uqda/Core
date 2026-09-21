@@ -2,7 +2,7 @@
 package version
 
 import (
-	_ "embed"
+	_ "embed" // Required by go:embed.
 	"strings"
 )
 
