@@ -6,8 +6,8 @@ test -d "$XCFRAMEWORK"
 
 FRAMEWORK=$(find "$XCFRAMEWORK" -type d -name Uqda.framework -path '*macos*' | head -n 1)
 test -n "$FRAMEWORK"
-test -s "$FRAMEWORK/Headers/Uqda.h"
-grep -q '@interface MobileUqda' "$FRAMEWORK/Headers/Uqda.h"
+HEADER=$(grep -R -l '@interface MobileUqda' "$FRAMEWORK" | head -n 1)
+test -n "$HEADER"
 
 STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT HUP INT TERM

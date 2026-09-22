@@ -211,7 +211,8 @@ jobs:
         run: |
           ./contrib/mobile/build -a
           sh tests/mobile/android-consumer.sh uqda.aar
-          mv uqda.aar uqda-$(sh contrib/semver/version.sh --bare)-android.aar
+          VERSION=$(sh contrib/semver/version.sh --bare)
+          mv uqda.aar "uqda-${VERSION}-android.aar"
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -239,8 +240,9 @@ jobs:
         run: |
           ./contrib/mobile/build -i
           sh tests/mobile/apple-consumer.sh Uqda.xcframework
+          VERSION=$(sh contrib/semver/version.sh --bare)
           ditto -c -k --sequesterRsrc --keepParent Uqda.xcframework \
-            uqda-$(sh contrib/semver/version.sh --bare)-apple-xcframework.zip
+            "uqda-${VERSION}-apple-xcframework.zip"
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
