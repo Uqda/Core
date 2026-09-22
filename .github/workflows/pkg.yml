@@ -166,8 +166,15 @@ jobs:
         shell: pwsh
         run: |
           $msi = Get-ChildItem *.msi | Select-Object -First 1
-          & msiexec.exe /i $msi.FullName /qn /norestart /l*v "$env:RUNNER_TEMP\uqda-install.log"
-          if ($LASTEXITCODE -ne 0) { Get-Content "$env:RUNNER_TEMP\uqda-install.log"; exit $LASTEXITCODE }
+          function Invoke-Msi([string]$Operation, [string]$Log) {
+            $arguments = "$Operation `"$($msi.FullName)`" /qn /norestart /L*V `"$Log`""
+            $process = Start-Process msiexec.exe -ArgumentList $arguments -Wait -PassThru
+            if ($process.ExitCode -ne 0) {
+              if (Test-Path $Log) { Get-Content $Log }
+              throw "msiexec $Operation failed with exit code $($process.ExitCode)"
+            }
+          }
+          Invoke-Msi '/i' "$env:RUNNER_TEMP\uqda-install.log"
           $installRoot = if ('${{ matrix.pkgarch }}' -eq 'x86') { ${env:ProgramFiles(x86)} } else { $env:ProgramFiles }
           $uqda = Join-Path $installRoot 'Uqda\uqda.exe'
           $config = Join-Path $env:ProgramData 'Uqda\uqda.conf'
@@ -176,11 +183,9 @@ jobs:
           & $uqda -useconffile $config -checkconf
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $identity = (Get-FileHash -Algorithm SHA256 $config).Hash
-          & msiexec.exe /fa $msi.FullName /qn /norestart /l*v "$env:RUNNER_TEMP\uqda-repair.log"
-          if ($LASTEXITCODE -ne 0) { Get-Content "$env:RUNNER_TEMP\uqda-repair.log"; exit $LASTEXITCODE }
+          Invoke-Msi '/fa' "$env:RUNNER_TEMP\uqda-repair.log"
           if ((Get-FileHash -Algorithm SHA256 $config).Hash -ne $identity) { throw 'MSI repair changed the node identity' }
-          & msiexec.exe /x $msi.FullName /qn /norestart /l*v "$env:RUNNER_TEMP\uqda-remove.log"
-          if ($LASTEXITCODE -ne 0) { Get-Content "$env:RUNNER_TEMP\uqda-remove.log"; exit $LASTEXITCODE }
+          Invoke-Msi '/x' "$env:RUNNER_TEMP\uqda-remove.log"
           if (Test-Path $uqda) { throw 'MSI removal left the executable installed' }
           if (-not (Test-Path $config)) { throw 'MSI removal deleted the persistent identity' }
 
