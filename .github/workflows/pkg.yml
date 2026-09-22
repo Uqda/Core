@@ -64,6 +64,20 @@ jobs:
           PKGARCH: ${{ matrix.pkgarch }}
         run: sh contrib/deb/generate.sh
 
+      - name: Native install, reinstall and removal smoke
+        if: matrix.pkgarch == 'amd64'
+        run: |
+          PACKAGE=$(find . -maxdepth 1 -name '*.deb' -print -quit)
+          sudo dpkg -i "$PACKAGE"
+          /usr/bin/uqda --version | grep -F 'Uqda Core 26 Beta 1'
+          sudo /usr/bin/uqda -useconffile /etc/uqda/uqda.conf -checkconf
+          IDENTITY=$(sudo sha256sum /etc/uqda/uqda.conf)
+          sudo dpkg -i "$PACKAGE"
+          test "$IDENTITY" = "$(sudo sha256sum /etc/uqda/uqda.conf)"
+          sudo dpkg -r uqda
+          test ! -e /usr/bin/uqda
+          sudo test -s /etc/uqda/uqda.conf
+
       - name: Upload artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -94,6 +108,17 @@ jobs:
         env:
           PKGARCH: ${{ matrix.pkgarch }}
         run: sh contrib/macos/create-pkg.sh
+
+      - name: Native install and reinstall smoke
+        if: matrix.pkgarch == 'arm64'
+        run: |
+          PACKAGE=$(find . -maxdepth 1 -name '*.pkg' -print -quit)
+          sudo installer -pkg "$PACKAGE" -target /
+          /usr/local/bin/uqda --version | grep -F 'Uqda Core 26 Beta 1'
+          sudo /usr/local/bin/uqda -useconffile /etc/uqda/uqda.conf -checkconf
+          IDENTITY=$(sudo shasum -a 256 /etc/uqda/uqda.conf)
+          sudo installer -pkg "$PACKAGE" -target /
+          test "$IDENTITY" = "$(sudo shasum -a 256 /etc/uqda/uqda.conf)"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -136,9 +161,89 @@ jobs:
       - name: Build package
         run: sh contrib/msi/build-msi.sh ${{ matrix.pkgarch }}
 
+      - name: Native install, repair and removal smoke
+        if: matrix.pkgarch != 'arm64'
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem *.msi | Select-Object -First 1
+          & msiexec.exe /i $msi.FullName /qn /norestart /l*v "$env:RUNNER_TEMP\uqda-install.log"
+          if ($LASTEXITCODE -ne 0) { Get-Content "$env:RUNNER_TEMP\uqda-install.log"; exit $LASTEXITCODE }
+          $installRoot = if ('${{ matrix.pkgarch }}' -eq 'x86') { ${env:ProgramFiles(x86)} } else { $env:ProgramFiles }
+          $uqda = Join-Path $installRoot 'Uqda\uqda.exe'
+          $config = Join-Path $env:ProgramData 'Uqda\uqda.conf'
+          $reportedVersion = & $uqda --version
+          if ($LASTEXITCODE -ne 0 -or $reportedVersion -notmatch 'Uqda Core 26 Beta 1') { throw "Unexpected version: $reportedVersion" }
+          & $uqda -useconffile $config -checkconf
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $identity = (Get-FileHash -Algorithm SHA256 $config).Hash
+          & msiexec.exe /fa $msi.FullName /qn /norestart /l*v "$env:RUNNER_TEMP\uqda-repair.log"
+          if ($LASTEXITCODE -ne 0) { Get-Content "$env:RUNNER_TEMP\uqda-repair.log"; exit $LASTEXITCODE }
+          if ((Get-FileHash -Algorithm SHA256 $config).Hash -ne $identity) { throw 'MSI repair changed the node identity' }
+          & msiexec.exe /x $msi.FullName /qn /norestart /l*v "$env:RUNNER_TEMP\uqda-remove.log"
+          if ($LASTEXITCODE -ne 0) { Get-Content "$env:RUNNER_TEMP\uqda-remove.log"; exit $LASTEXITCODE }
+          if (Test-Path $uqda) { throw 'MSI removal left the executable installed' }
+          if (-not (Test-Path $config)) { throw 'MSI removal deleted the persistent identity' }
+
       - name: Upload artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: Windows package (${{ matrix.pkgarch }})
           path: "*.msi"
+          if-no-files-found: error
+
+  build-mobile-android:
+    name: Mobile package (Android AAR)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      UQDA_MOBILE_VERSION: v0.0.0-20260908204917-8b95e45f8d3e
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: stable
+      - name: Install pinned Go mobile tools
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20260908204917-8b95e45f8d3e
+          go install golang.org/x/mobile/cmd/gobind@v0.0.0-20260908204917-8b95e45f8d3e
+          gomobile init
+      - name: Build and consume Android binding
+        run: |
+          ./contrib/mobile/build -a
+          sh tests/mobile/android-consumer.sh uqda.aar
+          mv uqda.aar uqda-$(sh contrib/semver/version.sh --bare)-android.aar
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Android AAR
+          path: "uqda-*-android.aar"
+          if-no-files-found: error
+
+  build-mobile-apple:
+    name: Mobile package (Apple XCFramework)
+    runs-on: macos-latest
+    timeout-minutes: 30
+    env:
+      UQDA_MOBILE_VERSION: v0.0.0-20260908204917-8b95e45f8d3e
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: stable
+      - name: Install pinned Go mobile tools
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20260908204917-8b95e45f8d3e
+          go install golang.org/x/mobile/cmd/gobind@v0.0.0-20260908204917-8b95e45f8d3e
+          gomobile init
+      - name: Build and consume Apple binding
+        run: |
+          ./contrib/mobile/build -i
+          sh tests/mobile/apple-consumer.sh Uqda.xcframework
+          ditto -c -k --sequesterRsrc --keepParent Uqda.xcframework \
+            uqda-$(sh contrib/semver/version.sh --bare)-apple-xcframework.zip
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Apple XCFramework
+          path: "uqda-*-apple-xcframework.zip"
           if-no-files-found: error

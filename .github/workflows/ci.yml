@@ -265,6 +265,7 @@ jobs:
         run: |
           ./contrib/mobile/build -a
           test -s uqda.aar
+          sh tests/mobile/android-consumer.sh uqda.aar
 
   mobile-apple:
     name: Mobile (Apple XCFramework)
@@ -286,6 +287,7 @@ jobs:
         run: |
           ./contrib/mobile/build -i
           test -d Uqda.xcframework
+          sh tests/mobile/apple-consumer.sh Uqda.xcframework
 
   build-freebsd:
     strategy:

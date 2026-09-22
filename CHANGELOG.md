@@ -2,8 +2,7 @@
 
 ## Uqda 26 Beta 1
 
-Unreleased. Machine version: `26.0-beta.1`; reserved tag: `v26.0-beta.1`.
-This entry describes the intended first public beta and is not a publication notice.
+Released 2026-09-22. Machine version: `26.0-beta.1`; tag: `v26.0-beta.1`.
 
 ### Highlights
 
@@ -48,8 +47,8 @@ This entry describes the intended first public beta and is not a publication not
 - The admin API has no authentication; protect its socket and keep it local.
 - The independent packet gate uses the real IPv6 packet interface without kernel
   TUN; native OS network integration requires separate platform validation.
-- Android/Apple binding artifacts and native installers require their platform
-  toolchains and validation before release. Authored CI does not establish a pass.
+- Native installers are unsigned beta artifacts; verify the published SHA-256
+  checksums before installation.
 - No anonymity guarantee or independent external security audit is claimed.
 
 Inherited public upstream release notes are preserved in

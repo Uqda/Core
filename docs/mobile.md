@@ -21,6 +21,7 @@ the Android SDK/NDK. On macOS, `./contrib/mobile/build -i` builds
 binding tools before invoking the script. Record their versions for reproducible
 builds; the script's Go mobile dependency resolution can update module files.
 
-`go test ./contrib/mobile` exercises Go behavior, but does not validate generated
-binding consumers. Release validation must compile both AAR/framework artifacts
-and consuming applications. Generated bindings are not committed.
+`go test ./contrib/mobile` exercises Go behavior. Release validation also builds
+the AAR/XCFramework and compiles minimal Java and Objective-C consumers through
+`tests/mobile/android-consumer.sh` and `tests/mobile/apple-consumer.sh`.
+Generated bindings are not committed.
