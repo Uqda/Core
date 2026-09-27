@@ -2,6 +2,13 @@ name: Packages
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/pkg.yml"
+      - "contrib/install/**"
+      - "contrib/homebrew/**"
+      - "contrib/systemd/uqda.service.quick"
+      - "contrib/packaging/install-config.sh"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -11,6 +18,68 @@ permissions:
   contents: read
 
 jobs:
+  build-portable-linux:
+    name: Portable Linux (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: "stable"
+      - name: Build portable archive
+        env:
+          GOARCH: ${{ matrix.arch }}
+        run: sh contrib/install/build-linux.sh
+      - name: Native install, update, remove and purge smoke
+        if: matrix.arch == 'amd64'
+        run: |
+          ASSET=$(find . -maxdepth 1 -name 'uqda-*-linux-amd64.tar.gz' -print -quit)
+          test -n "$ASSET"
+          mkdir "$RUNNER_TEMP/uqda-assets"
+          cp "$ASSET" "$RUNNER_TEMP/uqda-assets/"
+          (cd "$RUNNER_TEMP/uqda-assets" && sha256sum "$(basename "$ASSET")" > SHA256SUMS)
+          export UQDA_VERSION="v$(sh contrib/semver/version.sh --bare)"
+          export UQDA_DOWNLOAD_BASE_URL="file://$RUNNER_TEMP/uqda-assets"
+          export UQDA_INSTALL_TEST_MODE=1
+          sudo --preserve-env=UQDA_VERSION,UQDA_DOWNLOAD_BASE_URL,UQDA_INSTALL_TEST_MODE sh contrib/install/linux.sh install
+          sudo systemctl is-active --quiet uqda
+          IDENTITY=$(sudo sha256sum /etc/uqda/uqda.conf)
+          sudo --preserve-env=UQDA_VERSION,UQDA_DOWNLOAD_BASE_URL,UQDA_INSTALL_TEST_MODE sh contrib/install/linux.sh update
+          test "$IDENTITY" = "$(sudo sha256sum /etc/uqda/uqda.conf)"
+          sudo sh contrib/install/linux.sh uninstall
+          sudo test -s /etc/uqda/uqda.conf
+          sudo --preserve-env=UQDA_VERSION,UQDA_DOWNLOAD_BASE_URL,UQDA_INSTALL_TEST_MODE sh contrib/install/linux.sh install
+          test "$IDENTITY" = "$(sudo sha256sum /etc/uqda/uqda.conf)"
+          sudo sh contrib/install/linux.sh uninstall --purge --yes
+          sudo test ! -e /etc/uqda/uqda.conf
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Portable Linux (${{ matrix.arch }})
+          path: "uqda-*-linux-${{ matrix.arch }}.tar.gz"
+          if-no-files-found: error
+
+  homebrew-cask-smoke:
+    name: Homebrew cask lifecycle
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Install released macOS package through Homebrew
+        run: |
+          brew install --cask ./contrib/homebrew/Casks/uqda.rb
+          /usr/local/bin/uqda --version | grep -F 'Uqda Core 26 Beta 1'
+          sudo /usr/local/bin/uqda -useconffile /etc/uqda/uqda.conf -checkconf
+          IDENTITY=$(sudo shasum -a 256 /etc/uqda/uqda.conf)
+          brew reinstall --cask ./contrib/homebrew/Casks/uqda.rb
+          test "$IDENTITY" = "$(sudo shasum -a 256 /etc/uqda/uqda.conf)"
+          brew uninstall --cask uqda
+          sudo test -s /etc/uqda/uqda.conf
+
   build-vendored-sources:
     name: Vendored Sources
 

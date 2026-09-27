@@ -1,0 +1,37 @@
+# Managed by Uqda quick installer. Do not edit; use systemd drop-ins.
+[Unit]
+Description=Uqda Core
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=uqda
+Group=uqda
+ExecStartPre=/opt/uqda/current/uqda -useconffile /etc/uqda/uqda.conf -checkconf
+ExecStart=/opt/uqda/current/uqda -useconffile /etc/uqda/uqda.conf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+RuntimeDirectory=uqda
+RuntimeDirectoryMode=0750
+UMask=0077
+NoNewPrivileges=true
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/run/uqda
+DeviceAllow=/dev/net/tun rw
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target
