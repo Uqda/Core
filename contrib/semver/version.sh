@@ -10,7 +10,9 @@ case "${1:-}" in
   --bare) printf '%s\n' "$VERSION" ;;
   --debian) printf '%s\n' "$VERSION" | sed 's/-/~/g' ;;
   --title|--display)
-    TITLE="Uqda ${BASE%.0}"
+    ANNUAL=${BASE%.0}
+    ANNUAL=${ANNUAL%.0}
+    TITLE="Uqda $ANNUAL"
     case "$VERSION" in
       *-beta.*) TITLE="$TITLE Beta ${VERSION##*-beta.}" ;;
       *-*) TITLE="$TITLE ${VERSION#*-}" ;;
@@ -21,7 +23,11 @@ case "${1:-}" in
   --installer)
     # Numeric installer ordering: beta 1..999, general release 1000.
     case "$VERSION" in *-beta.*) REV=${VERSION##*-beta.} ;; *-*) exit 1 ;; *) REV=1000 ;; esac
-    printf '%s.%s\n' "$BASE" "$REV" ;;
+    # The public GA tag has an explicit .0 patch, but MSI permits only three
+    # numeric fields. Keep the established 26.0.1000 installer sequence.
+    INSTALLBASE=$BASE
+    case "$BASE" in *.*.*) INSTALLBASE=${BASE%.*} ;; esac
+    printf '%s.%s\n' "$INSTALLBASE" "$REV" ;;
   '') printf 'v%s\n' "$VERSION" ;;
   *) echo "Unknown version format: $1" >&2; exit 1 ;;
 esac
