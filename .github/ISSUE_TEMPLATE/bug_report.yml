@@ -1,0 +1,59 @@
+name: Bug report
+description: Report a problem found while testing Uqda Core.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing Uqda Core. For security vulnerabilities, do not open a public issue; follow [SECURITY.md](https://github.com/Uqda/Core/blob/main/SECURITY.md) instead. Remove private keys, tokens, addresses, and other sensitive data from logs.
+  - type: input
+    id: version
+    attributes:
+      label: Uqda version
+      description: Paste the output of `uqda --version` or the release tag.
+      placeholder: Uqda Core 26 Beta 1 / v26.0-beta.1
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform and architecture
+      placeholder: Debian 13 amd64, Windows 11 x64, macOS arm64, etc.
+    validations:
+      required: true
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: Installation method
+      options:
+        - Debian package
+        - Windows MSI
+        - macOS package
+        - Container image
+        - Android AAR
+        - Apple XCFramework
+        - Built from source
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include a minimal configuration only after removing secrets and identifying data.
+      placeholder: "1. ...\n2. ...\n3. ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and sanitized logs
+    validations:
+      required: true

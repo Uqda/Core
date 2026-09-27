@@ -8,8 +8,11 @@ It provides encrypted IPv6 connectivity over IPv4 or IPv6 peer connections.
 Uqda is derived from the open-source Yggdrasil implementation; it does not create
 a separate network and does not imply upstream endorsement.
 
-**Current release: Uqda 26 Beta 1.** It is published as the prerelease tag
-`v26.0-beta.1`. See [CHANGELOG](CHANGELOG.md).
+**Current release: Uqda 26 Beta 1.** This is the official first public beta,
+published under the prerelease tag `v26.0-beta.1` after release validation.
+It is ready for public testing; report any problems through the
+[bug report form](https://github.com/Uqda/Core/issues/new?template=bug_report.yml).
+See [CHANGELOG](CHANGELOG.md) for the tested scope and known limitations.
 
 Uqda comes from **عُقدة**, meaning a knot, connection point or node. It is not
 an acronym. A network node connects to other nodes and may forward traffic.
