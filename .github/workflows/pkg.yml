@@ -20,11 +20,15 @@ permissions:
 jobs:
   build-portable-linux:
     name: Portable Linux (${{ matrix.arch }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -37,9 +41,8 @@ jobs:
           GOARCH: ${{ matrix.arch }}
         run: sh contrib/install/build-linux.sh
       - name: Native install, update, remove and purge smoke
-        if: matrix.arch == 'amd64'
         run: |
-          ASSET=$(find . -maxdepth 1 -name 'uqda-*-linux-amd64.tar.gz' -print -quit)
+          ASSET=$(find . -maxdepth 1 -name 'uqda-*-linux-${{ matrix.arch }}.tar.gz' -print -quit)
           test -n "$ASSET"
           mkdir "$RUNNER_TEMP/uqda-assets"
           cp "$ASSET" "$RUNNER_TEMP/uqda-assets/"
@@ -51,6 +54,14 @@ jobs:
           sudo --preserve-env=UQDA_VERSION,UQDA_DOWNLOAD_BASE_URL,UQDA_INSTALL_TEST_MODE sh contrib/install/linux.sh install
           sudo systemctl is-active --quiet uqda
           IDENTITY=$(sudo sha256sum /etc/uqda/uqda.conf)
+          cp "$RUNNER_TEMP/uqda-assets/SHA256SUMS" "$RUNNER_TEMP/uqda-assets/SHA256SUMS.good"
+          printf '%064d  %s\n' 0 "$(basename "$ASSET")" > "$RUNNER_TEMP/uqda-assets/SHA256SUMS"
+          if sudo --preserve-env=UQDA_VERSION,UQDA_DOWNLOAD_BASE_URL,UQDA_INSTALL_TEST_MODE sh contrib/install/linux.sh update; then
+            echo 'Tampered checksum was accepted' >&2
+            exit 1
+          fi
+          mv "$RUNNER_TEMP/uqda-assets/SHA256SUMS.good" "$RUNNER_TEMP/uqda-assets/SHA256SUMS"
+          sudo systemctl is-active --quiet uqda
           sudo --preserve-env=UQDA_VERSION,UQDA_DOWNLOAD_BASE_URL,UQDA_INSTALL_TEST_MODE sh contrib/install/linux.sh update
           test "$IDENTITY" = "$(sudo sha256sum /etc/uqda/uqda.conf)"
           sudo sh contrib/install/linux.sh uninstall
@@ -66,8 +77,12 @@ jobs:
           if-no-files-found: error
 
   homebrew-cask-smoke:
-    name: Homebrew cask lifecycle
-    runs-on: macos-latest
+    name: Homebrew cask lifecycle (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-latest, macos-15-intel]
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Install released macOS package through Homebrew
