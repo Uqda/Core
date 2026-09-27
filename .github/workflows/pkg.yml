@@ -44,9 +44,10 @@ jobs:
           mkdir "$RUNNER_TEMP/uqda-assets"
           cp "$ASSET" "$RUNNER_TEMP/uqda-assets/"
           (cd "$RUNNER_TEMP/uqda-assets" && sha256sum "$(basename "$ASSET")" > SHA256SUMS)
-          export UQDA_VERSION="v$(sh contrib/semver/version.sh --bare)"
-          export UQDA_DOWNLOAD_BASE_URL="file://$RUNNER_TEMP/uqda-assets"
-          export UQDA_INSTALL_TEST_MODE=1
+          UQDA_VERSION="v$(sh contrib/semver/version.sh --bare)"
+          UQDA_DOWNLOAD_BASE_URL="file://$RUNNER_TEMP/uqda-assets"
+          UQDA_INSTALL_TEST_MODE=1
+          export UQDA_VERSION UQDA_DOWNLOAD_BASE_URL UQDA_INSTALL_TEST_MODE
           sudo --preserve-env=UQDA_VERSION,UQDA_DOWNLOAD_BASE_URL,UQDA_INSTALL_TEST_MODE sh contrib/install/linux.sh install
           sudo systemctl is-active --quiet uqda
           IDENTITY=$(sudo sha256sum /etc/uqda/uqda.conf)
@@ -71,13 +72,17 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Install released macOS package through Homebrew
         run: |
-          brew install --cask ./contrib/homebrew/Casks/uqda.rb
+          brew tap-new uqda/ci
+          TAP_DIR=$(brew --repository uqda/ci)
+          mkdir -p "$TAP_DIR/Casks"
+          cp contrib/homebrew/Casks/uqda.rb "$TAP_DIR/Casks/uqda.rb"
+          brew install --cask uqda/ci/uqda
           /usr/local/bin/uqda --version | grep -F 'Uqda Core 26 Beta 1'
           sudo /usr/local/bin/uqda -useconffile /etc/uqda/uqda.conf -checkconf
           IDENTITY=$(sudo shasum -a 256 /etc/uqda/uqda.conf)
-          brew reinstall --cask ./contrib/homebrew/Casks/uqda.rb
+          brew reinstall --cask uqda/ci/uqda
           test "$IDENTITY" = "$(sudo shasum -a 256 /etc/uqda/uqda.conf)"
-          brew uninstall --cask uqda
+          brew uninstall --cask uqda/ci/uqda
           sudo test -s /etc/uqda/uqda.conf
 
   build-vendored-sources:
