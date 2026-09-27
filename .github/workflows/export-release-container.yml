@@ -27,9 +27,11 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           test "$RELEASE_TAG" = "$(sh contrib/semver/version.sh)"
-          echo "version=$(sh contrib/semver/version.sh --bare)" >> "$GITHUB_OUTPUT"
-          echo "title=$(sh contrib/semver/version.sh --display)" >> "$GITHUB_OUTPUT"
-          echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=$(sh contrib/semver/version.sh --bare)"
+            echo "title=$(sh contrib/semver/version.sh --display)"
+            echo "revision=$(git rev-parse HEAD)"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
