@@ -2,7 +2,7 @@
 
 ## Uqda 26 Beta 1
 
-Released 2026-09-22. Machine version: `26.0-beta.1`; tag: `v26.0-beta.1`.
+Released 2026-09-27. Machine version: `26.0-beta.1`; tag: `v26.0-beta.1`.
 
 ### Highlights
 

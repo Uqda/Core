@@ -12,7 +12,7 @@ Do not derive Uqda versions from upstream tags or wire protocol metadata.
 | Git tag | `v26.0-beta.1` |
 | GitHub release type | Pre-release |
 
-Beta 1 was published as a GitHub prerelease on 2026-09-22 after the required
+Beta 1 was published as a GitHub prerelease on 2026-09-27 after the required
 validation gates passed. Package workflows prepare artifacts; publication of a
 future release still requires an explicit release-owner decision.
 
