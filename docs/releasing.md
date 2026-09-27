@@ -18,15 +18,17 @@ future release still requires an explicit release-owner decision.
 
 The annual generation is 26 for 2026, 27 for 2027 and 28 for 2028. Public names
 are `Uqda 26 Beta 1`, `Uqda 26 Beta 2`, `Uqda 26` and `Uqda 26.1`.
-The initial `.0` appears in machine/tag forms, not normally in product names.
-This is a two-component annual version, not three-component semantic versioning.
+Beta tags retain `v26.0-beta.N`; the requested general-release tag is
+`v26.0.0`. The trailing zero is a machine-version patch field and is omitted
+from the public annual name. The general release must not be tagged until its
+version file, packages, changelog and native install/upgrade/remove checks agree.
 
 Package workflows prepare artifacts. Use `version.sh --title`, its default tag
 output and `--prerelease` when creating release metadata. Verify the tag matches
 the embedded version; use the reviewed changelog rather than a commit dump.
 Debian uses `26.0~beta.1` for ordering; MSI/macOS numeric versions use `26.0.1`
-for Beta 1 and reserve revision 1000 for the general release. These are installer
-encodings, not alternate product versions. See [packaging](packaging.md).
+for Beta 1 and `26.0.1000` for `v26.0.0`. These are installer encodings, not
+alternate product versions. See [packaging](packaging.md).
 
 Require formatting, build, vet, tests, vulnerability scanning, fuzz smoke,
 independent upstream interoperability, mobile/native package validation and an

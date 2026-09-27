@@ -17,8 +17,14 @@ func BuildVersion() string { return strings.TrimSpace(releaseVersion) }
 
 // ProductName formats the annual version for public display.
 func ProductName() string {
-	v := strings.SplitN(BuildVersion(), "-", 2)
-	name := "Uqda " + strings.TrimSuffix(v[0], ".0")
+	return productNameFor(BuildVersion())
+}
+
+func productNameFor(machineVersion string) string {
+	v := strings.SplitN(machineVersion, "-", 2)
+	// Beta tags use 26.0-beta.N; the general-release tag is v26.0.0.
+	// Both display as the annual product name rather than "Uqda 26.0".
+	name := "Uqda " + strings.TrimSuffix(strings.TrimSuffix(v[0], ".0"), ".0")
 	if len(v) == 2 {
 		if beta, ok := strings.CutPrefix(v[1], "beta."); ok {
 			name += " Beta " + beta
