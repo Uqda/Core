@@ -1,0 +1,63 @@
+name: Export release container
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing Uqda release tag to export
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    name: Export tagged multiarchitecture image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+
+      - name: Validate release identity
+        id: identity
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          test "$RELEASE_TAG" = "$(sh contrib/semver/version.sh)"
+          echo "version=$(sh contrib/semver/version.sh --bare)" >> "$GITHUB_OUTPUT"
+          echo "title=$(sh contrib/semver/version.sh --display)" >> "$GITHUB_OUTPUT"
+          echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Build OCI archive
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ./contrib/docker/Dockerfile.multiarch
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
+          outputs: type=oci,dest=${{ runner.temp }}/uqda-image.oci.tar
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.identity.outputs.revision }}
+            org.opencontainers.image.version=${{ steps.identity.outputs.version }}
+            org.opencontainers.image.title=${{ steps.identity.outputs.title }}
+          provenance: false
+
+      - name: Verify OCI archive
+        run: |
+          test -s "${{ runner.temp }}/uqda-image.oci.tar"
+          tar -tf "${{ runner.temp }}/uqda-image.oci.tar" | grep -Fx oci-layout
+          tar -tf "${{ runner.temp }}/uqda-image.oci.tar" | grep -Fx index.json
+
+      - name: Upload OCI archive
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: uqda-${{ steps.identity.outputs.version }}-oci
+          path: ${{ runner.temp }}/uqda-image.oci.tar
+          if-no-files-found: error
+          compression-level: 0
