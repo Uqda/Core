@@ -1,9 +1,6 @@
 # Uqda 26
 
-Uqda 26 is the first general release of Uqda Core. Publish these
-notes only after the reviewed `v26.0.0` tag is on `main`, every attached asset
-has been checked against `SHA256SUMS`, and native install/update/remove tests
-have passed on the published artifacts.
+Uqda 26 is the first general release of Uqda Core.
 
 ## What is included
 
@@ -25,9 +22,9 @@ command. The general-release container image is a separate publication step.
 
 ## Installation and updates
 
-Follow the [installation guide](https://github.com/Uqda/Core/blob/main/docs/installation.md)
-and [quick-install guide](https://github.com/Uqda/Core/blob/main/docs/quick-install.md)
-after they are updated for this published release. On Linux, download the
+Follow the [installation guide](https://github.com/Uqda/Core/blob/v26.0.0/docs/installation.md)
+and [quick-install guide](https://github.com/Uqda/Core/blob/v26.0.0/docs/quick-install.md).
+On Linux, download the
 installer from the reviewed `main` branch, inspect it, then run its `install`,
 `update`, `status`, or `uninstall` action as appropriate. On macOS, use
 `brew install --cask Uqda/tap/uqda` once the tap points to `v26.0.0`.
