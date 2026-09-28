@@ -184,7 +184,7 @@ jobs:
         run: |
           PACKAGE=$(find . -maxdepth 1 -name '*.deb' -print -quit)
           sudo dpkg -i "$PACKAGE"
-          /usr/bin/uqda --version | grep -F 'Uqda Core 26 Beta 1'
+          test "$(/usr/bin/uqda --version)" = "$(sh contrib/semver/version.sh --display)"
           sudo /usr/bin/uqda -useconffile /etc/uqda/uqda.conf -checkconf
           IDENTITY=$(sudo sha256sum /etc/uqda/uqda.conf)
           sudo dpkg -i "$PACKAGE"
@@ -229,7 +229,7 @@ jobs:
         run: |
           PACKAGE=$(find . -maxdepth 1 -name '*.pkg' -print -quit)
           sudo installer -pkg "$PACKAGE" -target /
-          /usr/local/bin/uqda --version | grep -F 'Uqda Core 26 Beta 1'
+          test "$(/usr/local/bin/uqda --version)" = "$(sh contrib/semver/version.sh --display)"
           sudo /usr/local/bin/uqda -useconffile /etc/uqda/uqda.conf -checkconf
           IDENTITY=$(sudo shasum -a 256 /etc/uqda/uqda.conf)
           sudo installer -pkg "$PACKAGE" -target /
@@ -294,7 +294,9 @@ jobs:
           $uqda = Join-Path $installRoot 'Uqda\uqda.exe'
           $config = Join-Path $env:ProgramData 'Uqda\uqda.conf'
           $reportedVersion = & $uqda --version
-          if ($LASTEXITCODE -ne 0 -or $reportedVersion -notmatch 'Uqda Core 26 Beta 1') { throw "Unexpected version: $reportedVersion" }
+          if ($LASTEXITCODE -ne 0) { throw "Version command failed: $reportedVersion" }
+          $expectedVersion = go run ./cmd/uqda -version
+          if ($LASTEXITCODE -ne 0 -or $reportedVersion.Trim() -ne $expectedVersion.Trim()) { throw "Unexpected version: $reportedVersion (expected $expectedVersion)" }
           & $uqda -useconffile $config -checkconf
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $identity = (Get-FileHash -Algorithm SHA256 $config).Hash
