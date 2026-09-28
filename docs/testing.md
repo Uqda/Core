@@ -43,6 +43,20 @@ See [compatibility](compatibility.md) for the test boundary and source pin.
 `go test ./tests/interop` covers the separate same-source daemon harness and
 both CLI version commands against the authoritative `src/version/VERSION`.
 
+## Long idle-session recovery check
+
+For manual investigation of delayed first packets after inactivity, run:
+
+```sh
+UQDA_TEST_IDLE_RECOVERY=1 go test -count=1 -run '^TestIdleSessionRecovery$' -v ./src/core
+```
+
+The test waits through two real Ironwood one-minute session expirations, then
+checks delivery of the first IPv6 packet in both directions. It is opt-in to
+avoid adding more than two minutes to every regular CI run; the separate
+idle-recovery workflow runs it on relevant pull requests. A passing localhost test
+does not certify multicast, kernel TUN, or intermittent multi-node LAN behavior.
+
 ## Unix privilege-switching tests
 
 `TestCurrentUserid` and `TestCommonUsername` belong to `cmd/uqda`, not a dependency.
