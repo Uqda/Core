@@ -6,15 +6,17 @@ Do not derive Uqda versions from upstream tags or wire protocol metadata.
 
 | Meaning | Prepared value |
 |---|---|
-| Product/release title | Uqda 26 Beta 1 |
-| Core display | Uqda Core 26 Beta 1 |
-| Machine version | `26.0-beta.1` |
-| Git tag | `v26.0-beta.1` |
-| GitHub release type | Pre-release |
+| Product/release title | Uqda 26 |
+| Core display | Uqda Core 26 |
+| Machine version | `26.0.0` |
+| Git tag | `v26.0.0` (not yet created) |
+| GitHub release type | General release (pending validation) |
 
 Beta 1 was published as a GitHub prerelease on 2026-09-27 after the required
-validation gates passed. Package workflows prepare artifacts; publication of a
-future release still requires an explicit release-owner decision.
+validation gates passed. The `26.0.0` version on this branch is a release
+candidate, not evidence that the general release has been published. Package
+workflows prepare artifacts; create the tag and publish only after review,
+merge, artifact verification, and native install/upgrade/remove validation.
 
 The annual generation is 26 for 2026, 27 for 2027 and 28 for 2028. Public names
 are `Uqda 26 Beta 1`, `Uqda 26 Beta 2`, `Uqda 26` and `Uqda 26.1`.
