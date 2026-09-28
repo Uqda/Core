@@ -21,7 +21,7 @@ func TestReleaseIdentity(t *testing.T) {
 	if machine != version.BuildVersion() {
 		t.Fatal("embedded machine version differs from VERSION")
 	}
-	parts := regexp.MustCompile(`^(\d{2})\.(\d+)(?:-beta\.(\d+))?$`).FindStringSubmatch(machine)
+	parts := regexp.MustCompile(`^(\d{2})\.(\d+)(?:\.0)?(?:-beta\.(\d+))?$`).FindStringSubmatch(machine)
 	if parts == nil {
 		t.Fatalf("invalid annual version %q", machine)
 	}
