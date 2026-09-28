@@ -62,6 +62,31 @@ jobs:
           fi
           mv "$RUNNER_TEMP/uqda-assets/SHA256SUMS.good" "$RUNNER_TEMP/uqda-assets/SHA256SUMS"
           sudo systemctl is-active --quiet uqda
+          cp "$RUNNER_TEMP/uqda-assets/$(basename "$ASSET")" "$RUNNER_TEMP/uqda-assets/archive.good"
+          python3 - "$RUNNER_TEMP/uqda-assets/$(basename "$ASSET")" <<'PY'
+          import io
+          import sys
+          import tarfile
+
+          with tarfile.open(sys.argv[1], "w:gz") as archive:
+              for name in ("uqda", "uqdactl", "uqda.service", "install-config.sh"):
+                  entry = tarfile.TarInfo(name)
+                  if name == "uqda":
+                      entry.type = tarfile.SYMTYPE
+                      entry.linkname = "/etc/passwd"
+                  else:
+                      archive.addfile(entry, io.BytesIO())
+                      continue
+                  archive.addfile(entry)
+          PY
+          (cd "$RUNNER_TEMP/uqda-assets" && sha256sum "$(basename "$ASSET")" > SHA256SUMS)
+          if sudo --preserve-env=UQDA_VERSION,UQDA_DOWNLOAD_BASE_URL,UQDA_INSTALL_TEST_MODE sh contrib/install/linux.sh update; then
+            echo 'Archive containing a symlink was accepted' >&2
+            exit 1
+          fi
+          mv "$RUNNER_TEMP/uqda-assets/archive.good" "$RUNNER_TEMP/uqda-assets/$(basename "$ASSET")"
+          (cd "$RUNNER_TEMP/uqda-assets" && sha256sum "$(basename "$ASSET")" > SHA256SUMS)
+          sudo systemctl is-active --quiet uqda
           sudo --preserve-env=UQDA_VERSION,UQDA_DOWNLOAD_BASE_URL,UQDA_INSTALL_TEST_MODE sh contrib/install/linux.sh update
           test "$IDENTITY" = "$(sudo sha256sum /etc/uqda/uqda.conf)"
           sudo sh contrib/install/linux.sh uninstall

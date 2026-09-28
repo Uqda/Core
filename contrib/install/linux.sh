@@ -114,9 +114,22 @@ case "$EXPECTED" in *[!a-fA-F0-9]*|'') die "missing or invalid SHA-256 for $ASSE
 (cd "$TEMP" && printf '%s  %s\n' "$EXPECTED" "$ASSET" | sha256sum -c -) || die 'asset checksum mismatch'
 
 mkdir "$TEMP/payload"
-tar -tzf "$TEMP/$ASSET" | while IFS= read -r entry; do
-  case "$entry" in uqda|uqdactl|uqda.service|install-config.sh) ;; *) die "unexpected archive entry: $entry" ;; esac
-done
+python3 - "$TEMP/$ASSET" <<'PY' || die 'unsafe portable archive'
+import sys
+import tarfile
+
+limits = {"uqda": 200_000_000, "uqdactl": 200_000_000,
+          "uqda.service": 1_000_000, "install-config.sh": 1_000_000}
+seen = set()
+with tarfile.open(sys.argv[1], "r:gz") as archive:
+    for member in archive:
+        if (member.name not in limits or member.name in seen or
+                not member.isfile() or member.size > limits[member.name]):
+            raise SystemExit(f"unsafe archive entry: {member.name}")
+        seen.add(member.name)
+if seen != set(limits):
+    raise SystemExit("portable archive is missing required files")
+PY
 tar -C "$TEMP/payload" -xzf "$TEMP/$ASSET" --no-same-owner
 for file in uqda uqdactl uqda.service install-config.sh; do [ -f "$TEMP/payload/$file" ] || die "missing $file"; done
 grep -Fqx "$MARKER" "$TEMP/payload/uqda.service" || die 'service unit is not the quick-install unit'
