@@ -1,5 +1,25 @@
 # Changelog
 
+## Uqda 26
+
+Released 2026-09-28. Machine version: `26.0.0`; tag: `v26.0.0`.
+
+- First general release of Uqda Core, following the public Beta 1.
+- Portable Linux quick installer for systemd on amd64 and arm64, with
+  checksum verification, identity-preserving updates/removal, refusal to
+  replace unmanaged installations, and explicit identity purge.
+- Homebrew Cask for the native macOS packages on Intel and Apple Silicon.
+- Ironwood update incorporating upstream stale bloom-bit cleanup and routing
+  parent validation, plus opt-in idle-session recovery coverage.
+- Cross-platform package builds and native lifecycle checks for Debian,
+  Windows MSI, macOS, and portable Linux archives; two-host field tests on
+  Ubuntu 24.04 and Fedora 44.
+
+The intermittent upstream idle-session delay was not conclusively reproduced
+or fixed. Installers remain unsigned; verify the official `SHA256SUMS` before
+installation. The admin API has no authentication, and this release does not
+claim anonymity or an independent external security audit.
+
 ## Uqda 26 Beta 1
 
 Released 2026-09-27. Machine version: `26.0-beta.1`; tag: `v26.0-beta.1`.

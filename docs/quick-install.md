@@ -1,9 +1,7 @@
-# Quick installation lifecycle (release candidate)
+# Quick installation lifecycle
 
-The macOS Homebrew tap currently installs the published `v26.0-beta.1` package.
-The Linux quick installer remains a release candidate: do not advertise its
-commands as live until portable Linux archives and matching checksums are
-published. Uqda still needs a trusted peer or a trusted local multicast network
+The macOS Homebrew tap and Linux quick installer use the published `v26.0.0`
+release. Uqda still needs a trusted peer or a trusted local multicast network
 to connect.
 
 ## Linux (systemd, x86-64 or arm64)
@@ -48,8 +46,7 @@ installation; it intentionally refuses to replace another service unit.
 ## macOS (Homebrew)
 
 The [public Uqda Homebrew tap](https://github.com/Uqda/homebrew-tap) wraps the
-native macOS `.pkg` and its launchd service. It currently provides
-`v26.0-beta.1`:
+native macOS `.pkg` and its launchd service. It provides `v26.0.0`:
 
 ```sh
 brew install --cask Uqda/tap/uqda
