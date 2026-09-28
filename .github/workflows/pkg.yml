@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/pkg.yml"
+      - "src/version/VERSION"
       - "contrib/install/**"
       - "contrib/homebrew/**"
       - "contrib/systemd/uqda.service.quick"
