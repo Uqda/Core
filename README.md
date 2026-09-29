@@ -8,7 +8,7 @@ It provides encrypted IPv6 connectivity over IPv4 or IPv6 peer connections.
 Uqda is derived from the open-source Yggdrasil implementation; it does not create
 a separate network and does not imply upstream endorsement.
 
-**Current release: Uqda 26 (`v26.0.0`).** It is ready for public use and testing;
+**Current release: Uqda 26.0.1 (`v26.0.1`).** It is ready for public use and testing;
 report any problems through the
 [bug report form](https://github.com/Uqda/Core/issues/new?template=bug_report.yml).
 See [CHANGELOG](CHANGELOG.md) for the tested scope and known limitations.

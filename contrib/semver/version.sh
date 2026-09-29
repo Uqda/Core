@@ -21,10 +21,18 @@ case "${1:-}" in
     printf '%s\n' "$TITLE" ;;
   --prerelease) case "$VERSION" in *-*) echo true ;; *) echo false ;; esac ;;
   --installer)
-    # Numeric installer ordering: beta 1..999, general release 1000.
-    case "$VERSION" in *-beta.*) REV=${VERSION##*-beta.} ;; *-*) exit 1 ;; *) REV=1000 ;; esac
-    # The public GA tag has an explicit .0 patch, but MSI permits only three
-    # numeric fields. Keep the established 26.0.1000 installer sequence.
+    # Numeric installer ordering: beta 1..999, GA 1000, patches 1001+.
+    case "$VERSION" in
+      *-beta.*) REV=${VERSION##*-beta.} ;;
+      *-*) exit 1 ;;
+      *)
+        PATCH=${BASE##*.}
+        case "$PATCH" in *[!0-9]*|'') exit 1 ;; esac
+        REV=$((1000 + PATCH))
+        [ "$REV" -le 65535 ] || exit 1
+        ;;
+    esac
+    # MSI permits only three numeric fields; the patch lives in the last one.
     INSTALLBASE=$BASE
     case "$BASE" in *.*.*) INSTALLBASE=${BASE%.*} ;; esac
     printf '%s.%s\n' "$INSTALLBASE" "$REV" ;;

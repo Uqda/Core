@@ -6,10 +6,10 @@ Do not derive Uqda versions from upstream tags or wire protocol metadata.
 
 | Meaning | Value |
 |---|---|
-| Product/release title | Uqda 26 |
-| Core display | Uqda Core 26 |
-| Machine version | `26.0.0` |
-| Git tag | `v26.0.0` |
+| Product/release title | Uqda 26.0.1 |
+| Core display | Uqda Core 26.0.1 |
+| Machine version | `26.0.1` |
+| Git tag | `v26.0.1` |
 | GitHub release type | General release |
 
 Beta 1 was published as a GitHub prerelease on 2026-09-27 after the required
@@ -28,7 +28,7 @@ Package workflows prepare artifacts. Use `version.sh --title`, its default tag
 output and `--prerelease` when creating release metadata. Verify the tag matches
 the embedded version; use the reviewed changelog rather than a commit dump.
 Debian uses `26.0~beta.1` for ordering; MSI/macOS numeric versions use `26.0.1`
-for Beta 1 and `26.0.1000` for `v26.0.0`. These are installer encodings, not
+for Beta 1, `26.0.1000` for `v26.0.0`, and `26.0.1001` for `v26.0.1`. These are installer encodings, not
 alternate product versions. See [packaging](packaging.md).
 
 Require formatting, build, vet, tests, vulnerability scanning, fuzz smoke,

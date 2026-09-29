@@ -4,7 +4,8 @@ All packages install `uqda` and `uqdactl` and use `uqda.conf`. The version helpe
 reads `src/version/VERSION`; artifact names retain the canonical machine version.
 Debian control metadata replaces the prerelease hyphen with `~` for correct
 ordering. MSI and macOS require numeric installer versions: Beta N maps to
-`YY.minor.N` (N from 1 to 999), general release to `YY.minor.1000`. Product titles
+`YY.minor.N` (N from 1 to 999), general release to `YY.minor.1000`, and patch
+`YY.minor.P` to `YY.minor.(1000+P)`. Product titles
 still use the annual human name. Keep numeric mappings monotonic within a generation.
 
 ## Identity lifecycle

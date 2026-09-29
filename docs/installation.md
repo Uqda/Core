@@ -1,10 +1,10 @@
 # Installation
 
-Uqda 26 is published as GitHub release `v26.0.0`. Download an
+Uqda 26.0.1 is published as GitHub release `v26.0.1`. Download an
 artifact from that release and verify it against `SHA256SUMS`, or build with Go
 1.25 or newer using `./build` or `build.bat`. Run `uqda --version` and
 `uqdactl version` to check the local product identity. Both display
-`Uqda Core 26`.
+`Uqda Core 26.0.1`.
 
 | Integration | Configuration | Build entry point |
 |---|---|---|

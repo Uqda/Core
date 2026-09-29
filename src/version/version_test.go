@@ -9,6 +9,7 @@ func TestProductNameFor(t *testing.T) {
 	}{
 		{"26.0-beta.1", "Uqda 26 Beta 1"},
 		{"26.0.0", "Uqda 26"},
+		{"26.0.1", "Uqda 26.0.1"},
 		{"26.1.0", "Uqda 26.1"},
 		{"26.1", "Uqda 26.1"},
 	} {
