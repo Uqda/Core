@@ -78,6 +78,27 @@ func TestControlCLIWithLiveDaemon(t *testing.T) {
 		}
 	})
 
+	t.Run("DoctorNoPeersRouterOnly", func(t *testing.T) {
+		output, err := runControl(control, endpoint, "-json", "doctor")
+		if err != nil {
+			t.Fatalf("doctor failed: %v\n%s", err, output)
+		}
+		var report struct {
+			Checks []struct {
+				Name   string `json:"name"`
+				Status string `json:"status"`
+			} `json:"checks"`
+		}
+		if err := json.Unmarshal(output, &report); err != nil {
+			t.Fatalf("invalid doctor JSON: %v\n%s", err, output)
+		}
+		if len(report.Checks) != 4 || report.Checks[0].Status != "pass" ||
+			report.Checks[1].Status != "pass" || report.Checks[2].Status != "warn" ||
+			report.Checks[3].Status != "warn" {
+			t.Fatalf("unexpected doctor checks: %+v", report.Checks)
+		}
+	})
+
 	t.Run("AddAndRemovePeer", func(t *testing.T) {
 		const peer = "tcp://127.0.0.1:1"
 		if output, err := runControl(control, endpoint, "addPeer", "uri="+peer); err != nil {
