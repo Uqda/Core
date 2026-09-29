@@ -247,6 +247,15 @@ func TestDaemonPeeringAndAddressDerivation(t *testing.T) {
 			pa, errA, pb, errB)
 	}
 
+	control := buildCommand(t, "uqdactl", "github.com/Uqda/Core/cmd/uqdactl")
+	for _, node := range []*nodeHandle{nodeA, nodeB} {
+		endpoint := fmt.Sprintf("tcp://127.0.0.1:%d", node.adminPort)
+		output, err := runControl(control, endpoint, "doctor")
+		if err != nil || !bytes.Contains(output, []byte("PASS  Peers")) {
+			t.Fatalf("doctor did not confirm connected peers: err=%v output=%s", err, output)
+		}
+	}
+
 	t.Run("AddressDerivationMatchesNodeA", func(t *testing.T) {
 		self, err := getSelf(nodeA.adminPort)
 		if err != nil {

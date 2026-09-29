@@ -19,6 +19,7 @@ scanner/toolchain versions affect reproducibility; record these in CI results.
 ```sh
 go test -count=1 ./cmd/uqda ./src/config
 go test -count=1 -v ./tests/interop
+go test -count=1 -run 'TestControlCLIWithLiveDaemon|TestDaemonPeeringAndAddressDerivation' -v ./tests/interop
 go test ./src/core -run '^$' -fuzz '^FuzzVersionMetadataDecode$' -fuzztime=10s
 go test ./src/multicast -run '^$' -fuzz '^FuzzMulticastAdvertisementUnmarshalBinary$' -fuzztime=10s
 go test ./contrib/mobile
@@ -42,6 +43,9 @@ See [compatibility](compatibility.md) for the test boundary and source pin.
 
 `go test ./tests/interop` covers the separate same-source daemon harness and
 both CLI version commands against the authoritative `src/version/VERSION`.
+The daemon harness also runs `uqdactl doctor` against a no-peer node and a
+connected two-node TCP topology, checking the expected peer and TUN findings.
+It does not replace a field test on separate hosts or prove kernel TUN routing.
 
 ## Long idle-session recovery check
 

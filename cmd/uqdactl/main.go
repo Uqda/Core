@@ -53,6 +53,9 @@ func run() int {
 	if err := cmdLineEnv.setEndpoint(logger); err != nil {
 		return fail(logger, logbuffer, "%v", err)
 	}
+	if len(cmdLineEnv.args) == 1 && isDoctorCommand(cmdLineEnv.args[0]) {
+		return runDoctor(cmdLineEnv.endpoint, cmdLineEnv.injson)
+	}
 
 	conn, err := dialAdminEndpoint(cmdLineEnv.endpoint, logger)
 	if err != nil {
@@ -340,7 +343,7 @@ func dialAdminEndpoint(endpoint string, logger *log.Logger) (net.Conn, error) {
 		return nil, fmt.Errorf("admin endpoint %q has no address", endpoint)
 	}
 	logger.Printf("Connecting to %s endpoint %s", strings.ToUpper(network), address)
-	conn, err := net.Dial(network, address)
+	conn, err := net.DialTimeout(network, address, 5*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("connect to admin endpoint %q: %w", endpoint, err)
 	}

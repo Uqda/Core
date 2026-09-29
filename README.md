@@ -8,9 +8,8 @@ It provides encrypted IPv6 connectivity over IPv4 or IPv6 peer connections.
 Uqda is derived from the open-source Yggdrasil implementation; it does not create
 a separate network and does not imply upstream endorsement.
 
-**Current release: Uqda 26 Beta 1.** This is the official first public beta,
-published under the prerelease tag `v26.0-beta.1` after release validation.
-It is ready for public testing; report any problems through the
+**Current release: Uqda 26 (`v26.0.0`).** It is ready for public use and testing;
+report any problems through the
 [bug report form](https://github.com/Uqda/Core/issues/new?template=bug_report.yml).
 See [CHANGELOG](CHANGELOG.md) for the tested scope and known limitations.
 
@@ -23,6 +22,7 @@ an acronym. A network node connects to other nodes and may forward traffic.
 - TCP, TLS, QUIC, WebSocket, SOCKS and Unix-socket peer connectivity.
 - Local multicast discovery and TUN integration.
 - Local administration through `uqdactl` and the admin socket.
+- One-command local health checks with `uqdactl doctor` (or `uqdactl status`).
 - Configuration validation with `-checkconf`, Unix key-permission warnings,
   non-local admin exposure warnings and jittered peer reconnect delays.
 
@@ -65,7 +65,11 @@ Linux can use `CAP_NET_ADMIN`. See [configuration](docs/configuration.md).
 ```sh
 ./uqdactl getSelf
 ./uqdactl getPeers
+./uqdactl doctor
 ```
+
+The doctor check explains daemon, identity, peer and TUN status without changing
+configuration or showing peer passwords. See [doctor](docs/doctor.md).
 
 `uqda -autoconf` uses a new random identity on each startup. For migration,
 retain your existing key and follow [compatibility](docs/compatibility.md).
@@ -80,6 +84,7 @@ Report vulnerabilities privately using [SECURITY](SECURITY.md).
 - [Configuration](docs/configuration.md) and [installation](docs/installation.md)
 - [Compatibility](docs/compatibility.md) and [mobile API](docs/mobile.md)
 - [Security model](docs/security.md)
+- [Doctor health check](docs/doctor.md)
 - [Testing](docs/testing.md) and [contributing](CONTRIBUTING.md)
 - [Packaging](docs/packaging.md) and [release conventions](docs/releasing.md)
 
