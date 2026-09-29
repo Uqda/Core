@@ -34,3 +34,26 @@ state or configuration. The API has no authentication, so do not expose it
 to an untrusted network. A responding admin API and an up peer do not prove
 end-to-end IPv6 reachability, identity persistence after restart, or firewall
 safety; use the two-node integration checks for those claims.
+
+## Test a remote node
+
+For a real ICMPv6 reachability check through the host's Uqda interface, run:
+
+```sh
+uqdactl test 200:1234::1
+uqdactl test 200:1234::1 count=20 idle=75s
+uqdactl -json test 200:1234::1 count=20
+```
+
+Replace the example with the other node's Uqda IPv6 address (`uqdactl
+getSelf` on that node). `count` is limited to 1–20 and `idle` to 0–5 minutes.
+The command requires a running local daemon, an enabled TUN interface and the
+operating system's `ping`/`ping6` utility. It sends one ICMPv6 echo at a time,
+reports received probes and loss, and exits nonzero for any lost probe. If an
+idle duration is specified, it waits before the first probe; do not send other
+overlay traffic between the two nodes during that wait.
+
+The reported durations include starting the OS ping process. They are useful
+for spotting long stalls but are **not** raw network RTT. A firewall may block
+ICMP while other traffic works, so a failed echo does not by itself locate the
+fault. Run the command from both nodes to check both directions.

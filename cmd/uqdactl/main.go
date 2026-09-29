@@ -33,12 +33,15 @@ func run() int {
 	logbuffer := &bytes.Buffer{}
 	logger := log.New(logbuffer, "", log.Flags())
 
-	if err := protect.Pledge("stdio rpath inet unix dns"); err != nil {
-		return fail(logger, logbuffer, "apply initial process restrictions: %v", err)
-	}
-
 	cmdLineEnv := newCmdLineEnv()
 	cmdLineEnv.parseFlagsAndArgs()
+	pledge := "stdio rpath inet unix dns"
+	if len(cmdLineEnv.args) > 0 && strings.EqualFold(cmdLineEnv.args[0], "test") {
+		pledge += " proc exec"
+	}
+	if err := protect.Pledge(pledge); err != nil {
+		return fail(logger, logbuffer, "apply initial process restrictions: %v", err)
+	}
 
 	if cmdLineEnv.ver || (len(cmdLineEnv.args) == 1 && cmdLineEnv.args[0] == "version") {
 		fmt.Println(version.DisplayName())
@@ -55,6 +58,9 @@ func run() int {
 	}
 	if len(cmdLineEnv.args) == 1 && isDoctorCommand(cmdLineEnv.args[0]) {
 		return runDoctor(cmdLineEnv.endpoint, cmdLineEnv.injson)
+	}
+	if len(cmdLineEnv.args) > 0 && strings.EqualFold(cmdLineEnv.args[0], "test") {
+		return runNetworkTest(cmdLineEnv.endpoint, cmdLineEnv.args[1:], cmdLineEnv.injson)
 	}
 
 	conn, err := dialAdminEndpoint(cmdLineEnv.endpoint, logger)

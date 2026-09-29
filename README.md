@@ -23,6 +23,7 @@ an acronym. A network node connects to other nodes and may forward traffic.
 - Local multicast discovery and TUN integration.
 - Local administration through `uqdactl` and the admin socket.
 - One-command local health checks with `uqdactl doctor` (or `uqdactl status`).
+- Active remote reachability and loss checks with `uqdactl test <Uqda IPv6>`.
 - Configuration validation with `-checkconf`, Unix key-permission warnings,
   non-local admin exposure warnings and jittered peer reconnect delays.
 
@@ -66,6 +67,7 @@ Linux can use `CAP_NET_ADMIN`. See [configuration](docs/configuration.md).
 ./uqdactl getSelf
 ./uqdactl getPeers
 ./uqdactl doctor
+./uqdactl test 200:1234::1
 ```
 
 The doctor check explains daemon, identity, peer and TUN status without changing
