@@ -1,5 +1,24 @@
 # Changelog
 
+## Uqda 26.0.1
+
+Released 2026-09-29. Machine version: `26.0.1`; tag: `v26.0.1`.
+
+- Added `uqdactl doctor`/`status` for read-only local node diagnostics.
+- Added `uqdactl test <Uqda IPv6>` for bounded bidirectional ICMPv6 reachability
+  checks, packet loss and first-probe completion timing, with optional idle
+  interval and JSON output. Completion timing includes ping startup, not just RTT.
+- Preserved node identity during quick-installer uninstall, reinstall and update
+  checks on Ubuntu 24.04 and Fedora 44. The two-node field test transferred
+  1 MiB each way with matching SHA-256 values.
+- Patch installer versions now increase monotonically after the first general
+  release, allowing native package upgrades on Windows and macOS.
+
+Immediately after one Ubuntu service update, 2 of 3 probes were lost while the
+peer reconnected; the next 20 all succeeded. Service-active status alone does
+not certify instant overlay readiness. Installers remain unsigned and the
+administration API must remain private.
+
 ## Uqda 26
 
 Released 2026-09-28. Machine version: `26.0.0`; tag: `v26.0.0`.

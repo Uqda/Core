@@ -21,16 +21,19 @@ func TestReleaseIdentity(t *testing.T) {
 	if machine != version.BuildVersion() {
 		t.Fatal("embedded machine version differs from VERSION")
 	}
-	parts := regexp.MustCompile(`^(\d{2})\.(\d+)(?:\.0)?(?:-beta\.(\d+))?$`).FindStringSubmatch(machine)
+	parts := regexp.MustCompile(`^(\d{2})\.(\d+)(?:\.(\d+))?(?:-beta\.(\d+))?$`).FindStringSubmatch(machine)
 	if parts == nil {
 		t.Fatalf("invalid annual version %q", machine)
 	}
 	want := "Uqda Core " + parts[1]
-	if parts[2] != "0" {
+	if parts[2] != "0" || (parts[3] != "" && parts[3] != "0") {
 		want += "." + parts[2]
 	}
-	if parts[3] != "" {
-		want += " Beta " + parts[3]
+	if parts[3] != "" && parts[3] != "0" {
+		want += "." + parts[3]
+	}
+	if parts[4] != "" {
+		want += " Beta " + parts[4]
 	}
 	if version.DisplayName() != want {
 		t.Fatalf("display name: got %q, want %q", version.DisplayName(), want)

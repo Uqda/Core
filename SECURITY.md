@@ -6,8 +6,8 @@ See the [security model](docs/security.md) for trust boundaries and limitations.
 
 ## Supported versions
 
-Uqda 26 Beta 1 is the currently supported prerelease. Security fixes target the
-default branch; backports to this beta are considered case by case.
+Uqda 26.0.1 is the current supported release. Security fixes target the
+default branch; backports to earlier releases are considered case by case.
 
 ## Reporting a vulnerability
 

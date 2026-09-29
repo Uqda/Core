@@ -22,8 +22,8 @@ func ProductName() string {
 
 func productNameFor(machineVersion string) string {
 	v := strings.SplitN(machineVersion, "-", 2)
-	// Beta tags use 26.0-beta.N; the general-release tag is v26.0.0.
-	// Both display as the annual product name rather than "Uqda 26.0".
+	// Beta tags use 26.0-beta.N; the initial general release is v26.0.0.
+	// Patch versions retain their numeric suffix in the public name.
 	name := "Uqda " + strings.TrimSuffix(strings.TrimSuffix(v[0], ".0"), ".0")
 	if len(v) == 2 {
 		if beta, ok := strings.CutPrefix(v[1], "beta."); ok {
