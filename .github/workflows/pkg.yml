@@ -118,7 +118,7 @@ jobs:
           mkdir -p "$TAP_DIR/Casks"
           cp contrib/homebrew/Casks/uqda.rb "$TAP_DIR/Casks/uqda.rb"
           brew install --cask uqda/ci/uqda
-          /usr/local/bin/uqda --version | grep -F 'Uqda Core 26 Beta 1'
+          test "$(/usr/local/bin/uqda --version)" = "$(sh contrib/semver/version.sh --display)"
           sudo /usr/local/bin/uqda -useconffile /etc/uqda/uqda.conf -checkconf
           IDENTITY=$(sudo shasum -a 256 /etc/uqda/uqda.conf)
           brew reinstall --cask uqda/ci/uqda
