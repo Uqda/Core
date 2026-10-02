@@ -92,6 +92,18 @@ requires a Docker engine, and does not publish an image or require TUN privilege
 
 ## Race detection and platforms
 
+The root `./...` pattern does not include tests in the nested local Ironwood
+module. Run these authentication and peer-snapshot regressions explicitly:
+
+```sh
+go test -race -count=3 github.com/Arceliar/ironwood/encrypted
+go test -race -count=5 github.com/Arceliar/ironwood/network
+```
+
+Authentication tests pin the Argon2id protocol vector, cover same/different/empty
+password session handshakes, and verify that legacy private-group signatures are
+rejected. Independent upstream interoperability separately covers public mode.
+
 `go test -race ./...` requires cgo and a supported C compiler. The Linux CI race
 job runs this command; a workflow definition alone is not evidence of a passing
 run. Windows environments without cgo cannot run the race detector locally.

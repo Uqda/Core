@@ -8,7 +8,7 @@ It provides encrypted IPv6 connectivity over IPv4 or IPv6 peer connections.
 Uqda is derived from the open-source Yggdrasil implementation; it does not create
 a separate network and does not imply upstream endorsement.
 
-**Current release: Uqda 26.0.1 (`v26.0.1`).** It is ready for public use and testing;
+**Current release: Uqda 26.0.2 (`v26.0.2`).** It is ready for public use and testing;
 report any problems through the
 [bug report form](https://github.com/Uqda/Core/issues/new?template=bug_report.yml).
 See [CHANGELOG](CHANGELOG.md) for the tested scope and known limitations.
@@ -48,6 +48,10 @@ sources target Debian, Windows MSI, macOS and Docker; native package validation
 is required before distribution. See [installation](docs/installation.md).
 
 ## Quick start
+
+Use the compact terminal dashboard: `uqda`, `uqda peers`, `uqda info` and
+`uqda test <IPv6>`. The controller commands below remain supported for advanced
+administration. See the [command guide](docs/commands.md).
 
 For a **new** node, create a protected configuration file once:
 

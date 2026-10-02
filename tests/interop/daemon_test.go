@@ -250,9 +250,24 @@ func TestDaemonPeeringAndAddressDerivation(t *testing.T) {
 	control := buildCommand(t, "uqdactl", "github.com/Uqda/Core/cmd/uqdactl")
 	for _, node := range []*nodeHandle{nodeA, nodeB} {
 		endpoint := fmt.Sprintf("tcp://127.0.0.1:%d", node.adminPort)
-		output, err := runControl(control, endpoint, "doctor")
-		if err != nil || !bytes.Contains(output, []byte("PASS  Peers")) {
+		output, err := runControl(control, endpoint, "doctor", "--json")
+		if err != nil {
 			t.Fatalf("doctor did not confirm connected peers: err=%v output=%s", err, output)
+		}
+		var report struct {
+			Checks []struct{ Name, Status string }
+		}
+		if err := json.Unmarshal(output, &report); err != nil {
+			t.Fatalf("invalid doctor report: %v: %s", err, output)
+		}
+		peersPassed := false
+		for _, check := range report.Checks {
+			if check.Name == "Peers" && check.Status == "pass" {
+				peersPassed = true
+			}
+		}
+		if !peersPassed {
+			t.Fatalf("connected peers not healthy: %s", output)
 		}
 	}
 

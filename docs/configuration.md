@@ -18,6 +18,18 @@ administration socket; it has no authentication. `IfName: none` disables TUN.
 `GroupPassword` restricts encrypted sessions to peers with the same secret,
 while relay/transport peering remains separate.
 
+Starting in 26.0.2, private-group authentication uses Argon2id. Upgrade **every
+member of a private group together** from 26.0.1 or earlier. Mixed old/new members
+may still show a transport peer, but cannot exchange encrypted session traffic.
+The password and identity need not change. Empty/public mode remains compatible
+with upstream. There is no legacy-password authentication fallback.
+
+Use a strong randomly generated group secret, shared only with trusted members.
+Derivation uses 64 MiB transient memory, three passes and four lanes once per node
+startup, not per incoming packet. Low-memory devices must budget that startup
+memory. The deterministic protocol salt lets group members derive the same key;
+it cannot prevent precomputation against weak passwords reused between groups.
+
 The upstream [Yggdrasil configuration reference](https://yggdrasil-network.github.io/configurationref.html)
 explains shared network options. Uqda binary names, paths and validation behavior
 are documented here; upstream installation instructions are not Uqda instructions.

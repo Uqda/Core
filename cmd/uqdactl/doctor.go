@@ -48,13 +48,7 @@ func runDoctor(endpoint string, inJSON bool) int {
 		}
 		fmt.Println(string(encoded))
 	} else {
-		fmt.Println("Uqda doctor")
-		for _, check := range report.Checks {
-			fmt.Printf("  %-4s  %-10s %s\n", strings.ToUpper(check.Status), check.Name, check.Detail)
-			if check.Hint != "" {
-				fmt.Println("        Next:", check.Hint)
-			}
-		}
+		renderDoctor(os.Stdout, report)
 	}
 	for _, check := range report.Checks {
 		if check.Status == "fail" {

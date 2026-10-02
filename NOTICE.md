@@ -18,6 +18,10 @@ preserves the inherited public release entries; [CHANGELOG](CHANGELOG.md) covers
 licensed under MPL-2.0. `github.com/Arceliar/phony` supplies actor concurrency and
 is also licensed under MPL-2.0. Their names and authorship are unchanged.
 
+`third_party/ironwood` preserves the pinned upstream snapshot, its copyright and
+license, with a local fix for concurrent peer-latency inspection. Changes and
+provenance are listed in [UQDA-PATCHES](third_party/ironwood/UQDA-PATCHES.md).
+
 `go.mod` and `go.sum` identify additional direct and transitive dependencies.
 Each dependency's license is authoritative for that component. Distributors must
 include the applicable notices and meet the terms for their actual dependency

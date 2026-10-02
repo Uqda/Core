@@ -1,5 +1,23 @@
 # Changelog
 
+## Uqda 26.0.2
+
+Release date: 2026-10-02. Machine version: `26.0.2`; tag: `v26.0.2`.
+
+- One everyday command center: `uqda` displays node health, with short `peers`,
+  `info`, `test`, `version` and `help` commands. Daemon/service flags are unchanged.
+- Aligned ASCII status, identity, peer and network-test output for CMD and other
+  terminals. Human peer output omits URI credentials and arbitrary error text.
+- Reject unknown admin commands/parameters and arguments that were previously
+  ignored. Preserve the working advanced diagnostics, available via `uqda commands`.
+- Exercise all advertised admin operations on two real private-group nodes in
+  a Windows/Linux/macOS CI gate, without touching installed configurations.
+- Fix concurrent peer-latency snapshot reads in a pinned local Ironwood snapshot,
+  with repeated race regressions. No routing protocol or public-mode changes.
+- Harden private-group password derivation with Argon2id, calculated once at
+  startup (64 MiB, three passes, four lanes). Private groups must upgrade all
+  members together; old private-group authentication is deliberately not accepted.
+
 ## Uqda 26.0.1
 
 Released 2026-09-29. Machine version: `26.0.1`; tag: `v26.0.1`.

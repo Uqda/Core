@@ -118,7 +118,12 @@ jobs:
           mkdir -p "$TAP_DIR/Casks"
           cp contrib/homebrew/Casks/uqda.rb "$TAP_DIR/Casks/uqda.rb"
           brew install --cask uqda/ci/uqda
-          test "$(/usr/local/bin/uqda --version)" = "$(sh contrib/semver/version.sh --display)"
+          # The cask points to the last public release until these new packages
+          # have passed validation and are published. Do not compare it to a
+          # newer, not-yet-released source version.
+          CASK_VERSION=$(brew info --cask --json=v2 uqda/ci/uqda | python3 -c 'import json,sys; print(json.load(sys.stdin)["casks"][0]["version"])')
+          test "$(/usr/local/bin/uqda --version)" = "Uqda Core $CASK_VERSION"
+          test "$(/usr/local/bin/uqdactl version)" = "Uqda Core $CASK_VERSION"
           sudo /usr/local/bin/uqda -useconffile /etc/uqda/uqda.conf -checkconf
           IDENTITY=$(sudo shasum -a 256 /etc/uqda/uqda.conf)
           brew reinstall --cask uqda/ci/uqda
