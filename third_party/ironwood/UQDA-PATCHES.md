@@ -20,3 +20,8 @@ No packet formats, authentication, routing decisions or wire versions are change
 The independent pinned-upstream interoperability gate remains mandatory. Remove
 the local replacement when an upstream version contains an equivalent verified
 fix. The root module retains the original version and checksum as provenance.
+
+Go consumers do not inherit dependency-module `replace` directives. This local
+patch is included by builds using Core as the main module, including all release
+packages. A downstream Go main module must opt into the replacement explicitly;
+otherwise it selects the original upstream module version.

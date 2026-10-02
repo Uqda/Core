@@ -1,10 +1,19 @@
 # Installation
 
-Uqda 26.0.1 is published as GitHub release `v26.0.1`. Download an
+Uqda 26.0.2 is published as GitHub release `v26.0.2`. Download an
 artifact from that release and verify it against `SHA256SUMS`, or build with Go
 1.25 or newer using `./build` or `build.bat`. Run `uqda --version` and
 `uqdactl version` to check the local product identity. Both display
-`Uqda Core 26.0.1`.
+`Uqda Core 26.0.2`. For everyday status, simply run `uqda`; see the
+[command guide](commands.md).
+
+Source builds require the complete repository checkout: it contains the pinned,
+locally patched Ironwood dependency. `go install ...@version` is not a supported
+installation method with this local replacement; use the release packages or
+the checkout/build commands. Go applications importing Core as a dependency do
+not inherit its module replacement automatically; they must explicitly select
+the patched dependency in their own main module. Native release binaries and
+the published mobile bindings include the patch.
 
 | Integration | Configuration | Build entry point |
 |---|---|---|
