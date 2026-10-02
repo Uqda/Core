@@ -1,8 +1,8 @@
 # Terminal command center
 
-Development after 26.0.3 adds `uqda find` for read-only public peer discovery.
+Release 26.0.4 adds `uqda find` for read-only public peer discovery.
 See [public peer suggestions](public-peers.md) for usage and security boundaries.
-This command is not in the published 26.0.3 binaries yet.
+This command requires 26.0.4; it is not in the 26.0.3 binaries.
 
 Release 26.0.2 adds one everyday entry point: `uqda`. Older installations can
 still use `uqdactl doctor`; the shortcuts require 26.0.2 or newer.

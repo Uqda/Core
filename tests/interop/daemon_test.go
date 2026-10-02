@@ -20,18 +20,44 @@ import (
 	"github.com/Uqda/Core/src/config"
 )
 
-// freeTCPPort asks the OS for an unused loopback TCP port. There is an
-// inherent (very small) race between closing this listener and the daemon
-// binding the same port, which is an accepted tradeoff for test simplicity;
-// it has not been observed to flake in practice.
+// freeTCPPort is for a single node. Multi-node tests must reserve their ports
+// together: closing individual reservations lets the OS return the same port
+// again before the first daemon has bound it.
 func freeTCPPort(t *testing.T) int {
+	return freeTCPPorts(t, 1)[0]
+}
+
+// Hold all reservations simultaneously to ensure distinct endpoints. An
+// unrelated process can still take a released port before the daemon binds it;
+// startup logs expose such a failure rather than silently retrying a test.
+func freeTCPPorts(t *testing.T, count int) []int {
 	t.Helper()
-	l, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("failed to allocate a free port: %v", err)
+	var listeners []net.Listener
+	defer func() {
+		for _, listener := range listeners {
+			_ = listener.Close()
+		}
+	}()
+	ports := make([]int, 0, count)
+	for i := 0; i < count; i++ {
+		listener, err := net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			t.Fatalf("failed to allocate a free port: %v", err)
+		}
+		listeners = append(listeners, listener)
+		ports = append(ports, listener.Addr().(*net.TCPAddr).Port)
 	}
-	defer l.Close()
-	return l.Addr().(*net.TCPAddr).Port
+	return ports
+}
+
+func TestPortReservationsAreDistinct(t *testing.T) {
+	seen := map[int]bool{}
+	for _, port := range freeTCPPorts(t, 32) {
+		if port == 0 || seen[port] {
+			t.Fatalf("duplicate or invalid reservation: %d", port)
+		}
+		seen[port] = true
+	}
 }
 
 // buildUqda compiles the daemon binary once per test run into a temporary
@@ -62,6 +88,7 @@ func buildCommand(t *testing.T, name, packagePath string) string {
 // nodeSpec is what the caller decides about a node before it exists.
 type nodeSpec struct {
 	label      string
+	adminPort  int    // 0 allocates a single-node port.
 	listenPort int    // 0 means "do not listen"
 	peerAddr   string // "" means "no configured outbound peer"
 }
@@ -82,7 +109,10 @@ func startNode(t *testing.T, binPath string, spec nodeSpec) *nodeHandle {
 	t.Helper()
 
 	cfg := config.GenerateConfig()
-	adminPort := freeTCPPort(t)
+	adminPort := spec.adminPort
+	if adminPort == 0 {
+		adminPort = freeTCPPort(t)
+	}
 	cfg.AdminListen = fmt.Sprintf("tcp://127.0.0.1:%d", adminPort)
 	cfg.IfName = "none"
 	cfg.MulticastInterfaces = nil
@@ -224,11 +254,13 @@ func waitForCondition(timeout time.Duration, fn func() bool) bool {
 func TestDaemonPeeringAndAddressDerivation(t *testing.T) {
 	binPath := buildUqda(t)
 
-	listenPort := freeTCPPort(t)
-	nodeA := startNode(t, binPath, nodeSpec{label: "nodeA", listenPort: listenPort})
+	ports := freeTCPPorts(t, 3)
+	listenPort := ports[0]
+	nodeA := startNode(t, binPath, nodeSpec{label: "nodeA", listenPort: listenPort, adminPort: ports[1]})
 	nodeB := startNode(t, binPath, nodeSpec{
-		label:    "nodeB",
-		peerAddr: fmt.Sprintf("tcp://127.0.0.1:%d", listenPort),
+		label:     "nodeB",
+		adminPort: ports[2],
+		peerAddr:  fmt.Sprintf("tcp://127.0.0.1:%d", listenPort),
 	})
 
 	connected := waitForCondition(20*time.Second, func() bool {

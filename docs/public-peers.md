@@ -1,7 +1,7 @@
-# Public peer suggestions (unreleased)
+# Public peer suggestions (26.0.4)
 
-This feature is in development after 26.0.3; it is not present in that release's
-installed binaries. It uses [the public peer status site](https://publicpeers.neilalexander.dev/),
+This feature requires 26.0.4 or newer; it is not present in 26.0.3 binaries.
+It uses [the public peer status site](https://publicpeers.neilalexander.dev/),
 whose endpoints come from [Yggdrasil's public-peers repository](https://github.com/yggdrasil-network/public-peers).
 
 ```sh
