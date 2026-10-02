@@ -113,6 +113,10 @@ with tempfile.TemporaryDirectory(prefix="uqda-cli-") as temporary:
                     help_args.append("--endpoint=tcp://127.0.0.1:1")
                 run(binary, help_args)
             run(binary, ["help", "test"])
+            run(binary, ["help", "find"])
+            for args in (["find", "limit=0"], ["find", "country=../local"],
+                         ["find", "url=https://example.com"], ["find", "country=germany", "country=austria"]):
+                run(binary, [*args, "--endpoint=tcp://127.0.0.1:1"], expected=2)
             run(binary, ["help", "not-a-command"], expected=2)
             run(binary, ["version"])
         for args in (["status", "ignored"], ["peers", "unused=value"], ["unknown"]):

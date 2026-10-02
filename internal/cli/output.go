@@ -43,6 +43,7 @@ func Help(w io.Writer, program, release string) {
 	for _, entry := range [][2]string{
 		{program, "Node health and connection status"},
 		{program + " peers", "Connected peers and traffic"},
+		{program + " find", "Find public TLS peer candidates"},
 		{program + " test IP", "Test another Uqda IPv6 address"},
 		{program + " info", "Node address and public identity"},
 		{program + " version", "Installed release"},
@@ -81,6 +82,7 @@ type guideEntry struct {
 }
 
 var commandGuide = []guideEntry{
+	{"find", "uqda find [country=NAME] [limit=1..5]", "Read the publicpeers.neilalexander.dev catalog without a daemon or sudo. Bare find lists countries; country=germany checks up to 8 online TLS candidates and suggests 3 by default. Example: uqda find country=germany limit=2 --json. TCP port reachability is not an authenticated Uqda session or a trust guarantee. No peers are added and private-group settings are never changed."},
 	{"status", "uqda [status|doctor]", "Read-only health checks: daemon, identity, peers and TUN interface. status and doctor are aliases. Example: uqda status --json."},
 	{"peers", "uqda peers", "Show direct connections, traffic and latency. Example: uqda peers --json. The raw admin equivalent is uqdactl getPeers; sort=uptime or sort=cost changes ordering."},
 	{"info", "uqda info", "Show your IPv6 address, subnet and public key. The admin equivalent is uqdactl getSelf."},

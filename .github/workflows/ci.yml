@@ -120,6 +120,8 @@ jobs:
         run: go test ./src/core -run '^$' -fuzz '^FuzzVersionMetadataDecode$' -fuzztime=10s
       - name: Multicast parser
         run: go test ./src/multicast -run '^$' -fuzz '^FuzzMulticastAdvertisementUnmarshalBinary$' -fuzztime=10s
+      - name: Public peer catalog parser
+        run: go test ./internal/publicpeers -run '^$' -fuzz '^FuzzCatalog$' -fuzztime=10s
 
   lifecycle-stress:
     name: Lifecycle stress
