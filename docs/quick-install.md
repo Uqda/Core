@@ -1,6 +1,6 @@
 # Quick installation lifecycle
 
-The macOS Homebrew tap and Linux quick installer use the published `v26.0.1`
+The macOS Homebrew tap and Linux quick installer use the published `v26.0.2`
 release. Uqda still needs a trusted peer or a trusted local multicast network
 to connect.
 
@@ -46,7 +46,7 @@ installation; it intentionally refuses to replace another service unit.
 ## macOS (Homebrew)
 
 The [public Uqda Homebrew tap](https://github.com/Uqda/homebrew-tap) wraps the
-native macOS `.pkg` and its launchd service. It provides `v26.0.1`:
+native macOS `.pkg` and its launchd service. It provides `v26.0.2`:
 
 ```sh
 brew install --cask Uqda/tap/uqda
@@ -70,6 +70,12 @@ under `%ProgramData%` manually. Native MSI install, repair and removal are
 tested in the package workflow.
 
 ## Safety and compatibility
+
+Private groups upgrading from 26.0.1 or earlier must update **every member
+together**. Version 26.0.2 uses stronger Argon2id group authentication without
+a legacy fallback. Keep your existing identity and strong group password;
+expect a brief interruption until all members have upgraded. Public-mode
+connectivity remains compatible. See [configuration](configuration.md).
 
 Do not copy a node's private key to a second live node. Keep the configuration
 and admin socket private. The Linux installer will not silently take over

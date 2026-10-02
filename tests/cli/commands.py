@@ -45,13 +45,21 @@ with tempfile.TemporaryDirectory(prefix="uqda-cli-") as temporary:
             configs.append(cfg)
         endpoint = configs[0]["AdminListen"]
         flags = [f"--endpoint={endpoint}"]
-        for _ in range(60):
-            result = subprocess.run([CONTROL, *flags, "info", "--json"], capture_output=True, text=True, encoding="utf-8", timeout=10)
-            if result.returncode == 0:
-                break
-            time.sleep(0.1)
-        else:
-            raise AssertionError("daemon admin socket did not start")
+        # Argon2id runs independently at each node's startup. Readiness of the
+        # first process says nothing about the second, especially on busy CI.
+        # Wait for both boundedly, and never hide a daemon crash by retrying it.
+        for process, cfg in zip(processes, configs):
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline:
+                assert process.poll() is None, "daemon exited before admin readiness"
+                result = subprocess.run(
+                    [CONTROL, f"--endpoint={cfg['AdminListen']}", "info", "--json"],
+                    capture_output=True, text=True, encoding="utf-8", timeout=10)
+                if result.returncode == 0:
+                    break
+                time.sleep(0.1)
+            else:
+                raise AssertionError("daemon admin socket did not start within 20s")
         remote = json.loads(run(CONTROL, [f"--endpoint={configs[1]['AdminListen']}", "info", "--json"]))
         remote_key = remote["key"]
         peer = configs[1]["Listen"][0]
