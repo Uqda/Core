@@ -233,19 +233,19 @@ jobs:
           PKGARCH: ${{ matrix.pkgarch }}
         run: sh contrib/macos/create-pkg.sh
 
-      - name: Native upgrade from 26.0.2 and reinstall smoke
+      - name: Native upgrade from 26.0.3 and reinstall smoke
         env:
           GH_TOKEN: ${{ github.token }}
           PKGARCH: ${{ matrix.pkgarch }}
         run: |
           OLD_ASSETS="$RUNNER_TEMP/uqda-previous"
           mkdir -p "$OLD_ASSETS"
-          gh release download v26.0.2 --repo Uqda/Core \
-            --pattern "uqda-26.0.2-macos-${PKGARCH}.pkg" --pattern SHA256SUMS \
+          gh release download v26.0.3 --repo Uqda/Core \
+            --pattern "uqda-26.0.3-macos-${PKGARCH}.pkg" --pattern SHA256SUMS \
             --dir "$OLD_ASSETS"
-          (cd "$OLD_ASSETS" && grep "uqda-26.0.2-macos-${PKGARCH}.pkg$" SHA256SUMS | shasum -a 256 -c -)
-          sudo installer -pkg "$OLD_ASSETS/uqda-26.0.2-macos-${PKGARCH}.pkg" -target /
-          test "$(/usr/local/bin/uqda --version)" = "Uqda Core 26.0.2"
+          (cd "$OLD_ASSETS" && grep "uqda-26.0.3-macos-${PKGARCH}.pkg$" SHA256SUMS | shasum -a 256 -c -)
+          sudo installer -pkg "$OLD_ASSETS/uqda-26.0.3-macos-${PKGARCH}.pkg" -target /
+          test "$(/usr/local/bin/uqda --version)" = "Uqda Core 26.0.3"
           IDENTITY=$(sudo shasum -a 256 /etc/uqda/uqda.conf)
           PACKAGE=$(find . -maxdepth 1 -name '*.pkg' -print -quit)
           sudo installer -pkg "$PACKAGE" -target /
@@ -254,6 +254,7 @@ jobs:
           sudo /usr/local/bin/uqda -useconffile /etc/uqda/uqda.conf -checkconf
           test "$IDENTITY" = "$(sudo shasum -a 256 /etc/uqda/uqda.conf)"
           /usr/local/bin/uqda help addPeer | grep -F 'uri='
+          /usr/local/bin/uqda help find | grep -F 'country=NAME'
           sudo /usr/local/bin/uqda info
           sudo installer -pkg "$PACKAGE" -target /
           test "$IDENTITY" = "$(sudo shasum -a 256 /etc/uqda/uqda.conf)"
