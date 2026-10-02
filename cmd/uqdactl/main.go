@@ -60,6 +60,9 @@ func run() int {
 		return 0
 	}
 
+	if len(cmdLineEnv.args) > 0 && strings.EqualFold(cmdLineEnv.args[0], "find") {
+		return runFind(cmdLineEnv.args[1:], cmdLineEnv.injson)
+	}
 	if err := cmdLineEnv.setEndpoint(logger); err != nil {
 		return fail(logger, logbuffer, "%v", err)
 	}

@@ -42,7 +42,7 @@ func dispatchCLI(args []string, advancedHelp func()) (int, bool) {
 		}
 		fmt.Println(version.DisplayName())
 		return 0, true
-	case "status", "doctor", "peers", "info", "test", "commands":
+	case "status", "doctor", "peers", "info", "test", "commands", "find":
 	default:
 		fmt.Fprintf(os.Stderr, "Uqda: unknown command %q. Run 'uqda help'.\n", args[0])
 		return 2, true
