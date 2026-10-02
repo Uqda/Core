@@ -33,7 +33,11 @@ func TestDeniedUnixSocketCommands(t *testing.T) {
 	if err := os.Chmod(path, 0); err != nil {
 		t.Fatal(err)
 	}
-	defer os.Chmod(path, 0600)
+	defer func() {
+		if err := os.Chmod(path, 0600); err != nil {
+			t.Errorf("restore test socket permissions: %v", err)
+		}
+	}()
 	endpoint := "unix://" + path
 	_, err = dialAdminEndpoint(endpoint, log.New(io.Discard, "", 0))
 	if !isAdminAccessError(err) || !errors.Is(err, os.ErrPermission) {
