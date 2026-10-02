@@ -18,6 +18,8 @@ release tags and downloads remain unchanged.
   deadlines and at most two IP attempts limit network activity.
 - Catalog fuzz testing joins the existing cross-platform, race, security and
   installer lifecycle gates. Native macOS upgrade tests now start from 26.0.3.
+- The two-daemon regression harness reserves its admin and peer ports together,
+  preventing duplicate port selections before subprocess startup.
 
 ```sh
 uqda find
