@@ -1,8 +1,8 @@
 cask "uqda" do
   arch arm: "arm64", intel: "amd64"
-  version "26.0.1"
-  sha256 arm:   "aa926801f0d6479458d43a5adb5a531383521fb4007ad06eb19e363706d70e79",
-         intel: "6d41a7e22a6fe4a2b324788088b88dbc3a936747cc0c3e6480f1f8dd0975b5c7"
+  version "26.0.2"
+  sha256 arm:   "d7bc225b5ef574807c5066af6004d62a277b57f3c9f8d5114d44d9490a99c2c3",
+         intel: "c38bbe60255d93f884be5fd1355dc8873fd327d9cc41fe39df95be66d225ef06"
   url "https://github.com/Uqda/Core/releases/download/v#{version}/uqda-#{version}-macos-#{arch}.pkg"
 
   name "Uqda Core"
