@@ -68,7 +68,7 @@ func run() int {
 	}
 	var available admin.ListResponse
 	if err := doctorRequest(cmdLineEnv.endpoint, "list", &available); err != nil {
-		return fail(logger, logbuffer, "cannot read available commands; run 'uqda' to check node health")
+		return fail(logger, logbuffer, "cannot read available commands: %v; run 'uqda' to check node health", err)
 	}
 	if err := validateAdminArguments(cmdLineEnv.args, available); err != nil {
 		fmt.Fprintln(os.Stderr, "Uqda:", err)

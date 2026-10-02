@@ -135,19 +135,35 @@ func TestControlCLIRejectsMalformedResponse(t *testing.T) {
 	defer listener.Close()
 	done := make(chan error, 1)
 	go func() {
-		conn, err := listener.Accept()
-		if err != nil {
-			done <- err
-			return
+		for attempt := 0; attempt < 2; attempt++ {
+			conn, err := listener.Accept()
+			if err != nil {
+				done <- err
+				return
+			}
+			var request map[string]interface{}
+			if err := json.NewDecoder(conn).Decode(&request); err != nil {
+				_ = conn.Close()
+				done <- err
+				return
+			}
+			if attempt == 0 {
+				if request["request"] != "list" {
+					_ = conn.Close()
+					done <- fmt.Errorf("expected command discovery, got %v", request)
+					return
+				}
+				_, err = conn.Write([]byte(`{"status":"success","response":{"list":[{"command":"getself","fields":[]}]}}`))
+			} else {
+				_, err = conn.Write([]byte("{malformed response\n"))
+			}
+			_ = conn.Close()
+			if err != nil {
+				done <- err
+				return
+			}
 		}
-		defer conn.Close()
-		var request map[string]interface{}
-		if err := json.NewDecoder(conn).Decode(&request); err != nil {
-			done <- err
-			return
-		}
-		_, err = conn.Write([]byte("{malformed response\n"))
-		done <- err
+		done <- nil
 	}()
 
 	endpoint := "tcp://" + listener.Addr().String()
