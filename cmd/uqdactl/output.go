@@ -23,6 +23,22 @@ func renderDoctor(w io.Writer, report doctorReport) {
 	fmt.Fprint(w, "\n  Details: uqda peers   |   Network test: uqda test IP\n\n")
 }
 
+func renderCommands(w io.Writer, report admin.ListResponse) {
+	cli.Header(w, "ADVANCED COMMANDS", version.DisplayName())
+	for _, entry := range report.List {
+		fmt.Fprintf(w, "  uqdactl %s\n", entry.Command)
+		if len(entry.Fields) > 0 {
+			fields := make([]string, len(entry.Fields))
+			for i, field := range entry.Fields {
+				fields[i] = field + "=..."
+			}
+			cli.Text(w, "    Arguments: ", strings.Join(fields, " "))
+		}
+		cli.Text(w, "    ", entry.Description)
+		fmt.Fprintln(w)
+	}
+}
+
 func renderNetworkTest(w io.Writer, report networkTestReport) {
 	cli.Header(w, "NETWORK TEST", version.DisplayName())
 	cli.Field(w, "Target", report.Target)

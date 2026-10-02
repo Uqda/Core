@@ -84,9 +84,14 @@ with tempfile.TemporaryDirectory(prefix="uqda-cli-") as temporary:
             if "key" in entry.get("fields", []):
                 args.append(f"key={remote_key}")
             json.loads(run(CONTROL, args))
+            # Text output must also be usable, not just the JSON path.
+            text = run(CONTROL, [arg for arg in args if arg != "--json"])
+            assert "DEBUG:" not in text, (name, text)
             print(f"PASS {name}")
         for name in ("status", "doctor", "peers", "info", "commands"):
-            run(NODE, [name, *flags])
+            text = run(NODE, [name, *flags])
+            assert "DEBUG:" not in text, (name, text)
+            assert all(len(line) <= 80 for line in text.splitlines()), (name, text)
         run(CONTROL, flags)  # One command defaults to the health dashboard.
         for binary in (NODE, CONTROL):
             run(binary, ["help"])

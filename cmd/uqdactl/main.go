@@ -141,7 +141,7 @@ func run() int {
 	}
 
 	opts := []tablewriter.Option{
-		tablewriter.WithSymbols(tw.NewSymbols(tw.StyleASCII)),
+		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{Symbols: tw.NewSymbols(tw.StyleASCII)})),
 		tablewriter.WithRowAlignment(tw.AlignLeft),
 		tablewriter.WithHeaderAlignment(tw.AlignCenter),
 		tablewriter.WithHeaderAutoFormat(tw.Off),
@@ -150,6 +150,7 @@ func run() int {
 	if !cmdLineEnv.borders {
 		opts = append(opts, tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{
 			Borders: tw.BorderNone,
+			Symbols: tw.NewSymbols(tw.StyleASCII),
 			Settings: tw.Settings{
 				Lines:      tw.LinesNone,
 				Separators: tw.SeparatorsNone,
@@ -164,14 +165,7 @@ func run() int {
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
 			return fail(logger, logbuffer, "decode list response: %v", err)
 		}
-		table.Header([]string{"Command", "Arguments", "Description"})
-		for _, entry := range resp.List {
-			for i := range entry.Fields {
-				entry.Fields[i] = entry.Fields[i] + "=..."
-			}
-			_ = table.Append([]string{entry.Command, strings.Join(entry.Fields, ", "), entry.Description})
-		}
-		_ = table.Render()
+		renderCommands(os.Stdout, resp)
 
 	case "getself":
 		var resp admin.GetSelfResponse
@@ -182,7 +176,8 @@ func run() int {
 		cli.Field(os.Stdout, "Address", resp.IPAddress)
 		cli.Field(os.Stdout, "Subnet", resp.Subnet)
 		cli.Field(os.Stdout, "Routes", fmt.Sprintf("%d", resp.RoutingEntries))
-		cli.Field(os.Stdout, "Public key", resp.PublicKey)
+		fmt.Fprintln(os.Stdout, "  Public key")
+		cli.Text(os.Stdout, "    ", resp.PublicKey)
 		fmt.Println()
 
 	case "getpeers":
