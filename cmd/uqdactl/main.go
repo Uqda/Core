@@ -71,6 +71,9 @@ func run() int {
 	}
 	var available admin.ListResponse
 	if err := doctorRequest(cmdLineEnv.endpoint, "list", &available); err != nil {
+		if isAdminAccessError(err) {
+			return fail(logger, logbuffer, "%v.\n  Next: %s", err, adminAccessHint(cmdLineEnv.args[0]))
+		}
 		return fail(logger, logbuffer, "cannot read available commands: %v; run 'uqda' to check node health", err)
 	}
 	if err := validateAdminArguments(cmdLineEnv.args, available); err != nil {
@@ -80,6 +83,9 @@ func run() int {
 
 	conn, err := dialAdminEndpoint(cmdLineEnv.endpoint, logger)
 	if err != nil {
+		if isAdminAccessError(err) {
+			return fail(logger, logbuffer, "%v.\n  Next: %s", err, adminAccessHint(cmdLineEnv.args[0]))
+		}
 		return fail(logger, logbuffer, "%v", err)
 	}
 	if err := conn.SetDeadline(time.Now().Add(30 * time.Second)); err != nil {
@@ -326,6 +332,9 @@ func dialAdminEndpoint(endpoint string, logger *log.Logger) (net.Conn, error) {
 	logger.Printf("Connecting to %s endpoint %s", strings.ToUpper(network), address)
 	conn, err := net.DialTimeout(network, address, 5*time.Second)
 	if err != nil {
+		if network == "unix" && errors.Is(err, os.ErrPermission) {
+			return nil, &adminAccessError{cause: err}
+		}
 		return nil, fmt.Errorf("connect to admin endpoint %q: %w", endpoint, err)
 	}
 	return conn, nil

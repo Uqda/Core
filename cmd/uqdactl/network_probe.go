@@ -161,6 +161,10 @@ func runNetworkTest(endpoint string, args []string, inJSON bool) int {
 	}
 	var self admin.GetSelfResponse
 	if err := doctorSelfWithRetry(endpoint, &self); err != nil {
+		if isAdminAccessError(err) {
+			fmt.Fprintln(os.Stderr, "Uqda:", err, "\n  Next:", adminAccessHint("test"))
+			return 1
+		}
 		fmt.Fprintln(os.Stderr, "Cannot reach the Uqda admin socket; run uqdactl doctor first.")
 		return 1
 	}
@@ -170,6 +174,10 @@ func runNetworkTest(endpoint string, args []string, inJSON bool) int {
 	}
 	var interfaceState tun.GetTUNResponse
 	if err := doctorRequest(endpoint, "getTun", &interfaceState); err != nil || !interfaceState.Enabled {
+		if isAdminAccessError(err) {
+			fmt.Fprintln(os.Stderr, "Uqda:", err, "\n  Next:", adminAccessHint("test"))
+			return 1
+		}
 		fmt.Fprintln(os.Stderr, "The local Uqda TUN interface is unavailable; run uqdactl doctor.")
 		return 1
 	}

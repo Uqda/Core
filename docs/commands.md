@@ -20,6 +20,17 @@ the daemon. Help topics `install`, `update` and `uninstall` explain the external
 platform tools; they do not add fake `uqda install` or `uqda uninstall` operations.
 These expanded help pages are not part of the published 26.0.2 binaries.
 
+The development controller also distinguishes local admin-socket permission
+denials from an unavailable daemon and suggests rerunning the same command with
+`sudo` on macOS/Linux (for example `sudo uqda info`). Keep your original custom
+endpoint and arguments. It does not elevate automatically, change socket
+permissions, or print invocation arguments that may contain secrets. A root
+permission denial instead suggests checking ownership and OS security policy.
+This guidance is not yet included in the published 26.0.2 binaries. On 26.0.2,
+use `sudo uqda`, `sudo uqda info` and `sudo uqda peers` when your account cannot
+access the protected local admin socket. Do not make that socket world-accessible:
+the admin API has no authentication.
+
 `uqda` without arguments checks the existing daemon; it does not start a new node,
 modify configuration, or generate an identity. Keep `uqda` and `uqdactl` together
 in the installed binary directory. The launcher never searches PATH for an
