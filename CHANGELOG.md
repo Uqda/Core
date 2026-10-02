@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## Uqda 26.0.2
+
+Release date: 2026-10-02. Machine version: `26.0.2`; tag: `v26.0.2`.
 
 - One everyday command center: `uqda` displays node health, with short `peers`,
   `info`, `test`, `version` and `help` commands. Daemon/service flags are unchanged.

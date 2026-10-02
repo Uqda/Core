@@ -1,7 +1,7 @@
 # Terminal command center
 
-The next source build adds one everyday entry point: `uqda`. Installed release
-26.0.1 still uses `uqdactl doctor`; these shortcuts require the new build.
+Release 26.0.2 adds one everyday entry point: `uqda`. Older installations can
+still use `uqdactl doctor`; the shortcuts require 26.0.2 or newer.
 
 ```text
 uqda                  Node health and connection status

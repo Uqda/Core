@@ -6,10 +6,10 @@ Do not derive Uqda versions from upstream tags or wire protocol metadata.
 
 | Meaning | Value |
 |---|---|
-| Product/release title | Uqda 26.0.1 |
-| Core display | Uqda Core 26.0.1 |
-| Machine version | `26.0.1` |
-| Git tag | `v26.0.1` |
+| Product/release title | Uqda 26.0.2 |
+| Core display | Uqda Core 26.0.2 |
+| Machine version | `26.0.2` |
+| Git tag | `v26.0.2` |
 | GitHub release type | General release |
 
 Beta 1 was published as a GitHub prerelease on 2026-09-27 after the required
