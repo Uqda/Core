@@ -25,6 +25,7 @@ import (
 	"github.com/Uqda/Core/src/config"
 	"github.com/Uqda/Core/src/ipv6rwc"
 
+	"github.com/Uqda/Core/internal/cli"
 	"github.com/Uqda/Core/src/core"
 	"github.com/Uqda/Core/src/multicast"
 	"github.com/Uqda/Core/src/tun"
@@ -74,7 +75,19 @@ func run() int {
 	loglevel := flag.String("loglevel", "info", "loglevel to enable")
 	chuserto := flag.String("user", "", "user (and, optionally, group) to set UID/GID to")
 	notifyFd := flag.Int("notifyfd", -1, "write a newline to this file-descriptor to indicate readiness to a service manager")
+	flag.Usage = func() {
+		cli.Help(flag.CommandLine.Output(), "uqda", version.DisplayName())
+		fmt.Fprintln(flag.CommandLine.Output(), "  Daemon: uqda -useconffile PATH\n\n  Daemon options:")
+		flag.PrintDefaults()
+	}
+	if code, handled := dispatchCLI(os.Args[1:], flag.Usage); handled {
+		return code
+	}
 	flag.Parse()
+	if flag.NArg() != 0 {
+		fmt.Fprintln(os.Stderr, "Uqda: unexpected arguments; run 'uqda help'.")
+		return 2
+	}
 
 	done := make(chan struct{})
 	defer close(done)
@@ -155,12 +168,11 @@ func run() int {
 		return 0
 
 	default:
-		fmt.Println("Usage:")
-		flag.PrintDefaults()
-
-		if *getaddr || *getsnet {
-			fmt.Println("\nError: You need to specify some config data using -useconf or -useconffile.")
+		if *getaddr || *getsnet || *getpkey || *checkconf || *normaliseconf || *exportkey {
+			fmt.Fprintln(os.Stderr, "Uqda: this operation requires -useconf or -useconffile PATH.")
+			return 2
 		}
+		flag.Usage()
 		return 0
 	}
 

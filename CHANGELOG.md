@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- One everyday command center: `uqda` displays node health, with short `peers`,
+  `info`, `test`, `version` and `help` commands. Daemon/service flags are unchanged.
+- Aligned ASCII status, identity, peer and network-test output for CMD and other
+  terminals. Human peer output omits URI credentials and arbitrary error text.
+- Reject unknown admin commands/parameters and arguments that were previously
+  ignored. Preserve the working advanced diagnostics, available via `uqda commands`.
+- Exercise all advertised admin operations on two real private-group nodes in
+  a Windows/Linux/macOS CI gate, without touching installed configurations.
+
 ## Uqda 26.0.1
 
 Released 2026-09-29. Machine version: `26.0.1`; tag: `v26.0.1`.

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -10,11 +11,13 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
 	"suah.dev/protect"
 
+	"github.com/Uqda/Core/internal/cli"
 	"github.com/Uqda/Core/src/admin"
 	"github.com/Uqda/Core/src/core"
 	"github.com/Uqda/Core/src/multicast"
@@ -34,7 +37,13 @@ func run() int {
 	logger := log.New(logbuffer, "", log.Flags())
 
 	cmdLineEnv := newCmdLineEnv()
-	cmdLineEnv.parseFlagsAndArgs()
+	if err := cmdLineEnv.parseFlagsAndArgs(os.Args[1:], os.Stderr); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
+		fmt.Fprintln(os.Stderr, "Uqda:", err)
+		return 2
+	}
 	pledge := "stdio rpath inet unix dns"
 	if len(cmdLineEnv.args) > 0 && strings.EqualFold(cmdLineEnv.args[0], "test") {
 		pledge += " proc exec"
@@ -43,13 +52,8 @@ func run() int {
 		return fail(logger, logbuffer, "apply initial process restrictions: %v", err)
 	}
 
-	if cmdLineEnv.ver || (len(cmdLineEnv.args) == 1 && cmdLineEnv.args[0] == "version") {
+	if cmdLineEnv.ver || (len(cmdLineEnv.args) == 1 && strings.EqualFold(cmdLineEnv.args[0], "version")) {
 		fmt.Println(version.DisplayName())
-		return 0
-	}
-
-	if len(cmdLineEnv.args) == 0 {
-		flag.Usage()
 		return 0
 	}
 
@@ -62,10 +66,22 @@ func run() int {
 	if len(cmdLineEnv.args) > 0 && strings.EqualFold(cmdLineEnv.args[0], "test") {
 		return runNetworkTest(cmdLineEnv.endpoint, cmdLineEnv.args[1:], cmdLineEnv.injson)
 	}
+	var available admin.ListResponse
+	if err := doctorRequest(cmdLineEnv.endpoint, "list", &available); err != nil {
+		return fail(logger, logbuffer, "cannot read available commands; run 'uqda' to check node health")
+	}
+	if err := validateAdminArguments(cmdLineEnv.args, available); err != nil {
+		fmt.Fprintln(os.Stderr, "Uqda:", err)
+		return 2
+	}
 
 	conn, err := dialAdminEndpoint(cmdLineEnv.endpoint, logger)
 	if err != nil {
 		return fail(logger, logbuffer, "%v", err)
+	}
+	if err := conn.SetDeadline(time.Now().Add(30 * time.Second)); err != nil {
+		_ = conn.Close()
+		return fail(logger, logbuffer, "set admin request deadline: %v", err)
 	}
 
 	if err := protect.Pledge("stdio"); err != nil {
@@ -86,21 +102,12 @@ func run() int {
 	args := map[string]string{}
 	for c, a := range cmdLineEnv.args {
 		if c == 0 {
-			if strings.HasPrefix(a, "-") {
-				logger.Printf("Ignoring flag %s as it should be specified before other parameters\n", a)
-				continue
-			}
 			logger.Printf("Sending request: %v\n", a)
 			send.Name = a
 			continue
 		}
 		tokens := strings.SplitN(a, "=", 2)
-		switch {
-		case len(tokens) == 1:
-			logger.Println("Ignoring invalid argument:", a)
-		default:
-			args[tokens[0]] = tokens[1]
-		}
+		args[tokens[0]] = tokens[1]
 	}
 	if send.Arguments, err = json.Marshal(args); err != nil {
 		return fail(logger, logbuffer, "encode command arguments: %v", err)
@@ -134,6 +141,7 @@ func run() int {
 	}
 
 	opts := []tablewriter.Option{
+		tablewriter.WithSymbols(tw.NewSymbols(tw.StyleASCII)),
 		tablewriter.WithRowAlignment(tw.AlignLeft),
 		tablewriter.WithHeaderAlignment(tw.AlignCenter),
 		tablewriter.WithHeaderAutoFormat(tw.Off),
@@ -170,60 +178,19 @@ func run() int {
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
 			return fail(logger, logbuffer, "decode getSelf response: %v", err)
 		}
-		_ = table.Append([]string{"Build name:", resp.BuildName})
-		_ = table.Append([]string{"Build version:", resp.BuildVersion})
-		_ = table.Append([]string{"IPv6 address:", resp.IPAddress})
-		_ = table.Append([]string{"IPv6 subnet:", resp.Subnet})
-		_ = table.Append([]string{"Routing table size:", fmt.Sprintf("%d", resp.RoutingEntries)})
-		_ = table.Append([]string{"Public key:", resp.PublicKey})
-		_ = table.Render()
+		cli.Header(os.Stdout, "NODE IDENTITY", resp.BuildName+" "+resp.BuildVersion)
+		cli.Field(os.Stdout, "Address", resp.IPAddress)
+		cli.Field(os.Stdout, "Subnet", resp.Subnet)
+		cli.Field(os.Stdout, "Routes", fmt.Sprintf("%d", resp.RoutingEntries))
+		cli.Field(os.Stdout, "Public key", resp.PublicKey)
+		fmt.Println()
 
 	case "getpeers":
 		var resp admin.GetPeersResponse
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
 			return fail(logger, logbuffer, "decode getPeers response: %v", err)
 		}
-		table.Header([]string{"URI", "State", "Dir", "IP Address", "Uptime", "RTT", "RX", "TX", "Down", "Up", "Pr", "Cost", "Last Error"})
-		for _, peer := range resp.Peers {
-			state, lasterr, dir, rtt, rxr, txr := "Up", "-", "Out", "-", "-", "-"
-			if !peer.Up {
-				if state = "Down"; peer.LastError != "" {
-					lasterr = fmt.Sprintf("%s ago: %s", peer.LastErrorTime.Round(time.Second), peer.LastError)
-				}
-			} else if rttms := float64(peer.Latency.Microseconds()) / 1000; rttms > 0 {
-				rtt = fmt.Sprintf("%.02fms", rttms)
-			}
-			if peer.Inbound {
-				dir = "In"
-			}
-			uristring := peer.URI
-			if uri, err := url.Parse(peer.URI); err == nil {
-				uri.RawQuery = ""
-				uristring = uri.String()
-			}
-			if peer.RXRate > 0 {
-				rxr = peer.RXRate.String() + "/s"
-			}
-			if peer.TXRate > 0 {
-				txr = peer.TXRate.String() + "/s"
-			}
-			_ = table.Append([]string{
-				uristring,
-				state,
-				dir,
-				peer.IPAddress,
-				(time.Duration(peer.Uptime) * time.Second).String(),
-				rtt,
-				peer.RXBytes.String(),
-				peer.TXBytes.String(),
-				rxr,
-				txr,
-				fmt.Sprintf("%d", peer.Priority),
-				fmt.Sprintf("%d", peer.Cost),
-				lasterr,
-			})
-		}
-		_ = table.Render()
+		renderPeers(os.Stdout, resp)
 
 	case "gettree":
 		var resp admin.GetTreeResponse
@@ -279,9 +246,13 @@ func run() int {
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
 			return fail(logger, logbuffer, "decode getNodeInfo response: %v", err)
 		}
-		for _, v := range resp {
-			fmt.Println(string(v))
-			break
+		keys := make([]string, 0, len(resp))
+		for key := range resp {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			fmt.Printf("%s: %s\n", key, resp[key])
 		}
 
 	case "getmulticastinterfaces":
@@ -320,6 +291,12 @@ func run() int {
 		_ = table.Render()
 
 	case "addpeer", "removepeer":
+		cli.Header(os.Stdout, "PEER UPDATED", version.DisplayName())
+		if strings.EqualFold(send.Name, "addpeer") {
+			fmt.Println("  [PASS] Peer added. Run 'uqda peers' to check its connection.")
+		} else {
+			fmt.Println("  [PASS] Peer removed.")
+		}
 
 	default:
 		fmt.Println(string(recv.Response))
@@ -357,7 +334,6 @@ func dialAdminEndpoint(endpoint string, logger *log.Logger) (net.Conn, error) {
 }
 
 func fail(logger *log.Logger, logbuffer *bytes.Buffer, format string, args ...interface{}) int {
-	logger.Printf("Error: "+format, args...)
-	_, _ = fmt.Fprint(os.Stderr, logbuffer.String())
+	fmt.Fprintf(os.Stderr, "Uqda: "+format+"\n", args...)
 	return 1
 }

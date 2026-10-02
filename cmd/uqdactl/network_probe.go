@@ -199,17 +199,7 @@ func runNetworkTest(endpoint string, args []string, inJSON bool) int {
 		}
 		fmt.Println(string(encoded))
 	} else {
-		fmt.Printf("Uqda network test -> %s\n", report.Target)
-		fmt.Printf("  %d/%d replies (%.0f%% loss)\n", report.Received, report.Sent, report.LossPercent)
-		if report.FirstProbeReceived {
-			fmt.Printf("  First probe completed in %.1f ms\n", *report.FirstProbeElapsedMS)
-		} else {
-			fmt.Println("  First probe did not receive a reply")
-		}
-		if report.MedianElapsedMS != nil {
-			fmt.Printf("  Median/p95 probe completion: %.1f/%.1f ms\n", *report.MedianElapsedMS, *report.P95ElapsedMS)
-		}
-		fmt.Println("  Note:", report.MeasurementNote)
+		renderNetworkTest(os.Stdout, report)
 	}
 	if report.Status != "pass" {
 		return 1

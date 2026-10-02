@@ -49,6 +49,10 @@ is required before distribution. See [installation](docs/installation.md).
 
 ## Quick start
 
+The next source build includes a compact terminal dashboard: `uqda`, `uqda peers`,
+`uqda info` and `uqda test <IPv6>`. Release 26.0.1 uses the controller commands
+below. See the [command guide](docs/commands.md).
+
 For a **new** node, create a protected configuration file once:
 
 ```sh

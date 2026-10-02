@@ -315,9 +315,31 @@ jobs:
         env:
           GOOS: ${{ matrix.goos }}
 
+  cli-commands:
+    name: CLI commands (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: "go.mod"
+      - name: Test every advertised command against two real nodes
+        shell: bash
+        env:
+          EXE: ${{ runner.os == 'Windows' && '.exe' || '' }}
+        run: |
+          go build -o "$RUNNER_TEMP/uqda$EXE" ./cmd/uqda
+          go build -o "$RUNNER_TEMP/uqdactl$EXE" ./cmd/uqdactl
+          python tests/cli/commands.py "$RUNNER_TEMP/uqda$EXE" "$RUNNER_TEMP/uqdactl$EXE"
+
   tests-ok:
     name: All tests passed
-    needs: [lint, codeql, vet, race, vulncheck, fuzz-smoke, lifecycle-stress, build-linux, build-windows, build-macos, mobile-android, mobile-apple, build-freebsd, privileged-user-tests, interoperability, docker-validation]
+    needs: [lint, codeql, vet, race, vulncheck, fuzz-smoke, lifecycle-stress, build-linux, build-windows, build-macos, mobile-android, mobile-apple, build-freebsd, privileged-user-tests, interoperability, docker-validation, cli-commands]
     runs-on: ubuntu-latest
     if: ${{ !cancelled() }}
     steps:
