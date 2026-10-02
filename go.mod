@@ -2,6 +2,9 @@ module github.com/Uqda/Core
 
 go 1.25.0
 
+// Pinned upstream snapshot with the peer-latency debug read race fixed locally.
+replace github.com/Arceliar/ironwood => ./third_party/ironwood
+
 require (
 	github.com/Arceliar/ironwood v0.0.0-20260924233544-cc7fdd2b785f
 	github.com/Arceliar/phony v0.0.0-20220903101357-530938a4b13d

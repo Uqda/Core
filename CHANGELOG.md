@@ -12,6 +12,8 @@ Release date: 2026-10-02. Machine version: `26.0.2`; tag: `v26.0.2`.
   ignored. Preserve the working advanced diagnostics, available via `uqda commands`.
 - Exercise all advertised admin operations on two real private-group nodes in
   a Windows/Linux/macOS CI gate, without touching installed configurations.
+- Fix concurrent peer-latency snapshot reads in a pinned local Ironwood snapshot,
+  with repeated race regressions. No routing protocol or authentication changes.
 
 ## Uqda 26.0.1
 

@@ -86,6 +86,12 @@ jobs:
         env:
           CGO_ENABLED: '1'
         run: go test -race ./...
+      - name: Repeat peer snapshot and reconnect race regressions
+        env:
+          CGO_ENABLED: '1'
+        run: |
+          go test -race -count=5 github.com/Arceliar/ironwood/network
+          go test -race -count=3 ./src/core -run '^TestRepeatedConnectDisconnectCycles$'
 
   vulncheck:
     name: Vulnerability scan
