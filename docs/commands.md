@@ -9,8 +9,27 @@ uqda peers            Connected peers and traffic
 uqda test 200:1234::1  Test another node's Uqda IPv6 address
 uqda info             Node address and public identity
 uqda version          Installed release
-uqda help             Short command guide
+uqda help             Complete command guide
 ```
+
+The development help guide now includes all built-in admin operations, daemon
+configuration options, examples, runtime-versus-persistent peer changes, security
+notes and exit codes. `uqda help addPeer`, `uqda help removePeer`, `uqda help test`
+and `uqdactl help getNodeInfo` show individual command details without contacting
+the daemon. Help topics `install`, `update` and `uninstall` explain the external
+platform tools; they do not add fake `uqda install` or `uqda uninstall` operations.
+These expanded help pages are not part of the published 26.0.2 binaries.
+
+The development controller also distinguishes local admin-socket permission
+denials from an unavailable daemon and suggests rerunning the same command with
+`sudo` on macOS/Linux (for example `sudo uqda info`). Keep your original custom
+endpoint and arguments. It does not elevate automatically, change socket
+permissions, or print invocation arguments that may contain secrets. A root
+permission denial instead suggests checking ownership and OS security policy.
+This guidance is not yet included in the published 26.0.2 binaries. On 26.0.2,
+use `sudo uqda`, `sudo uqda info` and `sudo uqda peers` when your account cannot
+access the protected local admin socket. Do not make that socket world-accessible:
+the admin API has no authentication.
 
 `uqda` without arguments checks the existing daemon; it does not start a new node,
 modify configuration, or generate an identity. Keep `uqda` and `uqdactl` together

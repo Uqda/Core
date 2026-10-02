@@ -71,6 +71,13 @@ func diagnoseNode(endpoint string) doctorReport {
 	}
 	var self admin.GetSelfResponse
 	if err := doctorSelfWithRetry(endpoint, &self); err != nil {
+		if isAdminAccessError(err) {
+			report.Checks = append(report.Checks, doctorCheck{
+				Name: "Access", Status: "fail", Detail: "Permission denied accessing the local admin socket; daemon health is unknown.",
+				Hint: adminAccessHint("status"),
+			})
+			return report
+		}
 		report.Checks = append(report.Checks, doctorCheck{
 			Name: "Daemon", Status: "fail", Detail: "Cannot reach the admin API.",
 			Hint: "Check that Uqda is running and that the local admin socket is accessible; use -endpoint=... for a custom socket.",
@@ -91,6 +98,13 @@ func diagnoseNode(endpoint string) doctorReport {
 
 	var peers admin.GetPeersResponse
 	if err := doctorRequest(endpoint, "getPeers", &peers); err != nil {
+		if isAdminAccessError(err) {
+			report.Checks = append(report.Checks, doctorCheck{
+				Name: "Access", Status: "fail", Detail: "Permission denied accessing the local admin socket.",
+				Hint: adminAccessHint("status"),
+			})
+			return report
+		}
 		report.Checks = append(report.Checks, doctorCheck{
 			Name: "Peers", Status: "fail", Detail: "Could not read peer status.",
 			Hint: "Run uqdactl getPeers and inspect the daemon log.",
@@ -114,6 +128,13 @@ func diagnoseNode(endpoint string) doctorReport {
 
 	var interfaceState tun.GetTUNResponse
 	if err := doctorRequest(endpoint, "getTun", &interfaceState); err != nil {
+		if isAdminAccessError(err) {
+			report.Checks = append(report.Checks, doctorCheck{
+				Name: "Access", Status: "fail", Detail: "Permission denied accessing the local admin socket.",
+				Hint: adminAccessHint("status"),
+			})
+			return report
+		}
 		report.Checks = append(report.Checks, doctorCheck{
 			Name: "Interface", Status: "warn", Detail: "Could not read the TUN interface state.",
 			Hint: "Run uqdactl getTun and inspect the daemon log.",
@@ -135,7 +156,7 @@ func doctorSelfWithRetry(endpoint string, self *admin.GetSelfResponse) error {
 	deadline := time.Now().Add(5 * time.Second)
 	for {
 		err := doctorRequest(endpoint, "getSelf", self)
-		if err == nil || !time.Now().Before(deadline) {
+		if err == nil || isAdminAccessError(err) || !time.Now().Before(deadline) {
 			return err
 		}
 		time.Sleep(500 * time.Millisecond)

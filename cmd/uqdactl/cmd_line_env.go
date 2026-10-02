@@ -72,8 +72,11 @@ func (cmdLineEnv *cmdLineEnv) parseFlagsAndArgs(args []string, output io.Writer)
 		positional = []string{"status"}
 	}
 	if strings.EqualFold(positional[0], "help") {
+		if len(positional) == 2 && cli.HelpTopic(output, "uqdactl", version.DisplayName(), positional[1]) {
+			return flag.ErrHelp
+		}
 		if len(positional) != 1 {
-			return fmt.Errorf("help takes no arguments")
+			return fmt.Errorf("use help or help COMMAND with a known command")
 		}
 		flags.Usage()
 		return flag.ErrHelp

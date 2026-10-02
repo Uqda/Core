@@ -24,12 +24,14 @@ func dispatchCLI(args []string, advancedHelp func()) (int, bool) {
 	}
 	switch strings.ToLower(args[0]) {
 	case "help":
-		if len(args) == 2 && args[1] == "advanced" {
+		if len(args) == 2 && strings.EqualFold(args[1], "advanced") {
 			advancedHelp()
 		} else if len(args) == 1 {
 			cli.Help(os.Stdout, "uqda", version.DisplayName())
+		} else if len(args) == 2 && cli.HelpTopic(os.Stdout, "uqda", version.DisplayName(), args[1]) {
+			return 0, true
 		} else {
-			fmt.Fprintln(os.Stderr, "Uqda: use 'uqda help' or 'uqda help advanced'.")
+			fmt.Fprintln(os.Stderr, "Uqda: use 'uqda help', 'uqda help COMMAND' or 'uqda help advanced'.")
 			return 2, true
 		}
 		return 0, true
