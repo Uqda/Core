@@ -86,6 +86,8 @@ jobs:
         env:
           CGO_ENABLED: '1'
         run: go test -race ./...
+      - name: Private-group KDF and authentication regressions
+        run: go test -race -count=3 github.com/Arceliar/ironwood/encrypted
       - name: Repeat peer snapshot and reconnect race regressions
         env:
           CGO_ENABLED: '1'

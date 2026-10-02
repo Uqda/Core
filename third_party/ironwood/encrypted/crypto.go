@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/binary"
 
+	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/nacl/box"
 
 	"github.com/Arceliar/ironwood/encrypted/internal/e2c"
@@ -146,14 +146,26 @@ type groupAuth struct {
 	secret  [32]byte
 }
 
+// These parameters and the domain salt are part of Uqda's private-group
+// authentication protocol. Changing them requires upgrading every group member.
+// The salt is deliberately shared, not a per-node password-storage salt: nodes
+// with the same password must derive the same signature preimage without a
+// negotiation that could downgrade authentication. Use a random group password;
+// a shared salt does not prevent precomputation across groups using weak passwords.
+const groupAuthSalt = "uqda/group-auth/argon2id/v1"
+
 func newGroupAuth(password string) groupAuth {
 	if password == "" {
 		return groupAuth{}
 	}
-	return groupAuth{
-		enabled: true,
-		secret:  sha256.Sum256(append([]byte("ironwood/encrypted\x00"), []byte(password)...)),
-	}
+	// RFC 9106's memory-constrained Argon2id profile: 64 MiB, three passes,
+	// four lanes, and a 256-bit result. Derive once at PacketConn creation,
+	// never in response to incoming packets. There is no legacy SHA-256 fallback.
+	key := argon2.IDKey([]byte(password), []byte(groupAuthSalt), 3, 64*1024, 4, 32)
+	auth := groupAuth{enabled: true}
+	copy(auth.secret[:], key)
+	clear(key)
+	return auth
 }
 
 func (auth groupAuth) preimage() []byte {

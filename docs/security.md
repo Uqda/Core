@@ -28,6 +28,11 @@ A relay sees connection metadata and traffic patterns but cannot decrypt other
 nodes' end-to-end session payloads. `AllowedPublicKeys` does not restrict multicast
 peerings; disable discovery on untrusted interfaces. `GroupPassword` limits
 session communication to nodes with the same secret, not transport peering.
+In 26.0.2, that secret is derived with Argon2id at startup, using the RFC 9106
+memory-constrained cost profile (64 MiB, three passes, four lanes). This is not a
+PAKE or a guarantee against offline guessing: use a random strong password. The
+shared protocol salt is deterministic, not unique to each group. Older private
+groups must migrate all members together; no weak legacy fallback is accepted.
 
 Protect configuration backups and external PEM keys as carefully as active keys.
 A stolen private key permits node impersonation. Keep the admin API local and

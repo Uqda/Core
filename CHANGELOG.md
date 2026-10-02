@@ -13,7 +13,10 @@ Release date: 2026-10-02. Machine version: `26.0.2`; tag: `v26.0.2`.
 - Exercise all advertised admin operations on two real private-group nodes in
   a Windows/Linux/macOS CI gate, without touching installed configurations.
 - Fix concurrent peer-latency snapshot reads in a pinned local Ironwood snapshot,
-  with repeated race regressions. No routing protocol or authentication changes.
+  with repeated race regressions. No routing protocol or public-mode changes.
+- Harden private-group password derivation with Argon2id, calculated once at
+  startup (64 MiB, three passes, four lanes). Private groups must upgrade all
+  members together; old private-group authentication is deliberately not accepted.
 
 ## Uqda 26.0.1
 

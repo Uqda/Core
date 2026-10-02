@@ -15,11 +15,20 @@ Local changes:
   calls: registry callbacks may otherwise deadlock with connection shutdown.
 - `network/debug_test.go`: concurrent timestamp writes and peer snapshot reads,
   plus snapshot reads while peers are removed and added. Run with the race detector.
+- `encrypted/crypto.go`: Uqda private groups derive their signature preimage with
+  Argon2id (64 MiB, three passes, four lanes, 32-byte output) once at startup.
+  The fixed `uqda/group-auth/argon2id/v1` salt is a protocol domain separator,
+  not a unique password-storage salt. Keep group passwords strong and random.
+- `encrypted/crypto_test.go`: pinned KDF vector, unchanged empty/public mode,
+  same/different/absent password handshakes, and rejection of legacy signatures.
 
-No packet formats, authentication, routing decisions or wire versions are changed.
-The independent pinned-upstream interoperability gate remains mandatory. Remove
-the local replacement when an upstream version contains an equivalent verified
-fix. The root module retains the original version and checksum as provenance.
+No packet formats, routing decisions or public-mode wire versions are changed.
+Private-group authentication IS changed: every group member must upgrade together
+from 26.0.1 or earlier. No legacy fallback is offered. The independent pinned-upstream
+public interoperability gate remains mandatory. Remove the local replacement only
+when upstream contains equivalent verified fixes AND a deliberate migration plan
+preserves Uqda private-group authentication. The root module retains the original
+version and checksum as provenance.
 
 Go consumers do not inherit dependency-module `replace` directives. This local
 patch is included by builds using Core as the main module, including all release
