@@ -54,6 +54,7 @@ func TestUnsafeURIsAndAddresses(t *testing.T) {
 		"tls://100.64.0.1:1", "tls://192.0.2.1:1", "tls://224.0.0.1:1", "tls://198.18.0.1:1",
 		"tls://[::1]:1", "tls://[fc00::1]:1", "tls://[fe80::1%25en0]:1", "tls://[::ffff:127.0.0.1]:1",
 		"tls://[2001:db8::1]:1", "tls://[2002:7f00:1::]:1", "tls://[64:ff9b::7f00:1]:1",
+		"tls://2606:4700:4700::1111:443",
 		"http://peer.example:1", "quic://peer.example:1", "tls://user:password@peer.example:1",
 		"tls://peer.example:0", "tls://peer.example:65536", "tls://peer.example", "tls://peer.example:1/path",
 		"tls://peer.example:1#secret", "tls://peer.example:1?password=secret", "tls://peer.example:1?sni=x%0aevil",

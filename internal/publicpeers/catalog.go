@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/netip"
 	"net/url"
@@ -193,6 +194,9 @@ func (c Catalog) Countries() []string {
 func publicURI(raw string) (string, bool) {
 	u, err := url.Parse(raw)
 	if err != nil || len(raw) > 512 || (u.Scheme != "tls" && u.Scheme != "tcp") || u.User != nil || u.Path != "" || u.Fragment != "" || u.Opaque != "" {
+		return "", false
+	}
+	if _, _, err := net.SplitHostPort(u.Host); err != nil {
 		return "", false
 	}
 	port, err := strconv.Atoi(u.Port())
