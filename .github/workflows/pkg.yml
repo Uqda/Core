@@ -209,11 +209,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pkgarch: ["amd64", "arm64"]
+        include:
+          - pkgarch: amd64
+            runner: macos-15-intel
+          - pkgarch: arm64
+            runner: macos-latest
 
     name: Package (macOS, ${{ matrix.pkgarch }})
 
-    runs-on: macos-latest
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -229,14 +233,28 @@ jobs:
           PKGARCH: ${{ matrix.pkgarch }}
         run: sh contrib/macos/create-pkg.sh
 
-      - name: Native install and reinstall smoke
-        if: matrix.pkgarch == 'arm64'
+      - name: Native upgrade from 26.0.2 and reinstall smoke
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PKGARCH: ${{ matrix.pkgarch }}
         run: |
+          OLD_ASSETS="$RUNNER_TEMP/uqda-previous"
+          mkdir -p "$OLD_ASSETS"
+          gh release download v26.0.2 --repo Uqda/Core \
+            --pattern "uqda-26.0.2-macos-${PKGARCH}.pkg" --pattern SHA256SUMS \
+            --dir "$OLD_ASSETS"
+          (cd "$OLD_ASSETS" && grep "uqda-26.0.2-macos-${PKGARCH}.pkg$" SHA256SUMS | shasum -a 256 -c -)
+          sudo installer -pkg "$OLD_ASSETS/uqda-26.0.2-macos-${PKGARCH}.pkg" -target /
+          test "$(/usr/local/bin/uqda --version)" = "Uqda Core 26.0.2"
+          IDENTITY=$(sudo shasum -a 256 /etc/uqda/uqda.conf)
           PACKAGE=$(find . -maxdepth 1 -name '*.pkg' -print -quit)
           sudo installer -pkg "$PACKAGE" -target /
           test "$(/usr/local/bin/uqda --version)" = "$(sh contrib/semver/version.sh --display)"
+          test "$(/usr/local/bin/uqdactl version)" = "$(sh contrib/semver/version.sh --display)"
           sudo /usr/local/bin/uqda -useconffile /etc/uqda/uqda.conf -checkconf
-          IDENTITY=$(sudo shasum -a 256 /etc/uqda/uqda.conf)
+          test "$IDENTITY" = "$(sudo shasum -a 256 /etc/uqda/uqda.conf)"
+          /usr/local/bin/uqda help addPeer | grep -F 'uri='
+          sudo /usr/local/bin/uqda info
           sudo installer -pkg "$PACKAGE" -target /
           test "$IDENTITY" = "$(sudo shasum -a 256 /etc/uqda/uqda.conf)"
 
