@@ -37,10 +37,13 @@ func run() int {
 	logger := log.New(logbuffer, "", log.Flags())
 
 	cmdLineEnv := newCmdLineEnv()
-	if err := cmdLineEnv.parseFlagsAndArgs(os.Args[1:], os.Stderr); err != nil {
+	var flagOutput bytes.Buffer
+	if err := cmdLineEnv.parseFlagsAndArgs(os.Args[1:], &flagOutput); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
+			fmt.Fprint(os.Stdout, flagOutput.String())
 			return 0
 		}
+		fmt.Fprint(os.Stderr, flagOutput.String())
 		fmt.Fprintln(os.Stderr, "Uqda:", err)
 		return 2
 	}

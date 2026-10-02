@@ -102,7 +102,18 @@ with tempfile.TemporaryDirectory(prefix="uqda-cli-") as temporary:
             assert all(len(line) <= 80 for line in text.splitlines()), (name, text)
         run(CONTROL, flags)  # One command defaults to the health dashboard.
         for binary in (NODE, CONTROL):
-            run(binary, ["help"])
+            guide = run(binary, ["help"])
+            assert "addPeer" in guide and "removePeer" in guide
+            assert all(len(line) <= 80 for line in guide.splitlines())
+            for entry in commands:
+                # Controller help must not contact even a deliberately invalid
+                # admin endpoint. The launcher also renders help locally.
+                help_args = ["help", entry["command"]]
+                if binary == CONTROL:
+                    help_args.append("--endpoint=tcp://127.0.0.1:1")
+                run(binary, help_args)
+            run(binary, ["help", "test"])
+            run(binary, ["help", "not-a-command"], expected=2)
             run(binary, ["version"])
         for args in (["status", "ignored"], ["peers", "unused=value"], ["unknown"]):
             run(CONTROL, [*flags, *args], expected=2)

@@ -9,8 +9,16 @@ uqda peers            Connected peers and traffic
 uqda test 200:1234::1  Test another node's Uqda IPv6 address
 uqda info             Node address and public identity
 uqda version          Installed release
-uqda help             Short command guide
+uqda help             Complete command guide
 ```
+
+The development help guide now includes all built-in admin operations, daemon
+configuration options, examples, runtime-versus-persistent peer changes, security
+notes and exit codes. `uqda help addPeer`, `uqda help removePeer`, `uqda help test`
+and `uqdactl help getNodeInfo` show individual command details without contacting
+the daemon. Help topics `install`, `update` and `uninstall` explain the external
+platform tools; they do not add fake `uqda install` or `uqda uninstall` operations.
+These expanded help pages are not part of the published 26.0.2 binaries.
 
 `uqda` without arguments checks the existing daemon; it does not start a new node,
 modify configuration, or generate an identity. Keep `uqda` and `uqdactl` together
