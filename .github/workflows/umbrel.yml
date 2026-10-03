@@ -90,7 +90,20 @@ jobs:
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
       - name: Wrapper version
         id: version
-        run: echo "value=$(cat contrib/umbrel/VERSION)" >> "$GITHUB_OUTPUT"
+        run: |
+          python3 - <<'PYTHON'
+          import os, pathlib, re
+          current = pathlib.Path('contrib/umbrel/VERSION').read_text().strip()
+          candidate_path = pathlib.Path('contrib/umbrel/CANDIDATE_VERSION')
+          candidate = candidate_path.is_file()
+          version = candidate_path.read_text().strip() if candidate else current
+          pattern = r'26\.0\.4-umbrel\.(\d+)'
+          assert re.fullmatch(pattern, version) and re.fullmatch(pattern, current)
+          if candidate:
+              assert int(re.fullmatch(pattern, version)[1]) > int(re.fullmatch(pattern, current)[1])
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'value={version}\ncandidate={str(candidate).lower()}\n')
+          PYTHON
       - name: Log in to GHCR
         if: github.event_name == 'push' && github.repository == 'Uqda/Core'
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
@@ -121,17 +134,27 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ steps.version.outputs.value }}
           provenance: false
-      - name: Export digest-pinned community store
+      - name: Record published multiarchitecture digest
         if: github.event_name == 'push' && github.repository == 'Uqda/Core'
         run: |
           docker buildx imagetools inspect "ghcr.io/uqda/core:${{ steps.version.outputs.value }}" > "$RUNNER_TEMP/image.txt"
           DIGEST=$(awk '/^Digest:/ {print $2; exit}' "$RUNNER_TEMP/image.txt")
           test -n "$DIGEST"
-          python3 contrib/umbrel/export_store.py --digest "$DIGEST" --icon-ref "$GITHUB_SHA" --output "$RUNNER_TEMP/uqda-umbrel-store.zip"
+          printf 'version=%s\ndigest=%s\nrevision=%s\n' '${{ steps.version.outputs.value }}' "$DIGEST" "$GITHUB_SHA" > "$RUNNER_TEMP/uqda-umbrel-image.txt"
           echo "Published ghcr.io/uqda/core:${{ steps.version.outputs.value }}@$DIGEST" >> "$GITHUB_STEP_SUMMARY"
-          echo 'The exported store still requires actual Umbrel platform testing; the official development container or a production VM can be used without buying a device.' >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: github.event_name == 'push' && github.repository == 'Uqda/Core'
+        with:
+          name: uqda-umbrel-image
+          path: ${{ runner.temp }}/uqda-umbrel-image.txt
+      - name: Export digest-pinned community store
+        if: github.event_name == 'push' && github.repository == 'Uqda/Core' && steps.version.outputs.candidate != 'true'
+        run: |
+          DIGEST=$(awk -F= '/^digest=/ {print $2; exit}' "$RUNNER_TEMP/uqda-umbrel-image.txt")
+          python3 contrib/umbrel/export_store.py --digest "$DIGEST" --icon-ref "$GITHUB_SHA" --output "$RUNNER_TEMP/uqda-umbrel-store.zip"
+          echo 'The exported store still requires actual Umbrel platform testing; the official development container or a production VM can be used without buying a device.' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: github.event_name == 'push' && github.repository == 'Uqda/Core' && steps.version.outputs.candidate != 'true'
         with:
           name: uqda-umbrel-store
           path: ${{ runner.temp }}/uqda-umbrel-store.zip

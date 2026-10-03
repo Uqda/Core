@@ -73,6 +73,15 @@ jobs:
           # The development image's OpenSSL defaults to a missing Homebrew path.
           # Use the real Debian config; never disable certificate verification.
           docker exec umbrel-dev test -r /etc/ssl/openssl.cnf
+          # A new wrapper can be publishing in the native-test workflow. Bound
+          # visibility retries; never substitute a different published image.
+          image="$(awk '/^[[:space:]]*image:/ {print $2; exit}' uqda-package/uqda-network/docker-compose.yml)"
+          available=false
+          for attempt in $(seq 1 30); do
+            if docker exec umbrel-dev docker pull "$image"; then available=true; break; fi
+            sleep 10
+          done
+          test "$available" = true
           npm run dev exec:noninteractive -- env OPENSSL_CONF=/etc/ssl/openssl.cnf UQDA_PACKAGE_SOURCE=/umbrel-dev/uqda-package UQDA_PLATFORM_IMAGE="$UQDA_PLATFORM_IMAGE" npm --prefix /umbrel-dev/packages/umbreld test -- uqda-platform.integration.test.ts
       - name: Platform logs
         if: always()

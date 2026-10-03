@@ -13,7 +13,10 @@ let platform: Awaited<ReturnType<typeof createTestUmbreld>> | undefined
 let store: Awaited<ReturnType<typeof runGitServer>> | undefined
 const appId = 'uqda-network'
 let identity = ''
-let publishedImage = ''
+// Preserve the real previous-release upgrade boundary even when packaging moves
+// to the next wrapper version. This immutable image is used only in CI fixtures.
+const publishedImage = 'ghcr.io/uqda/core:26.0.4-umbrel.1@sha256:e68a42d1f2063e408272f96189a45c2f68beb09fee659700693b4ab6694a78ad'
+let packageVersion = ''
 const base = 'http://127.0.0.1:8926'
 let cookie = '', csrf = ''
 
@@ -64,6 +67,8 @@ beforeAll(async () => {
   if (!source) throw new Error('UQDA_PACKAGE_SOURCE required')
   await fse.copy(path.join(source, 'uqda-network'), path.join(store.directory, appId))
   await fse.copy(path.join(source, 'umbrel-app-store.yml'), path.join(store.directory, 'umbrel-app-store.yml'))
+  const manifest: any = yaml.load(await fse.readFile(path.join(store.directory, appId, 'umbrel-app.yml'), 'utf8'))
+  packageVersion = manifest.version
   const sourceImage = process.env.UQDA_PLATFORM_IMAGE
   if (sourceImage) {
     if (!/^127\.0\.0\.1:5000\/uqda-validation@sha256:[a-f0-9]{64}$/.test(sourceImage)) {
@@ -71,7 +76,6 @@ beforeAll(async () => {
     }
     const composePath = path.join(store.directory, appId, 'docker-compose.yml')
     const compose: any = yaml.load(await fse.readFile(composePath, 'utf8'))
-    publishedImage = compose.services.core.image
     for (const service of ['core', 'dashboard']) compose.services[service].image = sourceImage
     await fse.writeFile(composePath, yaml.dump(compose))
   }
@@ -121,7 +125,7 @@ test.sequential('install through actual Umbrel app manager and enforce both auth
   await login()
   identity = (await nodeStatus()).identity.address
   expect(identity).toMatch(/^2[0-9a-f]*:/)
-  if (process.env.UQDA_PLATFORM_IMAGE) {
+  if (process.env.UQDA_PLATFORM_IMAGE || packageVersion !== '26.0.4-umbrel.1') {
     // Co-hosted apps can receive cookies because cookies ignore TCP ports.
     // Even a real owner cookie plus the UI cookie cannot recover its proof.
     const session = await request('/api/session', undefined, true, '')
@@ -148,7 +152,7 @@ test.sequential('manifest update and optional published-to-source image upgrade 
   // to the actual newly built digest. Nothing is changed in the public store.
   const images = sourceImage ? [publishedImage, sourceImage] : ['']
   for (const [index, image] of images.entries()) {
-    manifest.version = `26.0.4-umbrel.1-platform-test-${index}`
+    manifest.version = `${packageVersion}-platform-test-${index}`
     await fse.writeFile(manifestPath, yaml.dump(manifest))
     if (image) {
       const composePath = path.join(store!.directory, appId, 'docker-compose.yml')
