@@ -131,6 +131,21 @@ class LifecycleTests(unittest.TestCase):
         with self.assertRaises(ControlError):
             self.supervisor.apply(self.values())
 
+    def test_encoded_peer_credentials_are_not_exposed_or_overwritten(self):
+        for query in ("%70assword=encoded-private-value", "pass%77ord=encoded-private-value",
+                      "token=encoded-private-value", "%73ecret=encoded-private-value"):
+            with self.subTest(query=query):
+                config = self.supervisor.read_config()
+                config["Peers"] = ["tls://example.com:443?" + query]
+                atomic_write(self.supervisor.config_path, json.dumps(config).encode())
+                before = self.supervisor.config_path.read_bytes()
+                settings = self.supervisor.settings()
+                self.assertFalse(settings["editable"])
+                self.assertNotIn("encoded-private-value", json.dumps(settings))
+                with self.assertRaises(ControlError):
+                    self.supervisor.apply(self.values())
+                self.assertEqual(before, self.supervisor.config_path.read_bytes())
+
 
 class HttpTests(LifecycleTests):
     # Reuse lifecycle fixture, not the lifecycle test methods.
@@ -231,7 +246,8 @@ class ValidationTests(unittest.TestCase):
     def test_uris_and_redaction(self):
         self.assertEqual(validate_uris(["tls://[2001:db8::1]:443"]), ["tls://[2001:db8::1]:443"])
         for address in ["http://example.com:443", "tls://example.com", "tls://user:secret@example.com:443",
-                        "tls://example.com:443?password=secret", "tls://example.com:443\n", "unix:///tmp/admin.sock"]:
+                        "tls://example.com:443?password=secret", "tls://example.com:443?%70assword=hidden",
+                        "tls://example.com:443?token=hidden", "tls://example.com:443\n", "unix:///tmp/admin.sock"]:
             with self.assertRaises(ControlError):
                 validate_uris([address])
         self.assertEqual(display_uri("tls://user:secret@example.com:443?password=hidden"), "tls://example.com:443")

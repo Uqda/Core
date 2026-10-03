@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 import threading
 import time
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, urlsplit
 
 MAX_MESSAGE = 65536
 
@@ -60,7 +60,10 @@ def validate_uris(values, listener=False):
             if listener and (uri.query or uri.path not in ("", "/") or uri.port < 1024):
                 raise ValueError()
             # Password-bearing transport URIs belong in advanced local config, never this UI.
-            if "password" in uri.query.lower() or "secret" in uri.query.lower():
+            # Decode parameter names just as Core's URL parser does. Encoded
+            # password keys must never make credential-bearing peers editable.
+            parameters = parse_qsl(uri.query, keep_blank_values=True, strict_parsing=True, max_num_fields=16)
+            if any(key not in {"key", "priority", "maxbackoff", "sni", "origin"} for key, _ in parameters):
                 raise ValueError()
         except ValueError:
             raise ControlError("Use a supported URI with a host and port, without embedded credentials.") from None
