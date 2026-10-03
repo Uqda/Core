@@ -88,6 +88,14 @@ starts the actual instance on the production internal port before registration,
 then waits for the real app gateway's authentication redirect. No replacement
 gateway or mocked app manager is introduced. A rerun is required to prove the fix.
 
+The next run built the environment but failed during the upstream HTTPS CA setup:
+https://github.com/Uqda/Core/actions/runs/37128409855
+OpenSSL tried to read the nonexistent Homebrew `openssl.cnf`; all four app tests
+were skipped after that setup error, not passed. The revised CI command explicitly
+uses the real Debian `/etc/ssl/openssl.cnf`. It does not bypass TLS verification.
+The isolated pre-test development service also has a documented 30-second stop
+deadline; it does not certify graceful production shutdown.
+
 That gate distinguishes a manifest-only app update from a binary/image upgrade.
 The first fixture isolated dashboard-password tests by disabling the outer auth
 layer in temporary test data. The revised test never disables either layer: it

@@ -51,7 +51,11 @@ jobs:
           npm run --prefix packages/umbreld test:umbrel-dev:prepare
       - name: Test published package through real Umbrel app manager
         working-directory: upstream/worktrees/codex/uqda-platform
-        run: npm run dev exec:noninteractive -- env UQDA_PACKAGE_SOURCE=/umbrel-dev/uqda-package npm --prefix /umbrel-dev/packages/umbreld test -- uqda-platform.integration.test.ts
+        run: |
+          # The development image's OpenSSL defaults to a missing Homebrew path.
+          # Use the real Debian config; never disable certificate verification.
+          docker exec umbrel-dev test -r /etc/ssl/openssl.cnf
+          npm run dev exec:noninteractive -- env OPENSSL_CONF=/etc/ssl/openssl.cnf UQDA_PACKAGE_SOURCE=/umbrel-dev/uqda-package npm --prefix /umbrel-dev/packages/umbreld test -- uqda-platform.integration.test.ts
       - name: Platform logs
         if: always()
         run: docker logs --tail 120 umbrel-dev || true
