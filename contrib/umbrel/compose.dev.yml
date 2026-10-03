@@ -17,6 +17,7 @@ services:
       - /run/uqda-core:mode=0700
   dashboard:
     image: uqda-umbrel:test
+    pull_policy: never
     user: "1000:1000"
     command: [dashboard.py]
     depends_on: [core]
@@ -32,6 +33,7 @@ services:
   peer:
     profiles: [network-test]
     image: uqda-umbrel:test
+    pull_policy: never
     cap_add: [NET_ADMIN]
     devices: [/dev/net/tun:/dev/net/tun]
     command: [control.py]

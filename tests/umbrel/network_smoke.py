@@ -99,6 +99,29 @@ with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as connection:
             process.communicate(timeout=10)
 
 
+def probe_udp(sender, receiver, address):
+    code = """
+import hashlib, socket
+with socket.socket(socket.AF_INET6, socket.SOCK_DGRAM) as server:
+    server.settimeout(12)
+    server.bind((ADDRESS, 0))
+    print(server.getsockname()[1], flush=True)
+    data, remote = server.recvfrom(2048)
+    assert data == b'd' * 1024
+    server.sendto(hashlib.sha256(data).digest(), remote)
+""".replace("ADDRESS", repr(address))
+    server = subprocess.Popen([*COMPOSE, "exec", "-T", receiver, "python3", "-u", "-c", code],
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    try:
+        port = int(server.stdout.readline())
+        execute(sender, "import socket, hashlib\nwith socket.socket(socket.AF_INET6, socket.SOCK_DGRAM) as client:\n"
+                " client.settimeout(8)\n client.connect((" + repr(address) + ", " + str(port) + "))\n"
+                " client.send(b'd' * 1024)\n assert client.recv(2048) == hashlib.sha256(b'd' * 1024).digest()")
+    finally:
+        _, error = server.communicate(timeout=15)
+    assert server.returncode == 0, error
+
+
 def run_network_test(compose):
     secret = "disposable-network-test-secret-0123456789"
     core_before = control("core", "status")["identity"]["address"]
@@ -119,6 +142,8 @@ def run_network_test(compose):
         wait_for(lambda: any(p["up"] for p in control("core", "status")["peers"]))
         probe("core", "peer", address)
         probe("peer", "core", core_before)
+        probe_udp("core", "peer", address)
+        probe_udp("peer", "core", core_before)
         configure("peer", "different-private-group-secret-0123456789", peers, [])
         wait_for(lambda: any(p["up"] for p in control("peer", "status")["peers"]))
         probe("core", "peer", address, allowed=False)
@@ -126,7 +151,7 @@ def run_network_test(compose):
         wait_for(lambda: any(p["up"] for p in control("peer", "status")["peers"]))
         probe("core", "peer", address)
         assert control("core", "status")["identity"]["address"] == core_before
-        print("PASS: two independent nodes, bidirectional 1MiB IPv6 TCP/hash, wrong-group rejection and recovery")
+        print("PASS: two independent nodes, bidirectional IPv6 TCP/hash and UDP, wrong-group rejection and recovery")
     finally:
         compose("rm", "-s", "-f", "peer")
         configure("core", secret, [], [])
