@@ -25,6 +25,8 @@ class ExportTests(unittest.TestCase):
                 shutil.copyfile(ROOT / relative, destination)
             for name in ("uqda.conf", "uqda.conf.previous", "uqda.conf.before-umbrel"):
                 (fixture / "uqda-network/data/config" / name).write_text("private-key-and-group-secret")
+            for relative in ("data/config/.gitkeep", "data/control/.gitkeep"):
+                (fixture / "uqda-network" / relative).write_text("private-key-and-group-secret")
             output = Path(directory) / "store.zip"
             with patch.object(exporter, "ROOT", fixture):
                 exporter.export("sha256:" + "a" * 64, output)
@@ -32,6 +34,8 @@ class ExportTests(unittest.TestCase):
                 self.assertEqual(len(archive.namelist()), 6)
                 for name in archive.namelist():
                     self.assertNotIn(b"private-key-and-group-secret", archive.read(name))
+                    if name.endswith("/.gitkeep"):
+                        self.assertEqual(archive.read(name), b"")
 
     def test_export_pins_both_images_and_updates_previously_pinned_icon(self):
         with tempfile.TemporaryDirectory() as directory:

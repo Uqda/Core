@@ -26,7 +26,8 @@ def export(digest, output, icon_ref="main"):
         # Never recursively package app data: it may contain private keys/backups.
         for relative in ("umbrel-app.yml", "data/config/.gitkeep", "data/control/.gitkeep"):
             path = ROOT / "uqda-network" / relative
-            data = path.read_bytes()
+            # Placeholders are generated empty, never read from local app data.
+            data = b"" if path.name == ".gitkeep" else path.read_bytes()
             if path.name == "umbrel-app.yml":
                 data = re.sub(rb"https://raw\.githubusercontent\.com/Uqda/Core/[^\s]+/contrib/umbrel/web/icon\.svg",
                               lambda _match: ("https://raw.githubusercontent.com/Uqda/Core/" + icon_ref +

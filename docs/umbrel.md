@@ -134,7 +134,7 @@ own test volumes. Do not run it alongside an existing `uqda0` interface.
 
 It also creates a disposable second node in an independent Docker network
 namespace. The gate transfers 1 MiB over overlay IPv6 TCP in both directions,
-checks the received SHA-256 hashes, rejects traffic with a different private-group
+checks the received SHA-256 hashes, exchanges UDP in both directions, rejects traffic with a different private-group
 password even when transport peers connect, and checks recovery after restoring
 the correct password. This demonstrates useful application traffic, not just a
 green transport indicator. All listeners and the second node belong to the test.
@@ -167,6 +167,15 @@ separately; amd64 VM success does not establish arm64 support.
 
 References: [official development script](https://github.com/getumbrel/umbrel/blob/2.0.0/scripts/umbrel-dev)
 and [official VM installation guide](https://umbrel.com/support/install-umbrelos-on-your-own-hardware/installing-umbrelos-in-a-virtual-machine).
+
+The separate `umbrel-platform.yml` gate installs the digest-pinned published
+package through the pinned official Umbrel 2.0 app manager. It starts LAN ingress
+on the normal internal server port (the upstream test factory's default port 0
+intentionally disables it). It checks anonymous gateway rejection, actual owner
+session cookies plus the separate dashboard password, restart, a manifest-only
+update, and uninstall/fresh-install identity replacement. A manifest-only update
+is not a binary upgrade test. Consult the run result before claiming these gates
+passed; the test source alone is not evidence.
 
 Plain Docker tests do not establish actual Umbrel app-store/proxy behavior. A
 development-instance test does not establish production boot or hardware-specific
