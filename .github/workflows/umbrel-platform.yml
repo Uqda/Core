@@ -1,0 +1,50 @@
+name: Umbrel platform validation
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/umbrel-uqda]
+    paths: ['.github/workflows/umbrel-platform.yml', 'tests/umbrel/platform.integration.test.ts']
+permissions:
+  contents: read
+concurrency:
+  group: umbrel-platform-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  platform:
+    name: Official Umbrel 2.0 app lifecycle
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          path: core
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: getumbrel/umbrel
+          ref: 9298257b0e904ca8d8270b1702672666343f0b86 # official 2.0.0
+          path: upstream
+          submodules: recursive
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: crazy-max/ghaction-github-runtime@3cb05d89e1f492524af3d41a1c98c83bc3025124 # v3, same pinned helper as official Umbrel CI
+      - name: Create disposable upstream worktree and package fixture
+        run: |
+          git -C upstream worktree add worktrees/uqda-platform -b uqda-platform HEAD
+          mkdir upstream/worktrees/uqda-platform/uqda-package
+          cp -R core/uqda-network core/umbrel-app-store.yml upstream/worktrees/uqda-platform/uqda-package/
+          cp core/tests/umbrel/platform.integration.test.ts upstream/worktrees/uqda-platform/packages/umbreld/source/modules/apps/uqda-platform.integration.test.ts
+      - name: Start official development platform
+        working-directory: upstream/worktrees/uqda-platform
+        env:
+          UMBREL_DEV_SKIP_CACHE_EXPORT: 'true'
+        run: |
+          npm run dev start
+          npm run --prefix packages/umbreld test:umbrel-dev:prepare
+      - name: Test published package through real Umbrel app manager
+        working-directory: upstream/worktrees/uqda-platform
+        run: npm run dev exec:noninteractive -- env UQDA_PACKAGE_SOURCE=/umbrel-dev/uqda-package npm --prefix /umbrel-dev/packages/umbreld test -- uqda-platform.integration.test.ts
+      - name: Platform logs
+        if: always()
+        run: docker logs --tail 120 umbrel-dev || true
+      - name: Stop disposable platform
+        if: always()
+        run: docker stop --time 30 umbrel-dev || true
