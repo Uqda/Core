@@ -44,11 +44,19 @@ jobs:
           git diff --check
 
   docker:
-    name: Native host TUN and container lifecycle
-    runs-on: ubuntu-latest
+    name: Native host TUN and container lifecycle (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
     needs: test
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Require native host TUN
+        run: |
+          sudo modprobe tun
+          test -c /dev/net/tun
       - name: Install browser test runtime
         run: |
           npm install --prefix "$RUNNER_TEMP/uqda-browser" playwright@1.51.1
@@ -63,7 +71,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
-          name: uqda-dashboard-screenshots
+          name: uqda-dashboard-screenshots-${{ matrix.runner }}
           path: ${{ runner.temp }}/uqda-screenshots
 
   image:
