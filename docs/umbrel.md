@@ -50,6 +50,9 @@ firewall settings.
 
 ## Your services over Uqda
 
+For the broader dashboard/app-gateway workflow, research evidence and remaining
+mobile/TLS/native-client acceptance work, see [Umbrel remote access](umbrel-remote-access.md).
+
 This workflow is a source enhancement, not part of the already published
 `26.0.4-umbrel.2` image. Distribution requires a new immutable wrapper version
 and digest-pinned community-store update after validation; the existing image

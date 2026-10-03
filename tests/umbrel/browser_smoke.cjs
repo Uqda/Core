@@ -24,6 +24,9 @@ async function until(check) {
     await page.click('#loginForm button');
     await until(async () => await page.locator('#address').textContent() !== '—');
     const before = await page.locator('#address').textContent();
+    if (await page.locator('#umbrelHttpAddress').textContent() !== 'http://[' + before + ']/') throw Error('Wrong remote Umbrel address');
+    await page.click('#checkUmbrel');
+    await until(async () => await page.locator('#umbrelChecks li').count() === 3);
     await page.fill('#serviceName', 'My files <not HTML>');
     await page.selectOption('#serviceKind', 'https');
     await page.fill('#servicePort', '8443');

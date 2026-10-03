@@ -1,6 +1,7 @@
 // Copied into the pinned official Umbrel checkout by umbrel-platform.yml.
 // Tests the actual app manager against the published image and rebuilt source.
 import path from 'node:path'
+import net from 'node:net'
 import {beforeAll, afterAll, afterEach, expect, test} from 'vitest'
 import fse from 'fs-extra'
 import {$} from 'execa'
@@ -61,6 +62,42 @@ async function nodeStatus() {
     return state.ready && state.tun?.enabled
   }, {interval:1000, timeout:60000})
   return state
+}
+
+const peerContainer = 'uqda-disposable-remote-peer'
+async function peerJson(program: string, input: unknown) {
+  // Request cookies/proofs travel only over stdin, never command arguments/logs.
+  const result = await $({input:JSON.stringify(input)})`docker exec -i ${peerContainer} python3 -c ${program}`
+  return JSON.parse(result.stdout)
+}
+const peerControl = (request: unknown) => peerJson(
+  "import json,sys; from control import socket_json; print(json.dumps(socket_json('/run/uqda-control/control.sock', json.load(sys.stdin), timeout=32)))",
+  request,
+)
+const peerHttp = (request: unknown) => peerJson(`
+import http.client, json, sys
+request = json.load(sys.stdin)
+try:
+    client = http.client.HTTPConnection(request['address'], request['port'], timeout=5)
+    client.request('GET', request['path'], headers={'Cookie':request.get('cookie', ''), 'X-Uqda-CSRF':request.get('proof', '')})
+    response = client.getresponse()
+    body = response.read(8192).decode('utf-8', errors='replace')
+    print(json.dumps({'status':response.status, 'location':response.getheader('location'), 'body':body}))
+    client.close()
+except OSError:
+    print(json.dumps({'unreachable':True}))
+`, request)
+
+async function unusedHostPort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const reservation = net.createServer()
+    reservation.once('error', reject)
+    reservation.listen(0, '0.0.0.0', () => {
+      const address = reservation.address()
+      if (!address || typeof address === 'string') return reject(new Error('Port reservation failed'))
+      reservation.close(error => error ? reject(error) : resolve(address.port))
+    })
+  })
 }
 
 beforeAll(async () => {
@@ -159,6 +196,64 @@ test.sequential('restart through Umbrel preserves identity and invalidates UI se
   expect((await nodeStatus()).identity.address).toBe(identity)
   if (serviceEntry) expect((await nodeStatus()).services.items).toContainEqual(serviceEntry)
 })
+
+test.sequential('actual Umbrel dashboard and authenticated app gateway work over a private overlay', async () => {
+  const image = process.env.UQDA_PLATFORM_IMAGE
+  // Published wrapper .2 lacks the new source workflow; it remains unchanged.
+  if (!image) return
+  const before = await nodeStatus()
+  const port = await unusedHostPort()
+  const group = 'disposable-umbrel-remote-test-group-12345'
+  const peers = [`tls://host.docker.internal:${port}`]
+  let created = false
+  try {
+    const applied = await request('/api/settings', {revision:before.settings.revision,
+      peers:before.settings.peers,listen:[`tls://0.0.0.0:${port}`],mode:'private',group_password:group})
+    expect(applied.status).toBe(200)
+    await $`docker run --detach --name ${peerContainer} --cap-add NET_ADMIN --device /dev/net/tun --add-host host.docker.internal:host-gateway --tmpfs /etc/uqda:mode=0700 --tmpfs /run/uqda-core:mode=0700 --tmpfs /run/uqda-control:mode=0700 ${image} control.py`
+    created = true
+    await pWaitFor(async () => {
+      try { return (await peerControl({action:'status'})).result?.ready === true } catch { return false }
+    }, {interval:1000,timeout:60000})
+    const configurePeer = async (password: string) => {
+      const state = await peerControl({action:'status'})
+      const result = await peerControl({action:'apply',settings:{revision:state.result.settings.revision,
+        peers,listen:[],mode:'private',group_password:password}})
+      expect(result.ok).toBe(true)
+    }
+    await configurePeer(group)
+    const dashboardRequest = {address:identity,port:80,path:'/'}
+    await pWaitFor(async () => (await peerHttp(dashboardRequest)).status === 200, {interval:1000,timeout:45000})
+    const home = await peerHttp(dashboardRequest)
+    expect(home.body.toLowerCase()).toContain('<html')
+    const anonymous = await peerHttp({address:identity,port:8926,path:'/api/status'})
+    expect(anonymous.status).toBe(302)
+    expect(anonymous.location.startsWith(`http://[${identity}]:2000/app-auth?`)).toBe(true)
+    const jar = platform!.browserApi.defaults.options.cookieJar!
+    const ownerCookie = await jar.getCookieString(base)
+    const owner = {address:identity,port:8926,path:'/api/status',cookie:ownerCookie}
+    expect((await peerHttp(owner)).status).toBe(401)
+    const authenticated = {...owner,cookie:[ownerCookie,cookie].join('; '),proof:csrf}
+    const result = await peerHttp(authenticated)
+    expect(result.status).toBe(200)
+    expect(JSON.parse(result.body).identity.address).toBe(identity)
+    expect((await peerHttp({...authenticated,proof:''})).status).toBe(401)
+    const local = await request('/api/umbrel/probe', {})
+    expect(local.status).toBe(200)
+    expect(await local.json()).toMatchObject({scope:'local',remote_verified:false,
+      ports:[{port:80,tcp_reachable:true},{port:443,tcp_reachable:true},{port:2000,tcp_reachable:true}]})
+    await configurePeer('wrong-umbrel-remote-test-group-12345')
+    expect((await peerHttp(dashboardRequest)).unreachable).toBe(true)
+    await configurePeer(group)
+    await pWaitFor(async () => (await peerHttp(dashboardRequest)).status === 200, {interval:1000,timeout:45000})
+    expect((await nodeStatus()).identity.address).toBe(identity)
+  } finally {
+    if (created) await $`docker rm -f ${peerContainer}`
+    const state = await nodeStatus()
+    expect((await request('/api/settings', {revision:state.settings.revision,
+      peers:before.settings.peers,listen:before.settings.listen,mode:'private'})).status).toBe(200)
+  }
+}, 180_000)
 
 test.sequential('manifest update and previous-to-current published image upgrade preserve identity', async () => {
   const manifestPath = path.join(store!.directory, appId, 'umbrel-app.yml')

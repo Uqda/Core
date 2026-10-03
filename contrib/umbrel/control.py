@@ -13,7 +13,7 @@ import tempfile
 import threading
 import time
 from urllib.parse import parse_qsl, urlsplit
-from service_access import ServiceBook, ServiceError, access_details
+from service_access import ServiceBook, ServiceError, access_details, probe_umbrel, umbrel_access
 
 MAX_MESSAGE = 65536
 
@@ -206,10 +206,18 @@ class Supervisor:
                 response["message"] = "Core is starting or unavailable. Check the app's container logs if this continues."
             response["services"] = self.services.snapshot()
             address = response.get("identity", {}).get("address")
+            response["umbrel_access"] = umbrel_access(address, response["settings"]["private"],
+                                                     response.get("tun", {}).get("enabled", False))
             if address:
                 response["services"]["items"] = [{**item, **access_details(item, address)}
                                                  for item in response["services"]["items"]]
             return response
+
+    def umbrel_probe(self, values):
+        with self.lock:
+            state = self.status()
+            return probe_umbrel(values, state.get("identity", {}).get("address"), state["settings"]["private"],
+                                state.get("tun", {}).get("enabled", False))
 
     def service_action(self, action, values):
         with self.lock:
@@ -331,6 +339,8 @@ class ControlHandler(socketserver.StreamRequestHandler):
                 value = supervisor.restart()
             elif action in {"service_add", "service_remove", "service_probe"}:
                 value = supervisor.service_action(action, request.get("settings"))
+            elif action == "umbrel_probe":
+                value = supervisor.umbrel_probe(request.get("settings"))
             else:
                 raise ControlError("Unsupported action.")
             response = {"ok": True, "result": value}

@@ -57,6 +57,43 @@ def access_details(service, address):
             "service_command": command}
 
 
+def umbrel_access(address, private, tun_enabled):
+    """Use Umbrel's existing host ingress; never install a second gateway."""
+    enabled = bool(address and private and tun_enabled)
+    result = {"enabled": enabled, "reason": "ready" if enabled else
+              "private_required" if not private else "node_required", "remote_verified": False}
+    if enabled:
+        address = node_address(address)
+        result.update(http_url=f"http://[{address}]/", https_url=f"https://[{address}]/",
+                      network_command=f"sudo uqda test {address}")
+    return result
+
+
+def local_tcp(address, port):
+    address = node_address(address)
+    if type(port) is not int or not 1 <= port <= 65535:
+        raise ServiceError("Invalid local TCP port.")
+    with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as connection:
+        connection.settimeout(2)
+        try:
+            connection.connect((address, port))
+            return True
+        except OSError:
+            return False
+
+
+def probe_umbrel(values, address, private, tun_enabled):
+    if not isinstance(values, dict) or values:
+        raise ServiceError("Umbrel checks do not accept custom targets or settings.")
+    access = umbrel_access(address, private, tun_enabled)
+    if not access["enabled"]:
+        raise ServiceError("Use a private group with a ready TUN interface before checking Umbrel access.")
+    # Fixed public gateway ports only. Do not connect to the internal umbrella
+    # server, bypass its app authentication or expose arbitrary Docker services.
+    return {"scope": "local", "remote_verified": False,
+            "ports": [{"port": port, "tcp_reachable": local_tcp(address, port)} for port in (80, 443, 2000)]}
+
+
 class ServiceBook:
     def __init__(self, directory, writer):
         self.path = Path(directory) / "services.json"
@@ -111,13 +148,6 @@ class ServiceBook:
         # No DNS, user-supplied hosts, HTTP requests, credentials or forwarding.
         # Only a saved TCP port on THIS daemon's own overlay identity is tested.
         address = node_address(address)
-        reachable = False
-        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as connection:
-            connection.settimeout(2)
-            try:
-                connection.connect((address, service["port"]))
-                reachable = True
-            except OSError:
-                pass
+        reachable = local_tcp(address, service["port"])
         return {"id": service["id"], "tcp_reachable": reachable, "scope": "local",
                 "remote_verified": False, **access_details(service, address)}

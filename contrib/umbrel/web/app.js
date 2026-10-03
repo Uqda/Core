@@ -5,6 +5,13 @@ const text = {
 };
 const byId = id => document.getElementById(id);
 Object.assign(text.en, {
+  umbrelTitle:'Your Umbrel, from another device',umbrelPrivate:'Private group only',
+  umbrelPurpose:'Use Uqda as the connection to Umbrel’s own dashboard and app gateways, without Tailscale. Umbrel remains your operating system and keeps its existing login, permissions and app authentication.',
+  umbrelHttps:'Umbrel HTTPS address',umbrelHttp:'Umbrel HTTP address · encrypted overlay, not browser TLS',
+  umbrelCertificate:'The existing Umbrel certificate may not cover your Uqda IPv6 address. Do not turn off certificate verification or install an unverified CA. HTTPS-only apps need a trusted certificate and a matching name/address.',
+  checkUmbrel:'Check local Umbrel ports',umbrelLimitsTitle:'What full access means',
+  umbrelLimits:'Connect your other device to the same private group, then open the address above and sign in to Umbrel normally. Compatible web apps use their existing gateway ports. This does not grant access to every app, configure SMB, change router/firewall rules, add phone VPN support or replace Umbrel’s native Tailscale integrations. Local port checks are not remote login tests. Uqda is a community integration, not officially endorsed by Umbrel.',
+  umbrelReady:'Address prepared — still verify the dashboard and intended apps from your other device.',umbrelPrivateRequired:'Use a private group in connection settings before using this remote-access workflow. No network mode is changed automatically.',umbrelNodeRequired:'Wait for Core and its TUN interface to become ready.',
   heading: 'Your services. Your connection.',
   intro: 'Reach your own Umbrel services over an encrypted IPv6 network. Set up access deliberately, one service at a time.',
   servicesTitle:'Your services over Uqda',noAutoPublish:'No automatic publishing',
@@ -32,6 +39,13 @@ Object.assign(text.en, {
   recoveryText: 'Update and restart through Umbrel. Back up app data first: deleting it removes your node identity and group settings. Never restore one identity onto two active nodes.'
 });
 Object.assign(text.ar, {
+  umbrelTitle:'جهاز Umbrel من جهازك الآخر',umbrelPrivate:'للمجموعة الخاصة فقط',
+  umbrelPurpose:'استخدم عقدة للاتصال بواجهة Umbrel وبوابات تطبيقاته دون Tailscale. يبقى Umbrel نظامك، مع تسجيل الدخول والصلاحيات وحماية التطبيقات الموجودة.',
+  umbrelHttps:'عنوان Umbrel عبر HTTPS',umbrelHttp:'عنوان Umbrel عبر HTTP · الشبكة مشفّرة، لكن دون TLS للمتصفح',
+  umbrelCertificate:'قد لا تغطي شهادة Umbrel الحالية عنوان IPv6 الخاص بعقدة. لا تعطّل التحقق من الشهادة ولا تثبّت شهادة CA دون التحقق منها. التطبيقات التي تتطلب HTTPS تحتاج شهادة موثوقة واسمًا أو عنوانًا مطابقًا.',
+  checkUmbrel:'فحص منافذ Umbrel محليًا',umbrelLimitsTitle:'ما المقصود بالوصول الكامل؟',
+  umbrelLimits:'اربط جهازك الآخر بالمجموعة الخاصة نفسها، ثم افتح العنوان أعلاه وسجّل دخولك إلى Umbrel كالمعتاد. تستخدم تطبيقات الويب المتوافقة منافذ بواباتها الموجودة. لا يمنح هذا الوصول لكل تطبيق ولا يضبط SMB أو الجدار الناري أو الراوتر، ولا يضيف عميل VPN للهاتف أو يستبدل تكاملات Tailscale الأصلية في Umbrel. فحص المنافذ محلي وليس اختبار تسجيل دخول عن بُعد. عقدة تكامل مجتمعي وليست معتمدة رسميًا من Umbrel.',
+  umbrelReady:'العنوان جاهز — اختبر الواجهة والتطبيقات المطلوبة من جهازك الآخر.',umbrelPrivateRequired:'اختر مجموعة خاصة من إعدادات الاتصال قبل استخدام مسار الوصول البعيد هذا. لا يتغير وضع الشبكة تلقائيًا.',umbrelNodeRequired:'انتظر حتى يعمل Core وواجهة TUN.',
   heading:'خدماتك. اتصال بإدارتك.',intro:'استخدم خدمات Umbrel الخاصة بك عبر شبكة IPv6 مشفّرة. جهّز الوصول بأمان، خدمة واحدة في كل مرة.',
   servicesTitle:'خدماتك عبر عقدة',noAutoPublish:'لا يوجد نشر تلقائي',
   servicesPurpose:'استخدم ملفاتك أو تطبيقات الويب أو SSH من جهاز آخر متصل بعقدة. حفظ الخدمة يولّد عنوانًا وإرشادات؛ لا يثبّت التطبيق ولا يفتح منافذه.',
@@ -62,7 +76,7 @@ if (!text[language]) language = 'en';
 function readSessionProof() { try { return sessionStorage.getItem('uqda-session-proof') || ''; } catch (_) { return ''; } }
 function storeSessionProof(value) { try { if (value) sessionStorage.setItem('uqda-session-proof', value); else sessionStorage.removeItem('uqda-session-proof'); } catch (_) {} }
 let csrf = readSessionProof(), snapshot = null, editing = false, applying = false, editRevision = '', generation = 0;
-let serviceBusy = false, serviceContext = '', serviceChecks = new Map();
+let serviceBusy = false, serviceContext = '', serviceChecks = new Map(), umbrelChecks = [];
 const t = key => text[language][key] || key;
 function translate() {
   document.documentElement.lang = language;
@@ -80,13 +94,15 @@ function authenticated(value) {
     byId('settingsForm').reset(); byId('loginForm').reset();
     byId('serviceForm').reset(); byId('serviceList').replaceChildren();
     serviceChecks.clear(); serviceContext = '';
+    umbrelChecks = []; byId('umbrelChecks').replaceChildren(); byId('umbrelAddresses').hidden = true;
+    for (const id of ['umbrelHttpsAddress','umbrelHttpAddress','umbrelNetworkCommand','umbrelAccessHint']) byId(id).textContent = '';
     byId('address').textContent = '—'; byId('peerList').replaceChildren(); byId('checks').replaceChildren();
     modeFields();
   }
 }
 function setApplying(value) {
   applying = value;
-  if (value) { generation++; serviceChecks.clear(); if (snapshot) renderServices(snapshot); }
+  if (value) { generation++; serviceChecks.clear(); umbrelChecks = []; if (snapshot) renderServices(snapshot); }
   byId('settingsForm').querySelectorAll('input,textarea,select,button').forEach(element => element.disabled = value || !snapshot?.settings.editable);
   byId('restart').disabled = value;
   byId('logout').disabled = value;
@@ -145,6 +161,7 @@ function serviceControls() {
   byId('restart').disabled = applying || serviceBusy;
   byId('save').disabled = applying || serviceBusy || !snapshot?.settings.editable;
   byId('logout').disabled = applying || serviceBusy;
+  byId('checkUmbrel').disabled = serviceBusy || applying || !snapshot?.umbrel_access?.enabled;
 }
 function serviceLine(parent, label, value) {
   const paragraph = document.createElement('p'); paragraph.className = 'field-hint'; paragraph.textContent = label;
@@ -153,7 +170,17 @@ function serviceLine(parent, label, value) {
 }
 function renderServices(data) {
   const context = [data.identity?.address, data.services?.revision, data.settings.revision, data.ready, data.tun?.enabled].join('|');
-  if (context !== serviceContext) { serviceChecks.clear(); serviceContext = context; }
+  if (context !== serviceContext) { serviceChecks.clear(); umbrelChecks = []; serviceContext = context; }
+  const access = data.umbrel_access || {enabled:false,reason:'node_required'};
+  byId('umbrelAddresses').hidden = !access.enabled;
+  byId('umbrelHttpsAddress').textContent = access.https_url || '';
+  byId('umbrelHttpAddress').textContent = access.http_url || '';
+  byId('umbrelNetworkCommand').textContent = access.network_command || '';
+  byId('umbrelAccessHint').textContent = t(access.enabled ? 'umbrelReady' : access.reason === 'private_required' ? 'umbrelPrivateRequired' : 'umbrelNodeRequired');
+  byId('umbrelChecks').replaceChildren();
+  for (const check of umbrelChecks) {
+    const line = document.createElement('li'); line.textContent = check.port + ' · ' + t(check.tcp_reachable ? 'localPass' : 'localFail'); byId('umbrelChecks').append(line);
+  }
   byId('serviceModeWarning').hidden = data.settings.private;
   byId('serviceList').replaceChildren();
   const items = data.services?.items || [];
@@ -188,7 +215,11 @@ async function serviceRequest(path, values, probe = false) {
     const data = await api(path, values);
     if (current !== generation || byId('dashboard').hidden) return;
     if (probe) {
-      if (context === serviceContext) { serviceChecks.set(data.id, data.tcp_reachable); renderServices(snapshot); }
+      if (context === serviceContext) {
+        if (path === '/api/umbrel/probe') umbrelChecks = data.ports;
+        else serviceChecks.set(data.id, data.tcp_reachable);
+        renderServices(snapshot);
+      }
     } else {
       render(data);
       if (path.endsWith('/add')) byId('serviceForm').reset();
@@ -221,6 +252,7 @@ byId('settingsForm').addEventListener('submit', async event => {
 });
 byId('restart').addEventListener('click', async () => { if (applying || serviceBusy || !confirm(t('restartConfirm'))) return; setApplying(true); notice(t('busy')); try { render(await api('/api/restart',{})); notice(t('restarted')); } catch (error) { notice(error.message,true); } finally { setApplying(false); } });
 byId('serviceForm').addEventListener('submit', event => { event.preventDefault(); if (!snapshot) return; serviceRequest('/api/services/add', {revision:snapshot.services.revision,name:byId('serviceName').value,kind:byId('serviceKind').value,port:Number(byId('servicePort').value)}); });
+byId('checkUmbrel').addEventListener('click', () => serviceRequest('/api/umbrel/probe', {}, true));
 byId('refresh').addEventListener('click',refresh);
 byId('copyAddress').addEventListener('click', async () => { try { await navigator.clipboard.writeText(byId('address').textContent); notice(t('copied')); } catch (_) { notice(t('copyFailed')); } });
 translate();

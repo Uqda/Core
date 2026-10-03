@@ -9,7 +9,8 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "contrib" / "umbrel"))
-from service_access import ServiceBook, ServiceError, access_details, node_address, validate_service
+from service_access import (ServiceBook, ServiceError, access_details, node_address,
+                            probe_umbrel, umbrel_access, validate_service)
 
 ADDRESS = "200:1234::abcd"
 
@@ -122,6 +123,29 @@ class ServiceTests(unittest.TestCase):
         self.book.path.write_text(json.dumps([item, item]))
         with self.assertRaises(ServiceError):
             self.book.snapshot()
+
+    def test_umbrel_addresses_require_private_group_and_tun(self):
+        for private, tun in ((False, True), (False, False), (True, False)):
+            access = umbrel_access(ADDRESS, private, tun)
+            self.assertFalse(access["enabled"])
+            self.assertNotIn("http_url", access)
+            self.assertFalse(access["remote_verified"])
+        self.assertFalse(umbrel_access(None, True, True)["enabled"])
+        access = umbrel_access(ADDRESS, True, True)
+        self.assertEqual(access["http_url"], f"http://[{ADDRESS}]/")
+        self.assertEqual(access["https_url"], f"https://[{ADDRESS}]/")
+
+    def test_umbrel_probe_only_fixed_public_ports_not_internal_server(self):
+        with patch("service_access.local_tcp", return_value=True) as connect:
+            result = probe_umbrel({}, ADDRESS, True, True)
+        self.assertEqual([call.args for call in connect.call_args_list], [(ADDRESS, 80), (ADDRESS, 443), (ADDRESS, 2000)])
+        self.assertEqual(result["scope"], "local")
+        self.assertFalse(result["remote_verified"])
+        for values, private, tun in (({"host": "127.0.0.1"}, True, True), ({"port": 22080}, True, True),
+                                     ({}, False, True), ({}, True, False), (None, True, True)):
+            with patch("service_access.local_tcp") as connect, self.assertRaises(ServiceError):
+                probe_umbrel(values, ADDRESS, private, tun)
+            connect.assert_not_called()
 
 
 if __name__ == "__main__":

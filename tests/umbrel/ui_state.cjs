@@ -31,6 +31,7 @@ const context = vm.createContext({document:{documentElement:{}, getElementById:i
   setInterval:() => {}, confirm:() => true, fetch:async () => reply({authenticated:false, csrf:''})});
 const run = code => vm.runInContext(code, context);
 const state = {ready:true, identity:{address:'200::123',build_version:'26.0.4'}, tun:{enabled:true,name:'uqda0'},
+  umbrel_access:{enabled:true,reason:'ready',https_url:'https://[200::123]/',http_url:'http://[200::123]/',network_command:'sudo uqda test 200::123'},
   peers:[], services:{revision:'s1',items:[]}, settings:{private:true,editable:true,revision:'r1',peers:[],listen:[]}};
 context.state = state;
 const flush = () => new Promise(resolve => setImmediate(resolve));
@@ -45,6 +46,14 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   };
   await run('api("/api/session")');
   run('authenticated(true); render(state)');
+  assert.equal(ids.umbrelHttpAddress.textContent, 'http://[200::123]/');
+  assert.equal(ids.checkUmbrel.disabled, false);
+  context.publicState = {...state, settings:{...state.settings,private:false,revision:'public'},umbrel_access:{enabled:false,reason:'private_required'}};
+  run('render(publicState)');
+  assert.equal(ids.umbrelAddresses.hidden, true);
+  assert.equal(ids.umbrelHttpAddress.textContent, '');
+  assert.equal(ids.checkUmbrel.disabled, true);
+  run('render(state)');
   const service = {id:'0123456789abcdef',name:'<img onerror=alert(1)>',kind:'https',port:8443,endpoint:'https://[200::123]:8443/',network_command:'sudo uqda test 200::123',service_command:"curl --head 'https://[200::123]:8443/'"};
   context.withService = {...state,services:{revision:'s2',items:[service]}};
   run('render(withService)');
@@ -85,6 +94,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.equal(ids.address.textContent, '—', 'late status must not restore logged-out identity');
   assert.equal(ids.groupPassword.value, '', 'logout must clear unsaved secrets');
   assert.equal(run('snapshot'), null);
+  assert.equal(ids.umbrelHttpAddress.textContent, '', 'logout must clear remote Umbrel address');
   assert.equal(run('csrf'), '');
   assert.equal(sessionValues.size, 0, 'logout must clear tab-local proof');
 
@@ -98,7 +108,8 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
 
   assert.match(html, /data-i18n="purposeTitle"/);
   for (const language of ['en', 'ar']) {
-    for (const key of ['purposeTitle','purposeText','setupTitle','setupPeer','setupTest','setupService','recoveryTitle','recoveryText','servicesTitle','servicesPurpose','deviceStep','deviceHelp','serviceStep','serviceHelp','verifyStep','verifyHelp','servicePublic','serviceName','serviceKind','servicePort','addService','httpWarning','serviceLimits','noServices','checkLocal','removeService','removeConfirm','serviceSaved','serviceRemoved','localUnknown','localPass','localFail','remotePending','networkCommand','serviceCommand','localExplanation','noServiceAddress','sshUser']) {
+    const keys = new Set([...html.matchAll(/data-i18n="([^"]+)"/g)].map(match => match[1]));
+    for (const key of keys) {
       assert(run(`text.${language}.${key}.length > 0`), `missing ${language} guide translation: ${key}`);
     }
   }

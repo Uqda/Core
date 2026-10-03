@@ -243,10 +243,11 @@ class HttpTests(LifecycleTests):
         self.login()
         original = self.supervisor.config_path.read_bytes()
         values = {"revision": self.supervisor.services.snapshot()["revision"], "name": "Web app", "kind": "https", "port": 8443}
-        for path in ("/api/services/add", "/api/services/remove", "/api/services/probe"):
+        for path in ("/api/services/add", "/api/services/remove", "/api/services/probe", "/api/umbrel/probe"):
             self.assertEqual(self.request(path, values, csrf="wrong")[0], 403)
             self.assertEqual(self.request(path, values, origin="http://evil.example")[0], 403)
         self.assertFalse(self.supervisor.services.path.exists())
+        self.assertEqual(self.request("/api/umbrel/probe", {})[0], 400, "TUN-disabled fixture must not probe")
         status, state, _ = self.request("/api/services/add", values)
         self.assertEqual(status, 200)
         item = state["services"]["items"][0]

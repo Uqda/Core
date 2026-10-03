@@ -43,6 +43,21 @@
           <div class="stats"><div><span class="label" data-i18n="connectedPeers">Connected peers</span><strong id="peerCount">0</strong></div><div><span class="label" data-i18n="interface">Network interface</span><strong id="interfaceName">—</strong></div><div><span class="label" data-i18n="coreVersion">Core version</span><strong id="version">—</strong></div><div><span class="label" data-i18n="mode">Access mode</span><strong id="modeValue">—</strong></div></div>
           <p class="small" data-i18n="accessHint">A connected transport peer does not prove private-group connectivity. Services also need to listen on IPv6 and allow access through their firewall.</p>
         </section>
+        <section class="card service-access" aria-labelledby="umbrelTitle">
+          <div class="section-head"><h2 id="umbrelTitle" data-i18n="umbrelTitle">Your Umbrel, from another device</h2><span class="subtle" data-i18n="umbrelPrivate">Private group only</span></div>
+          <p data-i18n="umbrelPurpose">Use Uqda as the connection to Umbrel's own dashboard and app gateways, without Tailscale. Umbrel remains your operating system and keeps its existing login, permissions and app authentication.</p>
+          <p id="umbrelAccessHint" class="small"></p>
+          <div id="umbrelAddresses" hidden>
+            <span class="label" data-i18n="umbrelHttps">Umbrel HTTPS address</span><code id="umbrelHttpsAddress"></code>
+            <span class="label" data-i18n="umbrelHttp">Umbrel HTTP address · encrypted overlay, not browser TLS</span><code id="umbrelHttpAddress"></code>
+            <span class="label" data-i18n="networkCommand">On your other device · network check</span><code id="umbrelNetworkCommand"></code>
+          </div>
+          <p class="field-hint" data-i18n="umbrelCertificate">The existing Umbrel certificate may not cover your Uqda IPv6 address. Do not turn off certificate verification or install an unverified CA. HTTPS-only apps need a trusted certificate and a matching name/address.</p>
+          <button id="checkUmbrel" type="button" data-i18n="checkUmbrel">Check local Umbrel ports</button>
+          <ul id="umbrelChecks" class="checks" aria-live="polite"></ul>
+          <p class="small" data-i18n="remotePending">Remote access: not verified — test from your other Uqda device.</p>
+          <details><summary data-i18n="umbrelLimitsTitle">What full access means</summary><p data-i18n="umbrelLimits">Connect your other device to the same private group, then open the address above and sign in to Umbrel normally. Compatible web apps use their existing gateway ports. This does not grant access to every app, configure SMB, change router/firewall rules, add phone VPN support or replace Umbrel's native Tailscale integrations. Local port checks are not remote login tests. Uqda is a community integration, not officially endorsed by Umbrel.</p></details>
+        </section>
         <section class="card service-access" aria-labelledby="servicesTitle">
           <div class="section-head"><h2 id="servicesTitle" data-i18n="servicesTitle">Your services over Uqda</h2><span class="subtle" data-i18n="noAutoPublish">No automatic publishing</span></div>
           <p data-i18n="servicesPurpose">Use your own files, web apps or SSH from another Uqda-connected device. Saving a service creates an address and instructions; it does not install the app or open its ports.</p>
