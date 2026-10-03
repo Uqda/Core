@@ -48,6 +48,60 @@ unsupported transport settings are preserved and make browser editing
 unavailable. Incoming listener configuration does not change router or host
 firewall settings.
 
+## Your services over Uqda
+
+The dashboard includes an explicit service-access workflow, in Arabic and
+English: connect another device, prepare one installed service, and verify it
+from that other device. It is a **service address book**, not an app installer
+or publishing switch. Select HTTPS, HTTP, SSH or generic TCP, give the service
+a name and enter its real listening port. Up to twelve entries are saved.
+
+For example, if an existing web service listens on this host's Uqda IPv6 at
+port 8443 with HTTPS enabled, save `My files / HTTPS / 8443`. The dashboard
+generates `https://[YOUR_UQDA_IPV6]:8443/`, a `sudo uqda test` network command,
+and a bounded `curl --head` command. No service-specific ports are guessed.
+SSH instructions use an existing account (`USER` is a placeholder), and TCP
+instructions use `nc`. Install these diagnostic clients separately if absent.
+HTTPS diagnostics retain certificate verification: a raw IPv6 URL may not
+match your certificate. Configure a suitable certificate/name rather than
+disabling verification. A failed HEAD request can also mean the app does not
+support HEAD; test its intended authenticated use separately.
+
+Saving entries does **not** start services, expose IPv4-only Docker apps,
+install a reverse proxy, open firewall/router ports, enable forwarding, add
+users or modify Core identity/settings. Removing an entry only removes its
+instructions; it does not uninstall, stop or secure the underlying service.
+Configure that service's IPv6 binding, authentication and narrowly scoped
+firewall rules separately. Do not blindly bind all applications to `::`.
+
+**Check local TCP** makes one bounded TCP connection to a saved port on this
+daemon's own literal Uqda IPv6 identity. It sends no application payload and
+cannot accept an arbitrary host, port, URL, shell command or credential.
+Success means only that TCP accepted a connection locally. The UI always
+keeps **Remote access: not verified**: local listening, an UP transport peer,
+application health, TLS/authentication and end-to-end reachability are distinct.
+Use the generated commands on another compatible Uqda-connected device, then
+verify the actual app login and operation. Opening this dashboard on an iPad
+does not itself connect the iPad to the overlay.
+
+Prefer a private group for your own devices. Each member needs the same strong
+group secret and a reachable transport peer; a public-mode node cannot simply
+join a private-group session. Public mode keeps overlay encryption but does
+not provide your group's access restriction. The UI warns about IPv6 services
+potentially reachable by other public nodes if permitted by the firewall.
+
+Web addresses are displayed as copyable text, not auto-opened links. Cookies
+can cross ports on the same HTTP host, so use a separate browser profile for
+an untrusted co-hosted app and HTTPS where available. No password or secret is
+included in generated addresses or commands. All service mutation/probe routes
+require the existing authenticated session, same Origin and session proof.
+
+Entries live in `data/config/services.json`, root-owned mode 0600. Include this
+file in app-data backups. They survive Core restarts and container recreation,
+but deleting app data removes the address book as well as the node identity.
+Revision checks reject stale edits. Probe results are deliberately ephemeral
+and cleared when the identity, network configuration or service list changes.
+
 ## Architecture and permissions
 
 `core` uses host networking, `/dev/net/tun` and `NET_ADMIN` because this
@@ -59,7 +113,7 @@ change firewall rules, publish other apps, or mount the Docker socket.
 no-new-privileges and a read-only filesystem on the Docker bridge network.
 It has no access to `/etc/uqda` or the raw admin socket. Only a dedicated
 group-restricted Unix control socket is shared with it. The supervisor exposes
-status, validated settings and restart operations, not arbitrary admin requests
+status, validated settings, restart and bounded service-address-book operations, not arbitrary admin requests
 or shell commands. The raw Core admin socket stays in the core container's
 private runtime directory and is never exposed over TCP.
 

@@ -11,7 +11,7 @@ const html = fs.readFileSync(path.join(root, 'contrib/umbrel/web/index.html'), '
 function element() {
   return {hidden:false, disabled:false, checked:false, value:'', textContent:'', dataset:{},
     children:[], events:{}, append(...values) { this.children.push(...values); },
-    replaceChildren(...values) { this.children = values; },
+    replaceChildren(...values) { this.children = values; }, querySelectorAll() { return []; }, reset() {},
     addEventListener(name, handler) { this.events[name] = handler; }};
 }
 const ids = Object.fromEntries([...html.matchAll(/id="([^"]+)"/g)].map(match => [match[1], element()]));
@@ -31,7 +31,7 @@ const context = vm.createContext({document:{documentElement:{}, getElementById:i
   setInterval:() => {}, confirm:() => true, fetch:async () => reply({authenticated:false, csrf:''})});
 const run = code => vm.runInContext(code, context);
 const state = {ready:true, identity:{address:'200::123',build_version:'26.0.4'}, tun:{enabled:true,name:'uqda0'},
-  peers:[], settings:{private:true,editable:true,revision:'r1',peers:[],listen:[]}};
+  peers:[], services:{revision:'s1',items:[]}, settings:{private:true,editable:true,revision:'r1',peers:[],listen:[]}};
 context.state = state;
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
@@ -45,6 +45,16 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   };
   await run('api("/api/session")');
   run('authenticated(true); render(state)');
+  const service = {id:'0123456789abcdef',name:'<img onerror=alert(1)>',kind:'https',port:8443,endpoint:'https://[200::123]:8443/',network_command:'sudo uqda test 200::123',service_command:"curl --head 'https://[200::123]:8443/'"};
+  context.withService = {...state,services:{revision:'s2',items:[service]}};
+  run('render(withService)');
+  assert.equal(ids.serviceList.children[0].children[0].textContent, service.name + ' · HTTPS · 8443');
+  context.fetch = async () => reply({id:service.id,tcp_reachable:true,scope:'local',remote_verified:false});
+  await run('serviceRequest("/api/services/probe", {id:"0123456789abcdef"}, true)');
+  assert.equal(run('serviceChecks.get("0123456789abcdef")'), true);
+  assert.equal(ids.serviceList.children[0].children[7].textContent, 'Remote access: not verified — test from your other Uqda device.');
+  run('render(state)');
+  assert.equal(run('serviceChecks.size'), 0, 'changed service list must invalidate local check');
   ids.groupPassword.value = 'secret-entered-by-user';
   context.fetch = async () => reply(state);
   await ids.settingsForm.events.submit({preventDefault() {}});
@@ -88,7 +98,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
 
   assert.match(html, /data-i18n="purposeTitle"/);
   for (const language of ['en', 'ar']) {
-    for (const key of ['purposeTitle','purposeText','setupTitle','setupPeer','setupTest','setupService','recoveryTitle','recoveryText']) {
+    for (const key of ['purposeTitle','purposeText','setupTitle','setupPeer','setupTest','setupService','recoveryTitle','recoveryText','servicesTitle','servicesPurpose','deviceStep','deviceHelp','serviceStep','serviceHelp','verifyStep','verifyHelp','servicePublic','serviceName','serviceKind','servicePort','addService','httpWarning','serviceLimits','noServices','checkLocal','removeService','removeConfirm','serviceSaved','serviceRemoved','localUnknown','localPass','localFail','remotePending','networkCommand','serviceCommand','localExplanation','noServiceAddress','sshUser']) {
       assert(run(`text.${language}.${key}.length > 0`), `missing ${language} guide translation: ${key}`);
     }
   }

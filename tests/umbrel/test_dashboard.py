@@ -97,6 +97,23 @@ class LifecycleTests(unittest.TestCase):
         with self.assertRaises(ControlError):
             self.supervisor.apply(self.values(mode="private"))
 
+    def test_services_persist_separately_without_changing_node_or_settings(self):
+        original = self.supervisor.config_path.read_bytes()
+        address = self.supervisor.status()["identity"]["address"]
+        state = self.supervisor.service_action("service_add", {
+            "revision": self.supervisor.services.snapshot()["revision"], "name": "My files", "kind": "https", "port": 8443})
+        self.assertEqual(original, self.supervisor.config_path.read_bytes())
+        self.assertEqual(self.supervisor.services.path.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(state["services"]["items"][0]["endpoint"], f"https://[{address}]:8443/")
+        self.supervisor.restart()
+        self.assertEqual(self.supervisor.status()["services"], state["services"])
+        with self.assertRaisesRegex(ControlError, "TUN interface"):
+            self.supervisor.service_action("service_probe", {"id": state["services"]["items"][0]["id"]})
+        self.supervisor.service_action("service_remove", {
+            "revision": state["services"]["revision"], "id": state["services"]["items"][0]["id"]})
+        self.assertEqual(self.supervisor.status()["services"]["items"], [])
+        self.assertEqual(original, self.supervisor.config_path.read_bytes())
+
     def test_stale_revision_and_invalid_input_do_not_change_config(self):
         original = self.supervisor.config_path.read_bytes()
         for values in [self.values(revision="stale"), self.values(peers=["tls://user:secret@example.com:443"]),
@@ -220,6 +237,24 @@ class HttpTests(LifecycleTests):
         self.assertEqual(status, 200)
         self.assertTrue(data["settings"]["private"])
         self.assertEqual(self.request("/api/restart", {})[0], 200)
+
+    def test_service_routes_require_authentication_origin_and_proof(self):
+        self.assertEqual(self.request("/api/services/add", {})[0], 401)
+        self.login()
+        original = self.supervisor.config_path.read_bytes()
+        values = {"revision": self.supervisor.services.snapshot()["revision"], "name": "Web app", "kind": "https", "port": 8443}
+        for path in ("/api/services/add", "/api/services/remove", "/api/services/probe"):
+            self.assertEqual(self.request(path, values, csrf="wrong")[0], 403)
+            self.assertEqual(self.request(path, values, origin="http://evil.example")[0], 403)
+        self.assertFalse(self.supervisor.services.path.exists())
+        status, state, _ = self.request("/api/services/add", values)
+        self.assertEqual(status, 200)
+        item = state["services"]["items"][0]
+        self.assertEqual(self.request("/api/services/probe", {"id": item["id"], "host": "127.0.0.1"})[0], 400)
+        self.assertEqual(self.request("/api/services/add", values)[0], 400, "stale writes must fail")
+        self.assertEqual(self.request("/api/services/remove", {
+            "revision": state["services"]["revision"], "id": item["id"]})[0], 200)
+        self.assertEqual(original, self.supervisor.config_path.read_bytes())
 
     def test_cookie_alone_cannot_read_status_or_bootstrap_a_session(self):
         self.login()

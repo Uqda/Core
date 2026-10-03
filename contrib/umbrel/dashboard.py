@@ -156,6 +156,8 @@ class Handler(BaseHTTPRequestHandler):
             self.control("apply", values)
         elif path == "/api/restart":
             self.control("restart")
+        elif path in {"/api/services/add", "/api/services/remove", "/api/services/probe"}:
+            self.control("service_" + path.rsplit("/", 1)[1], values)
         elif path == "/api/logout":
             with self.server.auth_lock:
                 for token, value in list(self.server.sessions.items()):

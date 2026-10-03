@@ -24,6 +24,16 @@ async function until(check) {
     await page.click('#loginForm button');
     await until(async () => await page.locator('#address').textContent() !== '—');
     const before = await page.locator('#address').textContent();
+    await page.fill('#serviceName', 'My files <not HTML>');
+    await page.selectOption('#serviceKind', 'https');
+    await page.fill('#servicePort', '8443');
+    await page.click('#addService');
+    await until(async () => await page.locator('.service-entry').count() === 1);
+    if (!(await page.locator('.service-entry h3').textContent()).includes('<not HTML>')) throw Error('Service name was not rendered as text');
+    if (!(await page.locator('.service-entry code').first().textContent()).includes('https://[' + before + ']:8443/')) throw Error('Wrong IPv6 service address');
+    if (!(await page.locator('.service-entry').textContent()).includes('Remote access: not verified')) throw Error('Remote access incorrectly claimed');
+    await page.click('.service-entry button[data-probe="true"]');
+    await until(async () => !(await page.locator('.service-entry').textContent()).includes('Local TCP: not checked'));
     // Cookies ignore ports. Exercise an actual co-hosted untrusted HTTP origin,
     // without printing its captured test cookie or the origin-scoped proof.
     let capturedCookie = '';
@@ -52,6 +62,7 @@ async function until(check) {
     }
     await page.click('#language');
     if (await page.locator('html').getAttribute('dir') !== 'rtl') throw Error('RTL not active');
+    if (!(await page.locator('.service-entry').textContent()).includes('الوصول عن بُعد: لم يُتحقق منه')) throw Error('Arabic service status missing');
     if (output) await page.screenshot({path:path.join(output,'dashboard-ar.png'),fullPage:true});
     await page.fill('#groupPassword','browser-private-group-secret-1234');
     await page.click('#save');

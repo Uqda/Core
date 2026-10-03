@@ -68,11 +68,13 @@ try:
     assert compose("exec", "-T", "core", "stat", "-c", "%a", "/etc/uqda/uqda.conf").strip() == "600"
     run_network_test(compose)
     state = ready()
+    saved_services = state["services"]
     config = {"revision": state["settings"]["revision"], "peers": [], "listen": [], "mode": "private",
               "group_password": "docker-private-group-test-0123456789"}
     assert request("/api/settings", config)[0] == 200
     compose("restart", "core")
     assert ready()["identity"]["address"] == address
+    assert ready()["services"] == saved_services, "Restart lost saved service instructions"
     # Recreate the containers as an image update would, retaining the same data.
     compose("up", "-d", "--force-recreate")
     # Sessions are deliberately invalidated by dashboard recreation.
@@ -88,6 +90,7 @@ try:
     else:
         raise AssertionError("Dashboard re-login failed")
     assert ready()["identity"]["address"] == address
+    assert ready()["services"] == saved_services, "Container recreation lost saved services"
     print("PASS: host TUN, login, split permissions, settings, restart and container recreation")
 finally:
     compose("logs", "--no-color")

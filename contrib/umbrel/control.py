@@ -13,6 +13,7 @@ import tempfile
 import threading
 import time
 from urllib.parse import parse_qsl, urlsplit
+from service_access import ServiceBook, ServiceError, access_details
 
 MAX_MESSAGE = 65536
 
@@ -111,6 +112,7 @@ class Supervisor:
         self.process = None
         self.lock = threading.RLock()
         self.closing = False
+        self.services = ServiceBook(self.config_dir, atomic_write)
 
     def command(self, *args):
         try:
@@ -202,7 +204,22 @@ class Supervisor:
                                         "remote": display_uri(p.get("remote", ""))} for p in peers])
             except (OSError, ValueError, KeyError, ControlError):
                 response["message"] = "Core is starting or unavailable. Check the app's container logs if this continues."
+            response["services"] = self.services.snapshot()
+            address = response.get("identity", {}).get("address")
+            if address:
+                response["services"]["items"] = [{**item, **access_details(item, address)}
+                                                 for item in response["services"]["items"]]
             return response
+
+    def service_action(self, action, values):
+        with self.lock:
+            if action == "service_probe":
+                state = self.status()
+                if not state["ready"] or not state.get("tun", {}).get("enabled"):
+                    raise ControlError("Core and its TUN interface must be ready before testing a service.")
+                return self.services.probe(values, state["identity"]["address"])
+            self.services.change(values, remove=action == "service_remove")
+            return self.status()
 
     def start(self):
         if self.process is not None and self.process.poll() is None:
@@ -312,10 +329,12 @@ class ControlHandler(socketserver.StreamRequestHandler):
                 value = supervisor.apply(request.get("settings"))
             elif action == "restart":
                 value = supervisor.restart()
+            elif action in {"service_add", "service_remove", "service_probe"}:
+                value = supervisor.service_action(action, request.get("settings"))
             else:
                 raise ControlError("Unsupported action.")
             response = {"ok": True, "result": value}
-        except ControlError as error:
+        except (ControlError, ServiceError) as error:
             response = {"ok": False, "error": str(error)}
         except Exception:
             response = {"ok": False, "error": "The local control service could not complete the request."}

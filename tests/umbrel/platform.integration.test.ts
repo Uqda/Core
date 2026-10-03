@@ -20,6 +20,7 @@ let packageVersion = ''
 let currentPublishedImage = ''
 const base = 'http://127.0.0.1:8926'
 let cookie = '', csrf = ''
+let serviceEntry: any
 
 async function ready() {
   await pWaitFor(async () => (await platform!.client.apps.state.query({appId})).state === 'ready',
@@ -136,6 +137,18 @@ test.sequential('install through actual Umbrel app manager and enforce both auth
     expect((await request('/api/status', undefined, true, '')).status).toBe(401)
     expect((await nodeStatus()).identity.address).toBe(identity)
   }
+  if (process.env.UQDA_PLATFORM_IMAGE) {
+    const state = await nodeStatus()
+    const response = await request('/api/services/add', {
+      revision:state.services.revision, name:'My files', kind:'https', port:8443,
+    })
+    expect(response.status).toBe(200)
+    serviceEntry = (await response.json()).services.items[0]
+    expect(serviceEntry.endpoint).toBe(`https://[${identity}]:8443/`)
+    expect((await request('/api/services/probe', {id:serviceEntry.id}, true, '')).status).toBe(403)
+    expect((await request('/api/services/remove', {revision:state.services.revision,id:serviceEntry.id}, true, '')).status).toBe(403)
+    expect((await nodeStatus()).settings.revision).toBe(state.settings.revision)
+  }
 })
 
 test.sequential('restart through Umbrel preserves identity and invalidates UI session', async () => {
@@ -144,6 +157,7 @@ test.sequential('restart through Umbrel preserves identity and invalidates UI se
   expect((await request('/api/status')).status).toBe(401)
   await login()
   expect((await nodeStatus()).identity.address).toBe(identity)
+  if (serviceEntry) expect((await nodeStatus()).services.items).toContainEqual(serviceEntry)
 })
 
 test.sequential('manifest update and previous-to-current published image upgrade preserve identity', async () => {
@@ -177,6 +191,10 @@ test.sequential('manifest update and previous-to-current published image upgrade
     }
     await login()
     expect((await nodeStatus()).identity.address).toBe(identity)
+    if (serviceEntry) {
+      const saved = path.join(platform!.instance.dataDirectory, 'app-data', appId, 'data/config/services.json')
+      expect(await fse.readJson(saved)).toContainEqual({id:serviceEntry.id,name:'My files',kind:'https',port:8443})
+    }
     const installed = (await platform!.client.apps.list.query()).find(app => app.id === appId)
     expect(installed && !('error' in installed) && installed.version).toBe(manifest.version)
     if (sourceImage && image !== publishedImage) {
@@ -191,6 +209,7 @@ test.sequential('uninstall and fresh install produce a new identity after data r
     {interval:1000, timeout:120000})
   const config = path.join(platform!.instance.dataDirectory, 'app-data', appId, 'data/config/uqda.conf')
   expect(await fse.pathExists(config)).toBe(false)
+  expect(await fse.pathExists(path.join(path.dirname(config), 'services.json'))).toBe(false)
   cookie = ''; csrf = ''
   await platform!.client.apps.install.mutate({appId})
   await ready()
