@@ -38,6 +38,11 @@ Umbrel dashboard, check IPv6 app-auth redirects and owner/UI-proof enforcement,
 and exercise install/restart/previous-public-image upgrade/uninstall/reinstall.
 See the linked release evidence before treating any gate as passed.
 
+Published image: `ghcr.io/uqda/core:26.0.5-umbrel.1@sha256:f2d26d976c8447b7f8179c3695903c82969bb9ddfb0464a31b960089ce4fb3c9`.
+Image source revision: `422a3e14500596fdad0c1b469fd6ee39a87b99c8`.
+Native Docker/TUN, browser and publication evidence:
+https://github.com/Uqda/Core/actions/runs/37144505817
+
 This is a community integration, not official Umbrel certification or endorsement.
 It is not yet a full substitute for every Tailscale feature. Native Umbrel clients,
 SMB, backups, production OS reboot and every third-party app require separate tests.

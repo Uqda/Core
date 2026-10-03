@@ -1,6 +1,6 @@
 # Uqda on Umbrel
 
-The `uqda-network` community-store package runs the verified Core 26.0.4
+The `uqda-network` community-store package runs the verified Core 26.0.5
 release with an Arabic/English browser dashboard. The root
 `umbrel-app-store.yml` makes this repository usable as a community app store
 once the package image is published and its digest is committed.
@@ -53,10 +53,9 @@ firewall settings.
 For the broader dashboard/app-gateway workflow, research evidence and remaining
 mobile/TLS/native-client acceptance work, see [Umbrel remote access](umbrel-remote-access.md).
 
-This workflow is a source enhancement, not part of the already published
-`26.0.4-umbrel.2` image. Distribution requires a new immutable wrapper version
-and digest-pinned community-store update after validation; the existing image
-and installed devices are not modified by this change.
+This workflow is included in `26.0.5-umbrel.1`. Update through the digest-pinned
+community store after backing up app data. Earlier immutable images remain
+available; existing devices are not modified until their owners update.
 
 The dashboard includes an explicit service-access workflow, in Arabic and
 English: connect another device, prepare one installed service, and verify it
