@@ -17,6 +17,7 @@ let identity = ''
 // to the next wrapper version. This immutable image is used only in CI fixtures.
 const publishedImage = 'ghcr.io/uqda/core:26.0.4-umbrel.1@sha256:e68a42d1f2063e408272f96189a45c2f68beb09fee659700693b4ab6694a78ad'
 let packageVersion = ''
+let currentPublishedImage = ''
 const base = 'http://127.0.0.1:8926'
 let cookie = '', csrf = ''
 
@@ -69,13 +70,14 @@ beforeAll(async () => {
   await fse.copy(path.join(source, 'umbrel-app-store.yml'), path.join(store.directory, 'umbrel-app-store.yml'))
   const manifest: any = yaml.load(await fse.readFile(path.join(store.directory, appId, 'umbrel-app.yml'), 'utf8'))
   packageVersion = manifest.version
+  const composePath = path.join(store.directory, appId, 'docker-compose.yml')
+  const compose: any = yaml.load(await fse.readFile(composePath, 'utf8'))
+  currentPublishedImage = compose.services.core.image
   const sourceImage = process.env.UQDA_PLATFORM_IMAGE
   if (sourceImage) {
     if (!/^127\.0\.0\.1:5000\/uqda-validation@sha256:[a-f0-9]{64}$/.test(sourceImage)) {
       throw new Error('Expected a digest-pinned disposable local image')
     }
-    const composePath = path.join(store.directory, appId, 'docker-compose.yml')
-    const compose: any = yaml.load(await fse.readFile(composePath, 'utf8'))
     for (const service of ['core', 'dashboard']) compose.services[service].image = sourceImage
     await fse.writeFile(composePath, yaml.dump(compose))
   }
@@ -144,13 +146,14 @@ test.sequential('restart through Umbrel preserves identity and invalidates UI se
   expect((await nodeStatus()).identity.address).toBe(identity)
 })
 
-test.sequential('manifest update and optional published-to-source image upgrade preserve identity', async () => {
+test.sequential('manifest update and previous-to-current published image upgrade preserve identity', async () => {
   const manifestPath = path.join(store!.directory, appId, 'umbrel-app.yml')
   const manifest: any = yaml.load(await fse.readFile(manifestPath, 'utf8'))
   const sourceImage = process.env.UQDA_PLATFORM_IMAGE
-  // Source matrix first moves to the real previous published image, then upgrades
-  // to the actual newly built digest. Nothing is changed in the public store.
-  const images = sourceImage ? [publishedImage, sourceImage] : ['']
+  // The source matrix initially installs a local rebuild. Now move to the real
+  // previous release, then upgrade to the actual new public digest, not a local
+  // stand-in. This covers precisely the update store users will receive.
+  const images = sourceImage ? [publishedImage, currentPublishedImage] : ['']
   for (const [index, image] of images.entries()) {
     manifest.version = `${packageVersion}-platform-test-${index}`
     await fse.writeFile(manifestPath, yaml.dump(manifest))
@@ -176,7 +179,7 @@ test.sequential('manifest update and optional published-to-source image upgrade 
     expect((await nodeStatus()).identity.address).toBe(identity)
     const installed = (await platform!.client.apps.list.query()).find(app => app.id === appId)
     expect(installed && !('error' in installed) && installed.version).toBe(manifest.version)
-    if (sourceImage && image === sourceImage) {
+    if (sourceImage && image !== publishedImage) {
       expect((await request('/api/status', undefined, true, '')).status).toBe(401)
     }
   }

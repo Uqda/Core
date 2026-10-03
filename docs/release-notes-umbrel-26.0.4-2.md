@@ -33,7 +33,8 @@ Wrong private-group passwords were rejected and correct-password recovery passed
 The pinned official Umbrel 2.0 development app manager passed installation,
 restart, previous-wrapper-to-new-source upgrade with retained identity, and
 uninstall/fresh-install identity replacement. Release packaging reruns these
-gates, including installation of the actual new published image.
+gates, including installation and previous-release-to-new-release upgrade of
+the actual published digest, not just a locally rebuilt stand-in.
 
 Evidence and detailed review: https://github.com/Uqda/Core/pull/22
 
