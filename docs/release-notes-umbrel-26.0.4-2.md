@@ -4,6 +4,12 @@ This is a new, separately versioned Umbrel integration release. The underlying
 Uqda Core remains the verified 26.0.4 release; native Linux/macOS installers and
 Homebrew are not changed by this wrapper release. The previous image is retained.
 
+The published amd64/arm64 image is
+`ghcr.io/uqda/core:26.0.4-umbrel.2@sha256:6bb61d60bc3d04a60d42f7c29c78e7d03878574b2557a18f4c49458461bdb4b1`.
+Both platform manifest/config hashes and the public index were independently
+verified. Runtime image source revision: `c5315c18cfca73bb55cecdd43914c1b7ba8cbc5d`.
+Subsequent packaging changes pin this image; they do not overwrite it.
+
 ## Changes
 
 - Require an origin-scoped, tab-held random proof for authenticated reads and

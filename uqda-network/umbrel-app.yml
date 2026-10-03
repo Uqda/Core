@@ -4,7 +4,7 @@ storage:
   dataRoot: data
 category: networking
 name: Uqda Network
-version: "26.0.4-umbrel.1"
+version: "26.0.4-umbrel.2"
 tagline: Your encrypted IPv6 connection, managed from Umbrel
 icon: https://raw.githubusercontent.com/Uqda/Core/01dbdb457985d452c56322273299a7a14c870885/contrib/umbrel/web/icon.svg
 description: >-
@@ -23,7 +23,18 @@ description: >-
   reachable. It does not provide anonymity or automatically expose Docker apps.
   Configuration and node identity are retained in app data; keep protected backups
   and never run two active nodes with the same identity.
-releaseNotes: ""
+releaseNotes: >-
+  Security and usability update for the Umbrel integration; Core remains 26.0.4.
+  Dashboard reads and changes require an origin-scoped session proof, protecting
+  against reuse of cookies received by another app on the same host. Reloading
+  the same tab retains access; new tabs may require signing in again.
+  Settings unlock correctly after saving or restarting, logout clears draft
+  secrets, and encoded peer credentials are hidden and preserved on disk.
+  Includes Arabic/English private-group and service setup guidance.
+  Native amd64/arm64 Docker, TCP/UDP and browser checks passed. The official
+  Umbrel 2.0 development app manager passed install, restart, upgrade and
+  uninstall/reinstall tests. Production OS boot and backup restoration are
+  not certified by these development tests. Back up app data before updating.
 developer: Uqda
 website: https://github.com/Uqda/Core
 dependencies: []
