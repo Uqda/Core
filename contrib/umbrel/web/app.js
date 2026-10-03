@@ -26,7 +26,9 @@ Object.assign(text.ar, {
 });
 let language = localStorage.getItem('uqda-language') || (navigator.language.startsWith('ar') ? 'ar' : 'en');
 if (!text[language]) language = 'en';
-let csrf = '', snapshot = null, editing = false, applying = false, editRevision = '', generation = 0;
+function readSessionProof() { try { return sessionStorage.getItem('uqda-session-proof') || ''; } catch (_) { return ''; } }
+function storeSessionProof(value) { try { if (value) sessionStorage.setItem('uqda-session-proof', value); else sessionStorage.removeItem('uqda-session-proof'); } catch (_) {} }
+let csrf = readSessionProof(), snapshot = null, editing = false, applying = false, editRevision = '', generation = 0;
 const t = key => text[language][key] || key;
 function translate() {
   document.documentElement.lang = language;
@@ -40,7 +42,7 @@ function authenticated(value) {
   generation++;
   byId('login').hidden = value; byId('dashboard').hidden = !value; byId('logout').hidden = !value;
   if (!value) {
-    csrf = ''; snapshot = null; editing = false; editRevision = '';
+    csrf = ''; storeSessionProof(''); snapshot = null; editing = false; editRevision = '';
     byId('settingsForm').reset(); byId('loginForm').reset();
     byId('address').textContent = '—'; byId('peerList').replaceChildren(); byId('checks').replaceChildren();
     modeFields();
@@ -55,7 +57,7 @@ function setApplying(value) {
 }
 async function api(path, value) {
   let response;
-  try { response = await fetch(path, value === undefined ? {cache:'no-store'} : {method:'POST',headers:{'Content-Type':'application/json','X-Uqda-CSRF':csrf},body:JSON.stringify(value)}); }
+  try { response = await fetch(path, value === undefined ? {cache:'no-store',headers:{'X-Uqda-CSRF':csrf}} : {method:'POST',headers:{'Content-Type':'application/json','X-Uqda-CSRF':csrf},body:JSON.stringify(value)}); }
   catch (_) { throw new Error(t('networkError')); }
   const data = await response.json();
   if (!response.ok) { if (response.status === 401) authenticated(false); throw new Error(data.error || t('networkError')); }
@@ -109,7 +111,7 @@ async function refresh() {
   } catch (error) { if (current === generation) notice(error.message, true); }
 }
 byId('language').addEventListener('click', () => { language = language === 'en' ? 'ar' : 'en'; localStorage.setItem('uqda-language',language); translate(); });
-byId('loginForm').addEventListener('submit', async event => { event.preventDefault(); const button = event.submitter; button.disabled = true; try { const data = await api('/api/login',{password:byId('loginPassword').value}); csrf = data.csrf; byId('loginPassword').value = ''; authenticated(true); notice(''); await refresh(); } catch (error) { notice(error.message, true); } finally { button.disabled = false; } });
+byId('loginForm').addEventListener('submit', async event => { event.preventDefault(); const button = event.submitter; button.disabled = true; try { const data = await api('/api/login',{password:byId('loginPassword').value}); csrf = data.csrf; storeSessionProof(csrf); byId('loginPassword').value = ''; authenticated(true); notice(''); await refresh(); } catch (error) { notice(error.message, true); } finally { button.disabled = false; } });
 byId('logout').addEventListener('click', async () => { try { await api('/api/logout',{}); csrf=''; authenticated(false); notice(''); } catch (error) { notice(error.message,true); } });
 byId('settingsForm').addEventListener('input', () => { editing = true; });
 byId('networkMode').addEventListener('change', modeFields);

@@ -1,5 +1,5 @@
 // Copied into the pinned official Umbrel checkout by umbrel-platform.yml.
-// Tests the actual app manager against the existing published store image.
+// Tests the actual app manager against the published image and rebuilt source.
 import path from 'node:path'
 import {beforeAll, afterAll, afterEach, expect, test} from 'vitest'
 import fse from 'fs-extra'
@@ -27,13 +27,13 @@ async function ready() {
     } catch { return false }
   }, {interval:1000, timeout:60000})
 }
-async function request(endpoint: string, value?: unknown, owner = true) {
+async function request(endpoint: string, value?: unknown, owner = true, proof = csrf) {
   const jar = platform!.browserApi.defaults.options.cookieJar
   if (!jar) throw new Error('Official browser session cookie jar unavailable')
   const ownerCookie = owner ? await jar.getCookieString(base) : ''
   const response = await fetch(base + endpoint, {redirect:'manual',
     method:value === undefined ? 'GET' : 'POST', headers:{Cookie:[ownerCookie,cookie].filter(Boolean).join('; '), Origin:base,
-      'Content-Type':'application/json', 'X-Uqda-CSRF':csrf},
+      'Content-Type':'application/json', 'X-Uqda-CSRF':proof},
     body:value === undefined ? undefined : JSON.stringify(value), signal:AbortSignal.timeout(35000)})
   return response
 }
@@ -63,6 +63,16 @@ beforeAll(async () => {
   if (!source) throw new Error('UQDA_PACKAGE_SOURCE required')
   await fse.copy(path.join(source, 'uqda-network'), path.join(store.directory, appId))
   await fse.copy(path.join(source, 'umbrel-app-store.yml'), path.join(store.directory, 'umbrel-app-store.yml'))
+  const sourceImage = process.env.UQDA_PLATFORM_IMAGE
+  if (sourceImage) {
+    if (!/^127\.0\.0\.1:5000\/uqda-validation@sha256:[a-f0-9]{64}$/.test(sourceImage)) {
+      throw new Error('Expected a digest-pinned disposable local image')
+    }
+    const composePath = path.join(store.directory, appId, 'docker-compose.yml')
+    const compose: any = yaml.load(await fse.readFile(composePath, 'utf8'))
+    for (const service of ['core', 'dashboard']) compose.services[service].image = sourceImage
+    await fse.writeFile(composePath, yaml.dump(compose))
+  }
   const git = $({cwd:store.directory})
   await git`git add .`
   await git`git commit -m ${'Add disposable Uqda store fixture'}`
@@ -109,6 +119,15 @@ test.sequential('install through actual Umbrel app manager and enforce both auth
   await login()
   identity = (await nodeStatus()).identity.address
   expect(identity).toMatch(/^2[0-9a-f]*:/)
+  if (process.env.UQDA_PLATFORM_IMAGE) {
+    // Co-hosted apps can receive cookies because cookies ignore TCP ports.
+    // Even a real owner cookie plus the UI cookie cannot recover its proof.
+    const session = await request('/api/session', undefined, true, '')
+    expect(session.status).toBe(200)
+    expect(await session.json()).toMatchObject({authenticated:false, csrf:''})
+    expect((await request('/api/status', undefined, true, '')).status).toBe(401)
+    expect((await nodeStatus()).identity.address).toBe(identity)
+  }
 })
 
 test.sequential('restart through Umbrel preserves identity and invalidates UI session', async () => {

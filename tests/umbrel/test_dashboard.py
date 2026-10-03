@@ -175,7 +175,7 @@ class HttpTests(LifecycleTests):
 
     def request(self, path, values=None, origin=None, csrf=None):
         connection = http.client.HTTPConnection("127.0.0.1", self.port, timeout=35)
-        headers = {"Cookie": self.cookie}
+        headers = {"Cookie": self.cookie, "X-Uqda-CSRF": self.csrf if csrf is None else csrf}
         method, body = "GET", None
         if values is not None:
             method, body = "POST", json.dumps(values)
@@ -220,6 +220,18 @@ class HttpTests(LifecycleTests):
         self.assertEqual(status, 200)
         self.assertTrue(data["settings"]["private"])
         self.assertEqual(self.request("/api/restart", {})[0], 200)
+
+    def test_cookie_alone_cannot_read_status_or_bootstrap_a_session(self):
+        self.login()
+        original = self.supervisor.config_path.read_bytes()
+        for proof in ("", "wrong", "\u00e9"):
+            status, session, _ = self.request("/api/session", csrf=proof)
+            self.assertEqual(status, 200)
+            self.assertEqual(session, {"authenticated": False, "csrf": ""})
+            self.assertEqual(self.request("/api/status", csrf=proof)[0], 401)
+            self.assertEqual(self.request("/api/settings", self.values(), csrf=proof)[0], 403)
+        self.assertEqual(self.request("/api/status")[0], 200)
+        self.assertEqual(self.supervisor.config_path.read_bytes(), original)
 
     def test_malformed_unicode_password_is_rejected_without_disconnect(self):
         self.assertEqual(self.request("/api/login", {"password": "\ud800"})[0], 400)

@@ -19,7 +19,7 @@ def compose(*args):
 
 def request(path, value=None):
     connection = http.client.HTTPConnection("127.0.0.1", 8926, timeout=35)
-    headers = {"Cookie": cookie}
+    headers = {"Cookie": cookie, "X-Uqda-CSRF": csrf}
     if value is not None:
         headers.update({"Content-Type": "application/json", "Origin": "http://127.0.0.1:8926", "X-Uqda-CSRF": csrf})
     connection.request("GET" if value is None else "POST", path, None if value is None else json.dumps(value), headers)

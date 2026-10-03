@@ -110,12 +110,28 @@ uses the official factory's real owner browser-session cookie jar, checks the
 anonymous gateway redirect, checks that owner access alone still requires the
 dashboard password, then authenticates the dashboard. It also checks manifest
 version changes and uninstall/fresh-install identity replacement. These expanded
-assertions are not yet claimed as passing.
+assertions passed against the published image in all four lifecycle tests:
+https://github.com/Uqda/Core/actions/runs/37130361331
+
+The review additionally found a cookie-replay boundary between co-hosted apps:
+cookies do not isolate ports, and the legacy Umbrel network is shared. The source
+now requires an origin-scoped, tab-held random proof for session bootstrap and
+status, as well as mutations. A cookie alone cannot recover that proof. Added
+HTTP regressions and a real-browser second-origin cookie-capture fixture cover
+this boundary. They do not claim HTTPS transport protection or isolate all apps'
+network traffic. This fix is not in the existing published wrapper image.
+
+The platform workflow now separately tests a current-source wrapper, built and
+digest-pinned in a disposable loopback-only registry, against the unchanged real
+Umbrel app manager. It does not publish an external image or alter the public
+store. Consult its completed result before treating the new source as validated.
 
 ## Remaining gates before publication
 
-1. Finish the actual Umbrel app-manager gate and run its added uninstall/reinstall
-   scenario. The native Linux daemon, Docker/TUN and real browser gates now pass.
+1. Finish the new current-source app-manager and cookie-proof regression gates.
+   The published-image manager passed install/restart/manifest update/uninstall
+   and reinstall; the earlier native Linux daemon, Docker/TUN and browser gates
+   passed before this additional security change.
 2. Before publishing wrapper changes, increment the wrapper version (do not
    overwrite `26.0.4-umbrel.1`), update manifest and both compose image tags, build
    after successful gates, then pin the newly published digest. Keep old packages

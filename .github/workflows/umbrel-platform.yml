@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [codex/umbrel-uqda]
-    paths: ['.github/workflows/umbrel-platform.yml', 'tests/umbrel/platform.integration.test.ts', 'tests/umbrel/development-service-timeout.conf']
+    paths: ['.github/workflows/umbrel-platform.yml', 'tests/umbrel/**', 'contrib/umbrel/**', 'uqda-network/**']
 permissions:
   contents: read
 concurrency:
@@ -11,7 +11,11 @@ concurrency:
   cancel-in-progress: false
 jobs:
   platform:
-    name: Official Umbrel 2.0 app lifecycle
+    name: Official Umbrel 2.0 app lifecycle (${{ matrix.image }})
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [published, source]
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:
@@ -36,10 +40,12 @@ jobs:
           mkdir upstream/worktrees/codex/uqda-platform/uqda-package
           cp -R core/uqda-network core/umbrel-app-store.yml upstream/worktrees/codex/uqda-platform/uqda-package/
           cp core/tests/umbrel/platform.integration.test.ts upstream/worktrees/codex/uqda-platform/packages/umbreld/source/modules/apps/uqda-platform.integration.test.ts
+          mkdir -p upstream/worktrees/codex/uqda-platform/uqda-source/contrib
+          cp -R core/contrib/umbrel upstream/worktrees/codex/uqda-platform/uqda-source/contrib/
       - name: Start official development platform
         working-directory: upstream/worktrees/codex/uqda-platform
         env:
-          UMBREL_DEV_SKIP_CACHE_EXPORT: 'false'
+          UMBREL_DEV_SKIP_CACHE_EXPORT: ${{ matrix.image == 'source' && 'true' || 'false' }}
         run: |
           npm run dev start
           # Bound only the empty development service's pre-test stop (upstream
@@ -49,13 +55,25 @@ jobs:
           docker exec umbrel-dev systemctl daemon-reload
           test "$(docker exec umbrel-dev systemctl show umbrel.service --property TimeoutStopUSec --value)" = '30s'
           npm run --prefix packages/umbreld test:umbrel-dev:prepare
-      - name: Test published package through real Umbrel app manager
+      - name: Build current source in a temporary loopback-only registry
+        if: matrix.image == 'source'
+        id: source
+        run: |
+          docker exec umbrel-dev docker run -d --name uqda-ci-registry -p 127.0.0.1:5000:5000 registry:3.0.0
+          docker exec umbrel-dev docker build -f /umbrel-dev/uqda-source/contrib/umbrel/Dockerfile -t 127.0.0.1:5000/uqda-validation:source /umbrel-dev/uqda-source
+          docker exec umbrel-dev docker push 127.0.0.1:5000/uqda-validation:source
+          digest="$(docker exec umbrel-dev docker image inspect 127.0.0.1:5000/uqda-validation:source --format '{{index .RepoDigests 0}}')"
+          case "$digest" in 127.0.0.1:5000/uqda-validation@sha256:*) ;; *) exit 1 ;; esac
+          echo "image=$digest" >> "$GITHUB_OUTPUT"
+      - name: Test package through real Umbrel app manager
         working-directory: upstream/worktrees/codex/uqda-platform
+        env:
+          UQDA_PLATFORM_IMAGE: ${{ steps.source.outputs.image }}
         run: |
           # The development image's OpenSSL defaults to a missing Homebrew path.
           # Use the real Debian config; never disable certificate verification.
           docker exec umbrel-dev test -r /etc/ssl/openssl.cnf
-          npm run dev exec:noninteractive -- env OPENSSL_CONF=/etc/ssl/openssl.cnf UQDA_PACKAGE_SOURCE=/umbrel-dev/uqda-package npm --prefix /umbrel-dev/packages/umbreld test -- uqda-platform.integration.test.ts
+          npm run dev exec:noninteractive -- env OPENSSL_CONF=/etc/ssl/openssl.cnf UQDA_PACKAGE_SOURCE=/umbrel-dev/uqda-package UQDA_PLATFORM_IMAGE="$UQDA_PLATFORM_IMAGE" npm --prefix /umbrel-dev/packages/umbreld test -- uqda-platform.integration.test.ts
       - name: Platform logs
         if: always()
         run: docker logs --tail 120 umbrel-dev || true

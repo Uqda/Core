@@ -2,6 +2,7 @@
 const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const fs = require('node:fs');
 const path = require('node:path');
+const http = require('node:http');
 
 async function until(check) {
   const deadline = Date.now() + 30000;
@@ -23,6 +24,27 @@ async function until(check) {
     await page.click('#loginForm button');
     await until(async () => await page.locator('#address').textContent() !== '—');
     const before = await page.locator('#address').textContent();
+    // Cookies ignore ports. Exercise an actual co-hosted untrusted HTTP origin,
+    // without printing its captured test cookie or the origin-scoped proof.
+    let capturedCookie = '';
+    const otherApp = http.createServer((request,response) => {
+      capturedCookie = request.headers.cookie || '';
+      response.end('<!doctype html><title>Disposable other-app fixture</title>');
+    });
+    await new Promise(resolve => otherApp.listen(0,'127.0.0.1',resolve));
+    try {
+      await page.goto('http://127.0.0.1:' + otherApp.address().port);
+      if (!capturedCookie.includes('uqda_session=')) throw Error('Co-host cookie fixture did not capture its test session');
+      if (await page.evaluate(() => sessionStorage.getItem('uqda-session-proof')) !== null) throw Error('Session proof leaked across origins');
+      const bootstrap = await fetch('http://127.0.0.1:8926/api/session', {headers:{Cookie:capturedCookie}});
+      const session = await bootstrap.json();
+      if (session.authenticated || session.csrf) throw Error('Cookie-only session disclosed authentication proof');
+      if ((await fetch('http://127.0.0.1:8926/api/status', {headers:{Cookie:capturedCookie}})).status !== 401) throw Error('Cookie-only read allowed');
+      await page.goto('http://127.0.0.1:8926');
+      await until(async () => await page.locator('#address').textContent() === before);
+      await page.reload();
+      await until(async () => await page.locator('#address').textContent() === before);
+    } finally { await new Promise(resolve => otherApp.close(resolve)); }
     const output = process.env.UQDA_SCREENSHOT_DIR;
     if (output) {
       fs.mkdirSync(output, {recursive:true});

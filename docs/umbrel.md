@@ -68,6 +68,11 @@ No raw dashboard port is published by the package. The dashboard also requires
 the stable per-install `APP_PASSWORD`, with constant-time comparison, bounded
 login attempts, eight-hour sessions, HttpOnly/SameSite cookies, Origin and CSRF
 checks on mutations, a restrictive CSP, and no third-party scripts or fonts.
+Authenticated reads also require a random session proof held in origin-scoped
+browser `sessionStorage`, not another cookie. Cookies ignore port numbers, so a
+co-hosted app receiving the cookie cannot bootstrap this proof or read status.
+Reloading the same tab preserves access; a new tab or blocked session storage
+may require signing in again. Logout clears the tab's proof.
 Use HTTPS when available; plain HTTP provides no transport protection for
 browser passwords. Stopping/recreating the dashboard invalidates its sessions.
 
@@ -169,7 +174,11 @@ References: [official development script](https://github.com/getumbrel/umbrel/bl
 and [official VM installation guide](https://umbrel.com/support/install-umbrelos-on-your-own-hardware/installing-umbrelos-in-a-virtual-machine).
 
 The separate `umbrel-platform.yml` gate installs the digest-pinned published
-package through the pinned official Umbrel 2.0 app manager. It starts LAN ingress
+package and a current-source image through the pinned official Umbrel 2.0 app
+manager. The latter is built inside the disposable development platform, pushed
+only to a loopback-bound temporary registry, then pinned by digest in the test
+store. It is not published to GHCR or substituted in the public store.
+The gate starts LAN ingress
 on the normal internal server port (the upstream test factory's default port 0
 intentionally disables it). It checks anonymous gateway rejection, actual owner
 session cookies plus the separate dashboard password, restart, a manifest-only

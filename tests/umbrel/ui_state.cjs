@@ -23,9 +23,11 @@ ids.settingsForm.reset = () => {
 };
 ids.loginForm.reset = () => { ids.loginPassword.value = ''; };
 const reply = (data, status = 200) => ({ok:status === 200, status, json:async () => data});
+const sessionValues = new Map();
 const context = vm.createContext({document:{documentElement:{}, getElementById:id => ids[id],
   querySelectorAll:() => [], createElement:element, createTextNode:text => text},
   localStorage:{getItem:() => 'en', setItem:() => {}}, navigator:{language:'en'},
+  sessionStorage:{getItem:key => sessionValues.get(key) || null, setItem:(key,value) => sessionValues.set(key,value), removeItem:key => sessionValues.delete(key)},
   setInterval:() => {}, confirm:() => true, fetch:async () => reply({authenticated:false, csrf:''})});
 const run = code => vm.runInContext(code, context);
 const state = {ready:true, identity:{address:'200::123',build_version:'26.0.4'}, tun:{enabled:true,name:'uqda0'},
@@ -36,6 +38,12 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
 (async () => {
   vm.runInContext(source, context);
   await flush();
+  run('csrf = "tab-local-proof"; storeSessionProof(csrf)');
+  context.fetch = async (_path, options) => {
+    assert.equal(options.headers['X-Uqda-CSRF'], 'tab-local-proof', 'GET must require origin-scoped session proof');
+    return reply({authenticated:true,csrf:'tab-local-proof'});
+  };
+  await run('api("/api/session")');
   run('authenticated(true); render(state)');
   ids.groupPassword.value = 'secret-entered-by-user';
   context.fetch = async () => reply(state);
@@ -68,6 +76,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.equal(ids.groupPassword.value, '', 'logout must clear unsaved secrets');
   assert.equal(run('snapshot'), null);
   assert.equal(run('csrf'), '');
+  assert.equal(sessionValues.size, 0, 'logout must clear tab-local proof');
 
   run('authenticated(true); render(state)');
   context.fetch = async () => reply({error:'Sign in'}, 401);

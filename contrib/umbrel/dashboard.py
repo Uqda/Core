@@ -69,7 +69,7 @@ class Handler(BaseHTTPRequestHandler):
             raise ControlError("Invalid request.")
         return value
 
-    def session(self):
+    def session(self, require_proof=False):
         try:
             cookies = SimpleCookie(self.headers.get("Cookie", ""))
             token = cookies["uqda_session"].value
@@ -78,6 +78,9 @@ class Handler(BaseHTTPRequestHandler):
         with self.server.auth_lock:
             value = self.server.sessions.get(token)
             if value and value["expires"] > time.monotonic():
+                if require_proof and not hmac.compare_digest(
+                        self.headers.get("X-Uqda-CSRF", "").encode("utf-8"), value["csrf"].encode("ascii")):
+                    return None
                 return value
             self.server.sessions.pop(token, None)
         return None
@@ -119,10 +122,10 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/healthz":
             self.reply(200, {"ok": True})
         elif path == "/api/session":
-            session = self.session()
+            session = self.session(require_proof=True)
             self.reply(200, {"authenticated": bool(session), "csrf": session["csrf"] if session else ""})
         elif path == "/api/status":
-            if not self.session():
+            if not self.session(require_proof=True):
                 self.reply(401, {"error": "Sign in to continue."})
             else:
                 self.control("status")
