@@ -45,7 +45,7 @@ Research of current master is pinned above; platform integration tests use the
 separate official 2.0.0 commit `9298257b0e904ca8d8270b1702672666343f0b86`.
 Do not assume all later releases behave identically.
 
-## Implemented source workflow (not yet distributed)
+## Workflow in 26.0.5-umbrel.1
 
 The dashboard's **Your Umbrel, from another device / جهاز Umbrel من جهازك الآخر**
 section generates these addresses from the daemon's own identity:
@@ -68,9 +68,10 @@ service, contact Docker, forward traffic or probe the internal umbreld port.
 Results always say local and never certify remote login or app functionality.
 The full service address book remains available for deliberate per-app checks.
 
-This source enhancement is not in the already published wrapper
-`26.0.4-umbrel.2`. It needs review, a new immutable image and a pinned store
-update before users receive it. The existing release and devices are unchanged.
+This enhancement is distributed in the new immutable wrapper
+`26.0.5-umbrel.1`, using Core 26.0.5, through the digest-pinned community store.
+It is not in earlier wrappers. Earlier images remain unchanged; devices receive
+the enhancement only when their owners update. Back up app data privately first.
 
 ## Security and compatibility boundaries
 

@@ -4,9 +4,9 @@ storage:
   dataRoot: data
 category: networking
 name: Uqda Network
-version: "26.0.4-umbrel.2"
+version: "26.0.5-umbrel.1"
 tagline: Your encrypted IPv6 connection, managed from Umbrel
-icon: https://raw.githubusercontent.com/Uqda/Core/01dbdb457985d452c56322273299a7a14c870885/contrib/umbrel/web/icon.svg
+icon: https://raw.githubusercontent.com/Uqda/Core/422a3e14500596fdad0c1b469fd6ee39a87b99c8/contrib/umbrel/web/icon.svg
 description: >-
   Run Uqda Core on your Umbrel and manage it from a bilingual Arabic/English dashboard.
   Sign in with the app password shown by Umbrel. New nodes start isolated:
@@ -18,35 +18,48 @@ description: >-
   explicit confirmation and removes private-group session protection.
 
 
+  In private mode, copy your Umbrel dashboard address for another device with a
+  working Uqda tunnel. Umbrel keeps its own login and app gateway. Save up to
+  twelve existing service addresses and check local TCP listeners. A local
+  listener check does not prove remote access or application health.
+
+
   Uqda creates a host IPv6 interface using host networking and the TUN device.
   Services must listen on IPv6 and permit access through their firewall to be
   reachable. It does not provide anonymity or automatically expose Docker apps.
   Configuration and node identity are retained in app data; keep protected backups
   and never run two active nodes with the same identity.
 releaseNotes: >-
-  Security and usability update for the Umbrel integration; Core remains 26.0.4.
+  New immutable integration based on Core 26.0.5, with a private Umbrel access
+  card and validated service address book. Nothing opens ports, installs apps
+  or creates an unauthenticated proxy. HTTPS still requires a matching verified
+  certificate, and client devices need their own working Uqda tunnel.
   Dashboard reads and changes require an origin-scoped session proof, protecting
   against reuse of cookies received by another app on the same host. Reloading
   the same tab retains access; new tabs may require signing in again.
   Settings unlock correctly after saving or restarting, logout clears draft
   secrets, and encoded peer credentials are hidden and preserved on disk.
   Includes Arabic/English private-group and service setup guidance.
-  Native amd64/arm64 Docker, TCP/UDP and browser checks passed. The official
-  Umbrel 2.0 development app manager passed install, restart, upgrade and
-  uninstall/reinstall tests. Production OS boot and backup restoration are
-  not certified by these development tests. Back up app data before updating.
+  Native amd64/arm64 Docker, TCP/UDP and browser checks passed. See release
+  notes for exact published-image Umbrel 2.0 lifecycle evidence. Community
+  integration, not official certification or full Tailscale parity. Native
+  clients, SMB, production OS boot and backup restoration need separate tests.
+  Back up app data before updating.
 developer: Uqda
 website: https://github.com/Uqda/Core
 dependencies: []
 repo: https://github.com/Uqda/Core
 support: https://github.com/Uqda/Core/issues
 port: 8926
-gallery: []
+gallery:
+  - https://github.com/Uqda/Core/releases/download/umbrel-26.0.5-1/dashboard-en.png
+  - https://github.com/Uqda/Core/releases/download/umbrel-26.0.5-1/dashboard-ar.png
+  - https://github.com/Uqda/Core/releases/download/umbrel-26.0.5-1/dashboard-mobile.png
 path: ""
 defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 submitter: Uqda
-submission: https://github.com/Uqda/Core/pull/22
+submission: https://github.com/Uqda/Core/pull/23
 backupIgnore:
   - data/control/*
