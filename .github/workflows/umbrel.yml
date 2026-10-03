@@ -97,10 +97,10 @@ jobs:
           candidate_path = pathlib.Path('contrib/umbrel/CANDIDATE_VERSION')
           candidate = candidate_path.is_file()
           version = candidate_path.read_text().strip() if candidate else current
-          pattern = r'26\.0\.4-umbrel\.(\d+)'
+          pattern = r'(\d+)\.(\d+)\.(\d+)-umbrel\.([1-9]\d*)'
           assert re.fullmatch(pattern, version) and re.fullmatch(pattern, current)
           if candidate:
-              assert int(re.fullmatch(pattern, version)[1]) > int(re.fullmatch(pattern, current)[1])
+              assert tuple(map(int, re.fullmatch(pattern, version).groups())) > tuple(map(int, re.fullmatch(pattern, current).groups()))
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               output.write(f'value={version}\ncandidate={str(candidate).lower()}\n')
           PYTHON
