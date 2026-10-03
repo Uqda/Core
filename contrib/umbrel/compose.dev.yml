@@ -29,6 +29,17 @@ services:
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
+  peer:
+    profiles: [network-test]
+    image: uqda-umbrel:test
+    cap_add: [NET_ADMIN]
+    devices: [/dev/net/tun:/dev/net/tun]
+    command: [control.py]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    tmpfs:
+      - /etc/uqda:mode=0700
+      - /run/uqda-core:mode=0700
+      - /run/uqda-control:mode=0700
 volumes:
   node-config:
   node-control:

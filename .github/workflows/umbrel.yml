@@ -39,6 +39,7 @@ jobs:
       - name: Validate JavaScript and package structure
         run: |
           node --check contrib/umbrel/web/app.js
+          node tests/umbrel/ui_state.cjs
           python3 tests/umbrel/package_check.py
           git diff --check
 

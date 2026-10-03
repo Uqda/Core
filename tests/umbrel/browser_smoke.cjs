@@ -35,11 +35,17 @@ async function until(check) {
     await page.click('#save');
     await until(async () => (await page.locator('#notice').textContent()).includes('تم حفظ'));
     if (await page.locator('#address').textContent() !== before) throw Error('Identity changed');
+    for (const id of ['peers','listeners','networkMode','groupPassword','save']) {
+      if (!await page.locator('#' + id).isEnabled()) throw Error('Settings remained locked after save: ' + id);
+    }
+    await page.fill('#groupPassword','unsaved-secret-must-clear');
     await page.setViewportSize({width:390,height:844});
     if (output) await page.screenshot({path:path.join(output,'dashboard-mobile.png'),fullPage:true});
     if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)) throw Error('Mobile overflow');
     await page.click('#logout');
     await page.locator('#login').waitFor({state:'visible'});
+    if (await page.locator('#groupPassword').inputValue()) throw Error('Logout retained a secret');
+    if (await page.locator('#address').textContent() !== '—') throw Error('Logout retained identity');
     if (errors.length) throw Error(errors.join('; '));
     console.log('PASS: browser login, real status, Arabic RTL, settings save, stable identity, mobile width, logout');
   } finally {

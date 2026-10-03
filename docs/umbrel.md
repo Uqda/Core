@@ -8,7 +8,7 @@ once the package image is published and its digest is committed.
 ## Install
 
 1. In Umbrel's App Store, open Community App Stores and add
-   `https://github.com/Uqda/Core`. Menu wording varies by umbrelOS version.
+   `https://github.com/Uqda/umbrel-app-store`. Menu wording varies by umbrelOS version.
 2. Install **Uqda Network** and open it.
 3. Sign in using the app password shown by Umbrel in the app's details.
 4. Enter a trusted peer URI, for example `tls://peer.example:443`, and the
@@ -26,6 +26,20 @@ That permits public encrypted sessions and may expose services listening on
 the host's Uqda IPv6 address. A connected transport peer alone is not evidence
 of a working private-group session. Verify connectivity from another trusted
 node using the existing Uqda network diagnostics.
+
+## What this app is useful for
+
+Use the dashboard to join your Umbrel host to your trusted Uqda devices with a
+persistent encrypted IPv6 identity, manage private-group settings, and inspect
+the local node without editing configuration files. It is not a reverse proxy,
+an anonymity service, or a switch that publishes every Umbrel app.
+
+After configuration, run `sudo uqda test UMBREL_UQDA_IPV6` from another trusted
+group member (replace the placeholder with the address shown in the dashboard).
+Then test the actual application's IPv6 endpoint separately. The interface and
+peer health checks only describe local/transport readiness; they do not establish
+remote application availability. The dashboard's bilingual setup guide explains
+these steps and the backup/removal implications before changing a service.
 
 The dashboard supports TLS/TCP/QUIC/WS/WSS peer URLs without embedded
 credentials, and optional TLS/TCP/QUIC incoming listeners on ports >=1024.
@@ -97,6 +111,7 @@ Do not use the Linux/systemd quick installer to update this container package.
 ```sh
 UQDA_TEST_BINARY=/path/to/verified/uqda python3 -m unittest discover -s tests/umbrel -v
 node --check contrib/umbrel/web/app.js
+node tests/umbrel/ui_state.cjs
 python3 tests/umbrel/package_check.py --require-digest
 ```
 
@@ -116,6 +131,46 @@ This gate checks actual host TUN, UID separation, lack of config/raw admin
 access from the dashboard, config mode 0600, login, settings, restart and
 container recreation with identity retained. It creates and deletes only its
 own test volumes. Do not run it alongside an existing `uqda0` interface.
+
+It also creates a disposable second node in an independent Docker network
+namespace. The gate transfers 1 MiB over overlay IPv6 TCP in both directions,
+checks the received SHA-256 hashes, rejects traffic with a different private-group
+password even when transport peers connect, and checks recovery after restoring
+the correct password. This demonstrates useful application traffic, not just a
+green transport indicator. All listeners and the second node belong to the test.
+
+## Testing without a physical Umbrel device
+
+Physical hardware is not required for app lifecycle validation. Umbrel's official
+`scripts/umbrel-dev` can run the platform in a privileged Linux Docker container
+with its own Docker daemon, persistent data volume and systemd. In a separate,
+disposable checkout of `getumbrel/umbrel` at the desired release:
+
+```sh
+npm run dev start
+npm run dev production-mode
+```
+
+Install the dedicated community store through that instance's actual app store,
+not by substituting `compose.dev.yml`. Exercise signup, Umbrel's app proxy,
+dashboard login, settings, private overlay traffic, app restart, update with data
+retained, and uninstall/reinstall. Use `npm run dev restart` to test a development
+instance restart. This is not a test of a production kernel/bootloader reboot.
+The official script requires native Linux Docker networking (or an appropriate
+macOS/WSL2 environment); a Windows Docker client alone is not sufficient.
+
+For production boot/reboot behavior, install the official umbrelOS ISO in an
+EFI virtual machine with at least 4 GB RAM and a 32 GB virtual disk. Install only
+onto a new disposable virtual disk, never an existing server disk. Test the app
+through the real Umbrel UI and restart the VM. Repeat native arm64 runtime tests
+separately; amd64 VM success does not establish arm64 support.
+
+References: [official development script](https://github.com/getumbrel/umbrel/blob/2.0.0/scripts/umbrel-dev)
+and [official VM installation guide](https://umbrel.com/support/install-umbrelos-on-your-own-hardware/installing-umbrelos-in-a-virtual-machine).
+
+Plain Docker tests do not establish actual Umbrel app-store/proxy behavior. A
+development-instance test does not establish production boot or hardware-specific
+behavior. Record these results separately; neither requires buying a device.
 
 The Umbrel workflow runs both gates, builds amd64/arm64 wrappers, and publishes
 new versioned wrapper tags to the existing public `ghcr.io/uqda/core` package on

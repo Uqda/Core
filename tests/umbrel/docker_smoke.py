@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import subprocess
 import time
+from network_smoke import run_network_test
 
 COMPOSE = ["docker", "compose", "-f", "contrib/umbrel/compose.dev.yml"]
 PASSWORD = os.environ["UQDA_TEST_PASSWORD"]
@@ -65,6 +66,8 @@ try:
     assert compose("exec", "-T", "dashboard", "python3", "-c",
                    "from pathlib import Path; assert not Path('/etc/uqda/uqda.conf').exists(); assert not Path('/run/uqda-core/admin.sock').exists(); print('isolated')").strip() == "isolated"
     assert compose("exec", "-T", "core", "stat", "-c", "%a", "/etc/uqda/uqda.conf").strip() == "600"
+    run_network_test(compose)
+    state = ready()
     config = {"revision": state["settings"]["revision"], "peers": [], "listen": [], "mode": "private",
               "group_password": "docker-private-group-test-0123456789"}
     assert request("/api/settings", config)[0] == 200

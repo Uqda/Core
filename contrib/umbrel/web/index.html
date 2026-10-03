@@ -24,6 +24,19 @@
         <form id="loginForm"><label for="loginPassword" data-i18n="appPassword">App password</label><input id="loginPassword" type="password" autocomplete="current-password" required maxlength="1024"><button class="primary" type="submit" data-i18n="signIn">Sign in</button></form>
       </section>
       <div id="dashboard" hidden>
+        <section class="card usage-guide">
+          <h2 data-i18n="purposeTitle">Why use Uqda on Umbrel?</h2>
+          <p data-i18n="purposeText">Give your Umbrel host a persistent encrypted IPv6 address and manage trusted connections without editing configuration files. Use a private group to connect your own devices.</p>
+          <details><summary data-i18n="setupTitle">Before using a service</summary>
+            <ol>
+              <li data-i18n="setupPeer">Connect a trusted peer. Private-group members must use the same strong group password.</li>
+              <li data-i18n="setupTest">From another group member, run sudo uqda test followed by the address shown below. A green peer badge alone does not verify end-to-end connectivity.</li>
+              <li data-i18n="setupService">Then test the intended service separately. It must listen on IPv6 and its firewall must allow access. Docker apps are not exposed automatically.</li>
+            </ol>
+            <h3 data-i18n="recoveryTitle">Keep your identity</h3>
+            <p data-i18n="recoveryText">Update and restart through Umbrel. Back up app data first: deleting it removes your node identity and group settings. Never restore one identity onto two active nodes.</p>
+          </details>
+        </section>
         <section class="card status-card" aria-label="Node status">
           <div class="section-head"><h2 data-i18n="nodeStatus">Your node</h2><span id="connection" class="badge">—</span></div>
           <div class="address-row"><div><span class="label" data-i18n="nodeAddress">Uqda IPv6 address</span><code id="address">—</code></div><button id="copyAddress" type="button" data-i18n="copy">Copy</button></div>

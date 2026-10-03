@@ -4,9 +4,29 @@ const text = {
   ar: {eyebrow:'جهاز UMBREL متصل بشبكتك',heading:'اتصال بإدارتك.',intro:'أدر اتصال IPv6 المشفّر من مكان واحد.',signOut:'تسجيل الخروج',loginTitle:'افتح لوحة الإدارة',loginHint:'استخدم كلمة مرور التطبيق الظاهرة في تفاصيل Uqda داخل Umbrel.',appPassword:'كلمة مرور التطبيق',signIn:'تسجيل الدخول',nodeStatus:'عُقدتك',nodeAddress:'عنوان Uqda IPv6',copy:'نسخ',connectedPeers:'العُقد المتصلة',interface:'واجهة الشبكة',coreVersion:'إصدار Core',mode:'وضع الوصول',accessHint:'اتصال النقل بعقدة أخرى لا يثبت اتصال المجموعة الخاصة. الخدمات تحتاج أيضًا للاستماع على IPv6 والسماح بالوصول عبر الجدار الناري.',settings:'إعدادات الاتصال',savedOnDevice:'محفوظة على هذا الجهاز',firstRun:'العُقد الجديدة تبدأ معزولة. أضف عقدة موثوقة وكلمة مرور مجموعتك المشتركة للاتصال.',peerAddresses:'عناوين العُقد',peersHint:'عنوان واحد في كل سطر. يدعم TLS وTCP وQUIC وWS وWSS. لا تُضاف أي عقدة تلقائيًا.',privateGroup:'مجموعة خاصة',publicNetwork:'شبكة عامة',groupPassword:'كلمة مرور المجموعة المشتركة',groupHint:'استخدم سرًا قويًا ومطابقًا لدى جميع الأعضاء. اترك الحقل فارغًا للحفاظ على السر الحالي. الأسرار المحفوظة لا تظهر هنا.',publicConfirm:'أفهم أن الوضع العام يزيل حماية المجموعة الخاصة، وقد يتيح للعُقد العامة الوصول إلى الخدمات التي تستمع على عنوان Uqda IPv6 الخاص بجهازي.',advanced:'الاتصالات الواردة',listenerAddresses:'عناوين الاستماع (اختياري)',listenerHint:'اتركه فارغًا للاتصالات الصادرة فقط. استخدم TLS أو TCP أو QUIC ومنفذًا بين 1024 و65535. إعداد الراوتر والجدار الناري منفصل.',save:'حفظ وإعادة الاتصال',restartHint:'الحفظ يعيد تشغيل Core ويحافظ على هوية العُقدة.',peers:'العُقد',refresh:'تحديث',health:'حالة الجهاز',restart:'إعادة تشغيل Core',project:'المشروع والتوثيق ↗',connected:'متصل',isolated:'لا توجد عُقد متصلة',starting:'جارٍ التشغيل',noPeers:'لا توجد عُقد بعد. أضف عقدة موثوقة من إعدادات الاتصال.',daemon:'Core يستجيب',identity:'هوية العُقدة متاحة',tun:'واجهة TUN مفعّلة',peerHealth:'اتصال نقل واحد على الأقل متاح',up:'متصل',down:'غير متصل',inbound:'وارد',outbound:'صادر',saved:'تم حفظ الإعدادات وإعادة اتصال Core بنفس الهوية.',restarted:'تمت إعادة تشغيل Core.',busy:'جارٍ تطبيق التعديلات…',copied:'تم نسخ العنوان.',copyFailed:'حدّد العنوان وانسخه يدويًا.',advancedConfig:'توجد إعدادات اتصال متقدمة. أُوقف التعديل من المتصفح للحفاظ على الإعداد الأصلي.',restartConfirm:'إعادة تشغيل Core؟ سينقطع الاتصال لفترة قصيرة.',networkError:'لوحة الإدارة غير متاحة. حاول بعد قليل.'}
 };
 const byId = id => document.getElementById(id);
+Object.assign(text.en, {
+  purposeTitle: 'Why use Uqda on Umbrel?',
+  purposeText: 'Give your Umbrel host a persistent encrypted IPv6 address and manage trusted connections without editing configuration files. Use a private group to connect your own devices.',
+  setupTitle: 'Before using a service',
+  setupPeer: 'Connect a trusted peer. Private-group members must use the same strong group password.',
+  setupTest: 'From another group member, run sudo uqda test followed by the address shown below. A green peer badge alone does not verify end-to-end connectivity.',
+  setupService: 'Then test the intended service separately. It must listen on IPv6 and its firewall must allow access. Docker apps are not exposed automatically.',
+  recoveryTitle: 'Keep your identity',
+  recoveryText: 'Update and restart through Umbrel. Back up app data first: deleting it removes your node identity and group settings. Never restore one identity onto two active nodes.'
+});
+Object.assign(text.ar, {
+  purposeTitle: 'لماذا تستخدم Uqda على Umbrel؟',
+  purposeText: 'امنح جهاز Umbrel عنوان IPv6 مشفّرًا ثابت الهوية، وأدر الاتصالات الموثوقة دون تعديل ملفات الإعدادات. استخدم مجموعة خاصة لربط أجهزتك ببعضها.',
+  setupTitle: 'قبل استخدام أي خدمة',
+  setupPeer: 'اتصل بعُقدة موثوقة. يجب أن تستخدم جميع عُقد المجموعة الخاصة كلمة مرور قوية ومطابقة.',
+  setupTest: 'من جهاز آخر في مجموعتك، شغّل sudo uqda test ثم العنوان الظاهر أدناه. ظهور اتصال أخضر وحده لا يثبت الاتصال الكامل بين الجهازين.',
+  setupService: 'اختبر الخدمة المطلوبة بشكل منفصل. يجب أن تستمع على IPv6 وأن يسمح جدارها الناري بالوصول. لا تُكشف تطبيقات Docker تلقائيًا.',
+  recoveryTitle: 'حافظ على هويتك',
+  recoveryText: 'حدّث التطبيق وأعد تشغيله من Umbrel. انسخ بياناته احتياطيًا أولًا: حذفها يزيل هوية العُقدة وإعدادات المجموعة. لا تستعد هوية واحدة على عُقدتين تعملان معًا.'
+});
 let language = localStorage.getItem('uqda-language') || (navigator.language.startsWith('ar') ? 'ar' : 'en');
 if (!text[language]) language = 'en';
-let csrf = '', snapshot = null, editing = false, applying = false, editRevision = '';
+let csrf = '', snapshot = null, editing = false, applying = false, editRevision = '', generation = 0;
 const t = key => text[language][key] || key;
 function translate() {
   document.documentElement.lang = language;
@@ -16,7 +36,23 @@ function translate() {
   if (snapshot) render(snapshot);
 }
 function notice(message, error = false) { byId('notice').textContent = message; byId('notice').className = error ? 'notice error' : 'notice'; byId('notice').hidden = !message; }
-function authenticated(value) { byId('login').hidden = value; byId('dashboard').hidden = !value; byId('logout').hidden = !value; }
+function authenticated(value) {
+  generation++;
+  byId('login').hidden = value; byId('dashboard').hidden = !value; byId('logout').hidden = !value;
+  if (!value) {
+    csrf = ''; snapshot = null; editing = false; editRevision = '';
+    byId('settingsForm').reset(); byId('loginForm').reset();
+    byId('address').textContent = '—'; byId('peerList').replaceChildren(); byId('checks').replaceChildren();
+    modeFields();
+  }
+}
+function setApplying(value) {
+  applying = value;
+  if (value) generation++;
+  byId('settingsForm').querySelectorAll('input,textarea,select,button').forEach(element => element.disabled = value || !snapshot?.settings.editable);
+  byId('restart').disabled = value;
+  byId('logout').disabled = value;
+}
 async function api(path, value) {
   let response;
   try { response = await fetch(path, value === undefined ? {cache:'no-store'} : {method:'POST',headers:{'Content-Type':'application/json','X-Uqda-CSRF':csrf},body:JSON.stringify(value)}); }
@@ -64,7 +100,14 @@ function render(data) {
   }
 }
 function formatBytes(value = 0) { const number = Number(value); if (number < 1024) return number + ' B'; if (number < 1048576) return (number / 1024).toFixed(1) + ' KB'; return (number / 1048576).toFixed(1) + ' MB'; }
-async function refresh() { if (byId('dashboard').hidden || applying) return; try { render(await api('/api/status')); } catch (error) { notice(error.message, true); } }
+async function refresh() {
+  if (byId('dashboard').hidden || applying) return;
+  const current = generation;
+  try {
+    const data = await api('/api/status');
+    if (current === generation && !byId('dashboard').hidden && !applying) render(data);
+  } catch (error) { if (current === generation) notice(error.message, true); }
+}
 byId('language').addEventListener('click', () => { language = language === 'en' ? 'ar' : 'en'; localStorage.setItem('uqda-language',language); translate(); });
 byId('loginForm').addEventListener('submit', async event => { event.preventDefault(); const button = event.submitter; button.disabled = true; try { const data = await api('/api/login',{password:byId('loginPassword').value}); csrf = data.csrf; byId('loginPassword').value = ''; authenticated(true); notice(''); await refresh(); } catch (error) { notice(error.message, true); } finally { button.disabled = false; } });
 byId('logout').addEventListener('click', async () => { try { await api('/api/logout',{}); csrf=''; authenticated(false); notice(''); } catch (error) { notice(error.message,true); } });
@@ -73,12 +116,12 @@ byId('networkMode').addEventListener('change', modeFields);
 byId('settingsForm').addEventListener('submit', async event => {
   event.preventDefault(); if (!snapshot || applying) return;
   const values = {revision:editRevision,peers:byId('peers').value.split('\n').map(value => value.trim()).filter(Boolean),listen:byId('listeners').value.split('\n').map(value => value.trim()).filter(Boolean),mode:byId('networkMode').value,group_password:byId('groupPassword').value,confirm_public:byId('confirmPublic').checked};
-  applying = true; byId('save').disabled = true; byId('restart').disabled = true; notice(t('busy'));
+  setApplying(true); notice(t('busy'));
   try { const data = await api('/api/settings',values); editing = false; byId('groupPassword').value = ''; byId('confirmPublic').checked = false; render(data); notice(t('saved')); }
   catch (error) { notice(error.message,true); }
-  finally { applying = false; byId('restart').disabled = false; byId('save').disabled = !snapshot.settings.editable; }
+  finally { setApplying(false); }
 });
-byId('restart').addEventListener('click', async () => { if (applying || !confirm(t('restartConfirm'))) return; applying=true; byId('restart').disabled=true; notice(t('busy')); try { render(await api('/api/restart',{})); notice(t('restarted')); } catch (error) { notice(error.message,true); } finally { applying=false; byId('restart').disabled=false; } });
+byId('restart').addEventListener('click', async () => { if (applying || !confirm(t('restartConfirm'))) return; setApplying(true); notice(t('busy')); try { render(await api('/api/restart',{})); notice(t('restarted')); } catch (error) { notice(error.message,true); } finally { setApplying(false); } });
 byId('refresh').addEventListener('click',refresh);
 byId('copyAddress').addEventListener('click', async () => { try { await navigator.clipboard.writeText(byId('address').textContent); notice(t('copied')); } catch (_) { notice(t('copyFailed')); } });
 translate();
