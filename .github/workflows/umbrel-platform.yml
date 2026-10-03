@@ -88,11 +88,10 @@ jobs:
           # static path; never replace it with synthetic HTML or bypass auth.
           if test -n "$UQDA_PLATFORM_IMAGE"; then
             docker exec umbrel-dev npm --prefix /umbrel-dev/packages/ui run build
-            # Upstream deliberately mounts source read-only inside the dev
-            # container. Populate the disposable host fixture, preserving that
-            # boundary instead of remounting or weakening it.
-            mkdir -p packages/umbreld/source/ui
-            docker cp umbrel-dev:/umbrel-dev/packages/ui/dist/. packages/umbreld/source/ui/
+            # Match upstream umbrel-dev's production-mode artifact path. This
+            # is a dedicated writable volume, not the read-only source tree.
+            docker exec umbrel-dev cp -R /umbrel-dev/packages/ui/dist/. /umbrel-dev/packages/umbreld/ui/
+            docker exec umbrel-dev test -s /umbrel-dev/packages/umbreld/ui/index.html
           fi
           npm run dev exec:noninteractive -- env OPENSSL_CONF=/etc/ssl/openssl.cnf UMBREL_UI_PROXY= UQDA_PACKAGE_SOURCE=/umbrel-dev/uqda-package UQDA_PLATFORM_IMAGE="$UQDA_PLATFORM_IMAGE" npm --prefix /umbrel-dev/packages/umbreld test -- uqda-platform.integration.test.ts
       - name: Platform logs
