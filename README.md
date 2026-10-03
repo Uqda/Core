@@ -33,6 +33,17 @@ delivery over TCP/TLS, including reconnect and multi-hop forwarding. See [compat
 
 ## Installation
 
+### Using your Umbrel services
+
+Uqda can provide an encrypted IPv6 path between your Umbrel host and another
+Uqda-connected device. The useful outcome is access to an existing service,
+such as your files or SSH, after configuring that service's IPv6 listening,
+authentication and firewall. A connected peer alone is not proof that an app
+is reachable. Apps are not published automatically, and opening the dashboard
+on a phone does not connect the phone to the overlay.
+See the [Umbrel service-access guide](docs/umbrel.md#your-services-over-uqda)
+for the deliberate setup flow and the status of the new address-book workflow.
+
 Install Go 1.25 or newer, then build from source:
 
 ```sh

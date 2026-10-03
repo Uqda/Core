@@ -50,6 +50,11 @@ firewall settings.
 
 ## Your services over Uqda
 
+This workflow is a source enhancement, not part of the already published
+`26.0.4-umbrel.2` image. Distribution requires a new immutable wrapper version
+and digest-pinned community-store update after validation; the existing image
+and installed devices are not modified by this change.
+
 The dashboard includes an explicit service-access workflow, in Arabic and
 English: connect another device, prepare one installed service, and verify it
 from that other device. It is a **service address book**, not an app installer
@@ -178,6 +183,9 @@ The native tests use the actual release daemon with TUN disabled, covering
 identity retention, secret redaction, private/public mode, invalid edits,
 stale revisions, rollback, supervisor locking, authentication, logout, session
 expiry, login limits, Origin/CSRF checks and the local control allowlist.
+Service tests cover persistent metadata, stale edits, removal without changing
+Core config, strict port/type validation, literal-address command generation,
+arbitrary-target rejection and local-only probe semantics.
 
 For Linux Docker with `/dev/net/tun`:
 
@@ -197,6 +205,11 @@ checks the received SHA-256 hashes, exchanges UDP in both directions, rejects tr
 password even when transport peers connect, and checks recovery after restoring
 the correct password. This demonstrates useful application traffic, not just a
 green transport indicator. All listeners and the second node belong to the test.
+The service-access fixture additionally registers an IPv6 HTTP service, checks
+its local TCP listener through the bounded control API, and verifies the actual
+HTTP body fetched from the separate node. Browser tests exercise registration,
+safe text rendering, generated addresses, local-only results, RTL and mobile
+layout; the saved entries must survive restart and container recreation.
 
 ## Testing without a physical Umbrel device
 

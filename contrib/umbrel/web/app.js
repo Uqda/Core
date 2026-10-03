@@ -19,7 +19,7 @@ Object.assign(text.en, {
   noServices:'No services saved yet. Choose an installed service and its actual IPv6 TCP port. Saving it will not publish it.',
   checkLocal:'Check local TCP',removeService:'Remove entry',removeConfirm:'Remove this address-book entry? The installed service and its firewall settings will not change.',
   serviceSaved:'Service instructions saved. No ports were opened.',serviceRemoved:'Address-book entry removed. The installed service was not removed.',
-  localUnknown:'Local TCP: not checked',localPass:'Local TCP: accepting connections',localFail:'Local TCP: unavailable',
+  localUnknown:'Local TCP: not checked',localPass:'Last local TCP check: accepted a connection',localFail:'Last local TCP check: unavailable',
   remotePending:'Remote access: not verified — test from your other Uqda device.',networkCommand:'On your other device · network check',serviceCommand:'Then check or use the service',localExplanation:'This check connects only to this node’s own IPv6 TCP port; it does not check application health, TLS, authentication or remote access.',
   noServiceAddress:'Start Core to generate this service’s Uqda address.',sshUser:'SSH: replace USER with your existing account name. This does not create an account.',
   purposeTitle: 'Why use Uqda on Umbrel?',
@@ -45,7 +45,7 @@ Object.assign(text.ar, {
   noServices:'لا توجد خدمات محفوظة بعد. اختر خدمة مثبتة ومنفذ TCP الفعلي الذي يستمع على IPv6. حفظها لا ينشرها.',
   checkLocal:'فحص TCP المحلي',removeService:'حذف من الدليل',removeConfirm:'حذف هذا الإدخال من دليل العناوين؟ لن تتغير الخدمة المثبتة أو إعدادات جدارها الناري.',
   serviceSaved:'حُفظت إرشادات الخدمة. لم تُفتح أي منافذ.',serviceRemoved:'حُذف الإدخال من الدليل. لم تُحذف الخدمة المثبتة.',
-  localUnknown:'TCP المحلي: لم يُفحص',localPass:'TCP المحلي: يقبل اتصالات',localFail:'TCP المحلي: غير متاح',
+  localUnknown:'TCP المحلي: لم يُفحص',localPass:'آخر فحص TCP محلي: قَبِل اتصالًا',localFail:'آخر فحص TCP محلي: غير متاح',
   remotePending:'الوصول عن بُعد: لم يُتحقق منه — اختبره من جهازك الآخر المتصل بعقدة.',networkCommand:'على جهازك الآخر · فحص الشبكة',serviceCommand:'ثم افحص الخدمة أو استخدمها',localExplanation:'يتصل الفحص فقط بمنفذ TCP على عنوان IPv6 لهذه العقدة؛ لا يفحص التطبيق أو TLS أو تسجيل الدخول أو الوصول عن بُعد.',
   noServiceAddress:'شغّل Core لتوليد عنوان عقدة لهذه الخدمة.',sshUser:'SSH: استبدل USER باسم حسابك الموجود. هذا الأمر لا ينشئ حسابًا.',
   purposeTitle: 'لماذا تستخدم Uqda على Umbrel؟',
@@ -86,7 +86,7 @@ function authenticated(value) {
 }
 function setApplying(value) {
   applying = value;
-  if (value) generation++;
+  if (value) { generation++; serviceChecks.clear(); if (snapshot) renderServices(snapshot); }
   byId('settingsForm').querySelectorAll('input,textarea,select,button').forEach(element => element.disabled = value || !snapshot?.settings.editable);
   byId('restart').disabled = value;
   byId('logout').disabled = value;
