@@ -1,7 +1,7 @@
 // Copied into the pinned official Umbrel checkout by umbrel-platform.yml.
 // Tests the actual app manager against the existing published store image.
 import path from 'node:path'
-import {beforeAll, afterAll, expect, test} from 'vitest'
+import {beforeAll, afterAll, afterEach, expect, test} from 'vitest'
 import fse from 'fs-extra'
 import {$} from 'execa'
 import pWaitFor from 'p-wait-for'
@@ -79,6 +79,16 @@ beforeAll(async () => {
 afterAll(async () => {
   await platform?.cleanup()
   await store?.close()
+})
+
+afterEach(async ({task}) => {
+  if (task.result?.state !== 'fail') return
+  // Keep bounded, credential-free startup diagnostics before temporary cleanup.
+  console.error((await $`docker ps -a --format ${'{{.Names}}: {{.Status}}'}`).stdout)
+  for (const service of ['core', 'dashboard']) {
+    const result = await $({reject:false})`docker logs --tail 30 ${appId + '_' + service + '_1'}`
+    console.error(result.stdout, result.stderr)
+  }
 })
 
 test.sequential('install through actual Umbrel app manager and enforce both auth layers', async () => {
