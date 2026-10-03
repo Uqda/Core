@@ -6,7 +6,7 @@ category: networking
 name: Uqda Network
 version: "26.0.4-umbrel.1"
 tagline: Your encrypted IPv6 connection, managed from Umbrel
-icon: https://raw.githubusercontent.com/Uqda/Core/main/contrib/umbrel/web/icon.svg
+icon: https://raw.githubusercontent.com/Uqda/Core/01dbdb457985d452c56322273299a7a14c870885/contrib/umbrel/web/icon.svg
 description: >-
   Run Uqda Core on your Umbrel and manage it from a bilingual Arabic/English dashboard.
   Sign in with the app password shown by Umbrel. New nodes start isolated:
@@ -36,6 +36,6 @@ defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 submitter: Uqda
-submission: https://github.com/Uqda/Core
+submission: https://github.com/Uqda/Core/pull/22
 backupIgnore:
   - data/control/*

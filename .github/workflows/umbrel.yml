@@ -48,10 +48,22 @@ jobs:
     needs: test
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Install browser test runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/uqda-browser" playwright@1.51.1
+          "$RUNNER_TEMP/uqda-browser/node_modules/.bin/playwright" install --with-deps chromium
       - name: Test Docker integration
         env:
           UQDA_TEST_PASSWORD: ci-dashboard-test-password-0123456789
+          UQDA_BROWSER_TEST: '1'
+          PLAYWRIGHT_MODULE: ${{ runner.temp }}/uqda-browser/node_modules/playwright
+          UQDA_SCREENSHOT_DIR: ${{ runner.temp }}/uqda-screenshots
         run: python3 tests/umbrel/docker_smoke.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: uqda-dashboard-screenshots
+          path: ${{ runner.temp }}/uqda-screenshots
 
   image:
     name: Build multiarchitecture wrapper
@@ -103,7 +115,7 @@ jobs:
           docker buildx imagetools inspect "ghcr.io/uqda/core:${{ steps.version.outputs.value }}" > "$RUNNER_TEMP/image.txt"
           DIGEST=$(awk '/^Digest:/ {print $2; exit}' "$RUNNER_TEMP/image.txt")
           test -n "$DIGEST"
-          python3 contrib/umbrel/export_store.py --digest "$DIGEST" --output "$RUNNER_TEMP/uqda-umbrel-store.zip"
+          python3 contrib/umbrel/export_store.py --digest "$DIGEST" --icon-ref "$GITHUB_SHA" --output "$RUNNER_TEMP/uqda-umbrel-store.zip"
           echo "Published ghcr.io/uqda/core:${{ steps.version.outputs.value }}@$DIGEST" >> "$GITHUB_STEP_SUMMARY"
           echo 'The exported store still requires installation testing on a real Umbrel device.' >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

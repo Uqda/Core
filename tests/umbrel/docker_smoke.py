@@ -58,6 +58,9 @@ try:
     state = ready()
     assert state["tun"]["enabled"] and state["tun"]["name"] == "uqda0"
     address = state["identity"]["address"]
+    if os.environ.get("UQDA_BROWSER_TEST") == "1":
+        subprocess.run(["node", "tests/umbrel/browser_smoke.cjs"], check=True)
+        state = ready()
     assert compose("exec", "-T", "dashboard", "id", "-u").strip() == "1000"
     assert compose("exec", "-T", "dashboard", "python3", "-c",
                    "from pathlib import Path; assert not Path('/etc/uqda/uqda.conf').exists(); assert not Path('/run/uqda-core/admin.sock').exists(); print('isolated')").strip() == "isolated"

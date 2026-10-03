@@ -9,7 +9,7 @@ services:
   core:
     # Host networking is required for the Umbrel host to use the uqda0 TUN interface.
     # Only this service receives NET_ADMIN; no Docker socket or privileged mode.
-    image: ghcr.io/uqda/core:26.0.4-umbrel.1
+    image: ghcr.io/uqda/core:26.0.4-umbrel.1@sha256:e68a42d1f2063e408272f96189a45c2f68beb09fee659700693b4ab6694a78ad
     network_mode: host
     cap_add:
       - NET_ADMIN
@@ -31,7 +31,7 @@ services:
       retries: 3
 
   dashboard:
-    image: ghcr.io/uqda/core:26.0.4-umbrel.1
+    image: ghcr.io/uqda/core:26.0.4-umbrel.1@sha256:e68a42d1f2063e408272f96189a45c2f68beb09fee659700693b4ab6694a78ad
     user: "1000:1000"
     command: ["dashboard.py"]
     restart: on-failure
