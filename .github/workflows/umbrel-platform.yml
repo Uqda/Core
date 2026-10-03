@@ -28,19 +28,19 @@ jobs:
       - uses: crazy-max/ghaction-github-runtime@3cb05d89e1f492524af3d41a1c98c83bc3025124 # v3, same pinned helper as official Umbrel CI
       - name: Create disposable upstream worktree and package fixture
         run: |
-          git -C upstream worktree add worktrees/uqda-platform -b uqda-platform HEAD
-          mkdir upstream/worktrees/uqda-platform/uqda-package
-          cp -R core/uqda-network core/umbrel-app-store.yml upstream/worktrees/uqda-platform/uqda-package/
-          cp core/tests/umbrel/platform.integration.test.ts upstream/worktrees/uqda-platform/packages/umbreld/source/modules/apps/uqda-platform.integration.test.ts
+          git -C upstream worktree add worktrees/codex/uqda-platform -b codex/uqda-platform HEAD
+          mkdir upstream/worktrees/codex/uqda-platform/uqda-package
+          cp -R core/uqda-network core/umbrel-app-store.yml upstream/worktrees/codex/uqda-platform/uqda-package/
+          cp core/tests/umbrel/platform.integration.test.ts upstream/worktrees/codex/uqda-platform/packages/umbreld/source/modules/apps/uqda-platform.integration.test.ts
       - name: Start official development platform
-        working-directory: upstream/worktrees/uqda-platform
+        working-directory: upstream/worktrees/codex/uqda-platform
         env:
-          UMBREL_DEV_SKIP_CACHE_EXPORT: 'true'
+          UMBREL_DEV_SKIP_CACHE_EXPORT: 'false'
         run: |
           npm run dev start
           npm run --prefix packages/umbreld test:umbrel-dev:prepare
       - name: Test published package through real Umbrel app manager
-        working-directory: upstream/worktrees/uqda-platform
+        working-directory: upstream/worktrees/codex/uqda-platform
         run: npm run dev exec:noninteractive -- env UQDA_PACKAGE_SOURCE=/umbrel-dev/uqda-package npm --prefix /umbrel-dev/packages/umbreld test -- uqda-platform.integration.test.ts
       - name: Platform logs
         if: always()

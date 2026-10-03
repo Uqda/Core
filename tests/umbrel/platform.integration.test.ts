@@ -19,10 +19,20 @@ let cookie = '', csrf = ''
 async function ready() {
   await pWaitFor(async () => (await platform!.client.apps.state.query({appId})).state === 'ready',
     {interval:1000, timeout:180000})
+  // App lifecycle readiness and gateway readiness are separate in Umbrel 2.0.
+  await pWaitFor(async () => {
+    try {
+      const response = await request('/api/status', undefined, false)
+      return response.status === 302 && response.headers.get('location')?.includes('/app-auth?') === true
+    } catch { return false }
+  }, {interval:1000, timeout:60000})
 }
-async function request(endpoint: string, value?: unknown) {
+async function request(endpoint: string, value?: unknown, owner = true) {
+  const jar = platform!.browserApi.defaults.options.cookieJar
+  if (!jar) throw new Error('Official browser session cookie jar unavailable')
+  const ownerCookie = owner ? await jar.getCookieString(base) : ''
   const response = await fetch(base + endpoint, {redirect:'manual',
-    method:value === undefined ? 'GET' : 'POST', headers:{Cookie:cookie, Origin:base,
+    method:value === undefined ? 'GET' : 'POST', headers:{Cookie:[ownerCookie,cookie].filter(Boolean).join('; '), Origin:base,
       'Content-Type':'application/json', 'X-Uqda-CSRF':csrf},
     body:value === undefined ? undefined : JSON.stringify(value), signal:AbortSignal.timeout(35000)})
   return response
@@ -56,7 +66,14 @@ beforeAll(async () => {
   const git = $({cwd:store.directory})
   await git`git add .`
   await git`git commit -m ${'Add disposable Uqda store fixture'}`
-  platform = await createTestUmbreld({autoLogin:true})
+  platform = await createTestUmbreld({autoStart:false})
+  // The official factory's port=0 intentionally skips LAN ingress. Use the
+  // production internal port before starting so the real gateway is exercised.
+  // The workflow has stopped the development service; all data remains temporary.
+  platform.instance.port = 22080
+  await platform.instance.start()
+  await platform.signup()
+  await platform.login()
   await platform.client.appStore.addRepository.mutate({url:store.url})
 })
 afterAll(async () => {
@@ -70,10 +87,11 @@ test.sequential('install through actual Umbrel app manager and enforce both auth
   const app = (await platform!.client.apps.list.query()).find(app => app.id === appId)
   if (!app || 'error' in app) throw new Error('App installation failed')
   expect(app.appProxyAuth).toMatchObject({supported:true, defaultEnabled:true, override:null})
-  expect((await request('/api/status')).status).not.toBe(200)
-  // Only in this disposable fixture: disable the outer layer to exercise the
-  // independent dashboard password through the real generated app proxy.
-  await platform!.client.apps.setSettings.mutate({appId, appProxyAuthEnabled:false})
+  const anonymous = await request('/api/status', undefined, false)
+  expect(anonymous.status).toBe(302)
+  expect(anonymous.headers.get('location')).toContain('/app-auth?')
+  // A real owner login cookie authorizes Umbrel's gateway, but does not bypass
+  // the independent dashboard password. Neither auth layer is disabled.
   expect((await request('/api/status')).status).toBe(401)
   await login()
   identity = (await nodeStatus()).identity.address
@@ -101,4 +119,19 @@ test.sequential('manifest update through Umbrel preserves identity', async () =>
   await ready()
   await login()
   expect((await nodeStatus()).identity.address).toBe(identity)
+  const installed = (await platform!.client.apps.list.query()).find(app => app.id === appId)
+  expect(installed && !('error' in installed) && installed.version).toBe(manifest.version)
+})
+
+test.sequential('uninstall and fresh install produce a new identity after data removal', async () => {
+  await platform!.client.apps.uninstall.mutate({appId})
+  await pWaitFor(async () => !(await platform!.client.apps.list.query()).some(app => app.id === appId),
+    {interval:1000, timeout:120000})
+  const config = path.join(platform!.instance.dataDirectory, 'app-data', appId, 'data/config/uqda.conf')
+  expect(await fse.pathExists(config)).toBe(false)
+  cookie = ''; csrf = ''
+  await platform!.client.apps.install.mutate({appId})
+  await ready()
+  await login()
+  expect((await nodeStatus()).identity.address).not.toBe(identity)
 })
