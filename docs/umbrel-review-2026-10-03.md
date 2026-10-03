@@ -126,23 +126,44 @@ digest-pinned in a disposable loopback-only registry, against the unchanged real
 Umbrel app manager. It does not publish an external image or alter the public
 store. Consult its completed result before treating the new source as validated.
 
+At `3af5503`, all four app-manager lifecycle tests passed for both the existing
+published image and the freshly rebuilt source, including the new cookie-proof
+boundary in the source matrix:
+https://github.com/Uqda/Core/actions/runs/37130948499
+
+At `d7d248a`, 24 real-daemon/auth/configuration/export tests, native amd64 and
+arm64 Docker/TUN/network/browser tests, UI state tests and the PR's fresh
+multiarchitecture build passed:
+https://github.com/Uqda/Core/actions/runs/37131151836
+The matching push run also passed; its image publication step leaves an existing
+tag untouched, so its green build-job label alone is not a fresh-build claim:
+https://github.com/Uqda/Core/actions/runs/37131145599
+
+Screenshots from that PR run were downloaded and visually reviewed in English,
+Arabic RTL and a 390-pixel mobile viewport. The actual browser also visits a
+second local HTTP origin, confirms it receives the port-independent test cookie,
+verifies it cannot read the tab-local proof or bootstrap/read with that cookie,
+then returns to the dashboard and reloads without losing the authenticated view.
+
+The expanded source matrix switches to the previous published image and then
+upgrades to the newly built source digest through the real manager. It verifies
+both containers' actual configured image, retained identity and the new read-auth
+boundary. Both matrices passed all four lifecycle tests at `d7d248a`:
+https://github.com/Uqda/Core/actions/runs/37131145571
+
 ## Remaining gates before publication
 
-1. Finish the new current-source app-manager and cookie-proof regression gates.
-   The published-image manager passed install/restart/manifest update/uninstall
-   and reinstall; the earlier native Linux daemon, Docker/TUN and browser gates
-   passed before this additional security change.
-2. Before publishing wrapper changes, increment the wrapper version (do not
+1. Before publishing wrapper changes, increment the wrapper version (do not
    overwrite `26.0.4-umbrel.1`), update manifest and both compose image tags, build
    after successful gates, then pin the newly published digest. Keep old packages
    available for existing installations.
-3. Update the dedicated store from that verified export, with release notes and
+2. Update the dedicated store from that verified export, with release notes and
    screenshots from the actual browser test. Do not label unexecuted visual QA
    as complete.
-4. Production Umbrel VM boot/reboot, backup restoration, full owner-browser proxy
+3. Production Umbrel VM boot/reboot, backup restoration, full owner-browser proxy
    authentication and external/network-storage behavior remain unverified. A real
    VM can validate production lifecycle without needing physical hardware.
-5. Native arm64 application runtime now passes in Docker; that is not a Raspberry
+4. Native arm64 application runtime now passes in Docker; that is not a Raspberry
    Pi firmware/kernel or arm64 production Umbrel lifecycle test.
 
 No live server, firewall, private-group configuration, existing release or
