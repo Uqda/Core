@@ -79,6 +79,9 @@ func (m *Uqda) StartJSON(configjson []byte) error {
 				return !iprange.Contains(ip)
 			}),
 		}
+		if m.config.GroupPassword != "" {
+			options = append(options, core.GroupPassword(m.config.GroupPassword))
+		}
 		for _, peer := range m.config.Peers {
 			options = append(options, core.Peer{URI: peer})
 		}

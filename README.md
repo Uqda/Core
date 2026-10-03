@@ -31,6 +31,19 @@ Routing and encrypted sessions build on Ironwood. Wire compatibility is a
 requirement; the independent pinned-upstream gate checks real daemon peering and IPv6 packet
 delivery over TCP/TLS, including reconnect and multi-hop forwarding. See [compatibility](docs/compatibility.md).
 
+## Using your Umbrel services
+
+Uqda can provide an encrypted IPv6 path between your Umbrel host and another
+Uqda-connected device. The useful outcome is access to an existing service,
+such as your files or SSH, after configuring that service's IPv6 listening,
+authentication and firewall. A connected peer alone is not proof that an app
+is reachable. Apps are not published automatically, and opening the dashboard
+on a phone does not connect the phone to the overlay.
+See the [Umbrel service-access guide](docs/umbrel.md#your-services-over-uqda)
+for the deliberate setup flow and the status of the new address-book workflow.
+For whole-dashboard access through Umbrel's existing app gateways, see the
+[private remote-access workflow and compatibility boundaries](docs/umbrel-remote-access.md).
+
 ## Installation
 
 Install Go 1.25 or newer, then build from source:

@@ -16,7 +16,7 @@
       <div class="toolbar"><button id="language" type="button">العربية</button><button id="logout" class="quiet" type="button" hidden data-i18n="signOut">Sign out</button></div>
     </header>
     <main>
-      <div class="intro"><span class="eyebrow" data-i18n="eyebrow">YOUR UMBREL. CONNECTED.</span><h1 data-i18n="heading">A connection you control.</h1><p data-i18n="intro">Manage your encrypted IPv6 connection from one place.</p></div>
+      <div class="intro"><span class="eyebrow" data-i18n="eyebrow">YOUR UMBREL. CONNECTED.</span><h1 data-i18n="heading">Your services. Your connection.</h1><p data-i18n="intro">Reach your own Umbrel services over an encrypted IPv6 network. Set up access deliberately, one service at a time.</p></div>
       <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
       <section id="login" class="card login">
         <h2 data-i18n="loginTitle">Open your dashboard</h2>
@@ -42,6 +42,40 @@
           <div class="address-row"><div><span class="label" data-i18n="nodeAddress">Uqda IPv6 address</span><code id="address">—</code></div><button id="copyAddress" type="button" data-i18n="copy">Copy</button></div>
           <div class="stats"><div><span class="label" data-i18n="connectedPeers">Connected peers</span><strong id="peerCount">0</strong></div><div><span class="label" data-i18n="interface">Network interface</span><strong id="interfaceName">—</strong></div><div><span class="label" data-i18n="coreVersion">Core version</span><strong id="version">—</strong></div><div><span class="label" data-i18n="mode">Access mode</span><strong id="modeValue">—</strong></div></div>
           <p class="small" data-i18n="accessHint">A connected transport peer does not prove private-group connectivity. Services also need to listen on IPv6 and allow access through their firewall.</p>
+        </section>
+        <section class="card service-access" aria-labelledby="umbrelTitle">
+          <div class="section-head"><h2 id="umbrelTitle" data-i18n="umbrelTitle">Your Umbrel, from another device</h2><span class="subtle" data-i18n="umbrelPrivate">Private group only</span></div>
+          <p data-i18n="umbrelPurpose">Use Uqda as the connection to Umbrel's own dashboard and app gateways, without Tailscale. Umbrel remains your operating system and keeps its existing login, permissions and app authentication.</p>
+          <p id="umbrelAccessHint" class="small"></p>
+          <div id="umbrelAddresses" hidden>
+            <span class="label" data-i18n="umbrelHttps">Umbrel HTTPS address</span><code id="umbrelHttpsAddress"></code>
+            <span class="label" data-i18n="umbrelHttp">Umbrel HTTP address · encrypted overlay, not browser TLS</span><code id="umbrelHttpAddress"></code>
+            <span class="label" data-i18n="networkCommand">On your other device · network check</span><code id="umbrelNetworkCommand"></code>
+          </div>
+          <p class="field-hint" data-i18n="umbrelCertificate">The existing Umbrel certificate may not cover your Uqda IPv6 address. Do not turn off certificate verification or install an unverified CA. HTTPS-only apps need a trusted certificate and a matching name/address.</p>
+          <button id="checkUmbrel" type="button" data-i18n="checkUmbrel">Check local Umbrel ports</button>
+          <ul id="umbrelChecks" class="checks" aria-live="polite"></ul>
+          <p class="small" data-i18n="remotePending">Remote access: not verified — test from your other Uqda device.</p>
+          <details><summary data-i18n="umbrelLimitsTitle">What full access means</summary><p data-i18n="umbrelLimits">Connect your other device to the same private group, then open the address above and sign in to Umbrel normally. Compatible web apps use their existing gateway ports. This does not grant access to every app, configure SMB, change router/firewall rules, add phone VPN support or replace Umbrel's native Tailscale integrations. Local port checks are not remote login tests. Uqda is a community integration, not officially endorsed by Umbrel.</p></details>
+        </section>
+        <section class="card service-access" aria-labelledby="servicesTitle">
+          <div class="section-head"><h2 id="servicesTitle" data-i18n="servicesTitle">Your services over Uqda</h2><span class="subtle" data-i18n="noAutoPublish">No automatic publishing</span></div>
+          <p data-i18n="servicesPurpose">Use your own files, web apps or SSH from another Uqda-connected device. Saving a service creates an address and instructions; it does not install the app or open its ports.</p>
+          <ol class="access-steps">
+            <li><strong data-i18n="deviceStep">1 · Connect your other device</strong><p data-i18n="deviceHelp">Install Uqda on that device. Use compatible network modes; for a private group, use the same strong group password and a reachable peer. Opening this dashboard alone does not connect a phone or tablet to Uqda.</p></li>
+            <li><strong data-i18n="serviceStep">2 · Prepare one service</strong><p data-i18n="serviceHelp">Use a service already installed on Umbrel. Enable IPv6 listening and allow only the intended clients through its firewall. Keep the service's own login enabled. IPv4-only Docker apps need separate configuration.</p></li>
+            <li><strong data-i18n="verifyStep">3 · Verify from the other device</strong><p data-i18n="verifyHelp">Check the network, then use the service command below. A local TCP check does not prove remote access, app health or authentication.</p></li>
+          </ol>
+          <p id="serviceModeWarning" class="public-warning small" data-i18n="servicePublic" hidden>You are in public mode. Other public nodes may reach IPv6 services if their firewall permits it. Prefer a private group for your own devices; never remove app authentication.</p>
+          <form id="serviceForm" class="service-form">
+            <div><label for="serviceName" data-i18n="serviceName">Service name</label><input id="serviceName" maxlength="64" required placeholder="My files"></div>
+            <div><label for="serviceKind" data-i18n="serviceKind">Service type</label><select id="serviceKind"><option value="https">HTTPS</option><option value="http">HTTP</option><option value="ssh">SSH</option><option value="tcp">TCP</option></select></div>
+            <div><label for="servicePort" data-i18n="servicePort">Existing TCP port</label><input id="servicePort" type="number" min="1" max="65535" step="1" required inputmode="numeric"></div>
+            <button id="addService" class="primary" type="submit" data-i18n="addService">Save service</button>
+          </form>
+          <p class="field-hint" data-i18n="httpWarning">Prefer HTTPS. Plain HTTP does not add application-level TLS. Do not share the dashboard password or group secret in a service address.</p>
+          <div id="serviceList" aria-live="polite"></div>
+          <p class="small" data-i18n="serviceLimits">This is a service address book, not a VPN internet exit, reverse proxy or app installer. No automatic discovery, routing or firewall changes. Copy web addresses into a separate browser profile; same-host HTTP cookies can be shared across ports.</p>
         </section>
         <div class="columns">
           <section class="card settings-card">

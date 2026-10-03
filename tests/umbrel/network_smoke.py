@@ -129,6 +129,53 @@ with socket.socket(socket.AF_INET6, socket.SOCK_DGRAM) as server:
     assert server.returncode == 0, error
 
 
+def probe_saved_service(address):
+    """A real IPv6 HTTP fixture reached locally and from an independent node."""
+    code = """
+import http.server, json, os, socket
+class Server(http.server.HTTPServer):
+    address_family = socket.AF_INET6
+class Handler(http.server.BaseHTTPRequestHandler):
+    def log_message(self, *_args): pass
+    def do_GET(self):
+        body = b'uqda-private-service-fixture'
+        self.send_response(200)
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+server = Server((ADDRESS, 0), Handler)
+print(json.dumps({'port': server.server_port, 'pid': os.getpid()}), flush=True)
+server.serve_forever()
+""".replace("ADDRESS", repr(address))
+    process = subprocess.Popen([*COMPOSE, "exec", "-T", "core", "python3", "-u", "-c", code],
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    pid, item = None, None
+    try:
+        fixture = json.loads(process.stdout.readline())
+        pid = fixture["pid"]
+        state = control("core", "status")
+        saved = control("core", "service_add", {"revision": state["services"]["revision"],
+                        "name": "Disposable HTTP fixture", "kind": "http", "port": fixture["port"]})
+        item = next(entry for entry in saved["services"]["items"] if entry["port"] == fixture["port"])
+        assert item["endpoint"] == f"http://[{address}]:{fixture['port']}/"
+        result = control("core", "service_probe", {"id": item["id"]})
+        assert result["tcp_reachable"] and result["scope"] == "local" and not result["remote_verified"]
+        # The local check is not a remote claim: fetch from the separate node.
+        execute("peer", "import http.client\nclient = http.client.HTTPConnection(" + repr(address) + ", " +
+                str(fixture["port"]) + ", timeout=8)\nclient.request('GET', '/')\n"
+                "response = client.getresponse()\nassert response.status == 200\n"
+                "assert response.read() == b'uqda-private-service-fixture'\nclient.close()")
+        print("PASS: saved service address, local TCP scope and actual remote IPv6 HTTP response")
+    finally:
+        if item is not None:
+            state = control("core", "status")
+            control("core", "service_remove", {"revision": state["services"]["revision"], "id": item["id"]})
+        if pid is not None and process.poll() is None:
+            execute("core", "import os, signal\ntry: os.kill(" + str(pid) + ", signal.SIGTERM)\nexcept ProcessLookupError: pass")
+        if process.poll() is None:
+            process.communicate(timeout=10)
+
+
 def run_network_test(compose):
     secret = "disposable-network-test-secret-0123456789"
     core_before = control("core", "status")["identity"]["address"]
@@ -147,6 +194,7 @@ def run_network_test(compose):
         address = peer["identity"]["address"]
         assert address != core_before, "Test peer must have its own identity"
         wait_for(lambda: any(p["up"] for p in control("core", "status")["peers"]))
+        probe_saved_service(core_before)
         probe("core", "peer", address)
         probe("peer", "core", core_before)
         probe_udp("core", "peer", address)
