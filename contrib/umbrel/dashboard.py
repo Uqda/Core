@@ -146,7 +146,7 @@ class Handler(BaseHTTPRequestHandler):
         if not session:
             self.reply(401, {"error": "Sign in to continue."})
             return
-        if not hmac.compare_digest(self.headers.get("X-Uqda-CSRF", ""), session["csrf"]):
+        if not hmac.compare_digest(self.headers.get("X-Uqda-CSRF", "").encode("utf-8"), session["csrf"].encode("ascii")):
             self.reply(403, {"error": "Refresh the page before trying again."})
             return
         if path == "/api/settings":
@@ -167,6 +167,11 @@ class Handler(BaseHTTPRequestHandler):
         if not isinstance(supplied, str) or len(supplied) > 1024:
             self.reply(400, {"error": "Invalid password."})
             return
+        try:
+            supplied_bytes = supplied.encode("utf-8")
+        except UnicodeEncodeError:
+            self.reply(400, {"error": "Invalid password."})
+            return
         with self.server.auth_lock:
             now = time.monotonic()
             while self.server.failed_logins and self.server.failed_logins[0] < now - 60:
@@ -174,7 +179,7 @@ class Handler(BaseHTTPRequestHandler):
             if len(self.server.failed_logins) >= 10:
                 self.reply(429, {"error": "Too many attempts. Try again in one minute."})
                 return
-            if not hmac.compare_digest(supplied.encode(), self.server.password):
+            if not hmac.compare_digest(supplied_bytes, self.server.password):
                 self.server.failed_logins.append(now)
                 self.reply(401, {"error": "Incorrect password."})
                 return

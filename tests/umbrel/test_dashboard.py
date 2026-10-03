@@ -221,6 +221,18 @@ class HttpTests(LifecycleTests):
         self.assertTrue(data["settings"]["private"])
         self.assertEqual(self.request("/api/restart", {})[0], 200)
 
+    def test_malformed_unicode_password_is_rejected_without_disconnect(self):
+        self.assertEqual(self.request("/api/login", {"password": "\ud800"})[0], 400)
+        self.assertEqual(self.request("/api/status")[0], 401)
+        self.login()
+
+    def test_non_ascii_csrf_is_rejected_without_changing_config(self):
+        self.login()
+        original = self.supervisor.config_path.read_bytes()
+        self.assertEqual(self.request("/api/settings", self.values(), csrf="\u00e9")[0], 403)
+        self.assertEqual(self.supervisor.config_path.read_bytes(), original)
+        self.assertEqual(self.request("/api/status")[0], 200)
+
     def test_rate_limit_and_expired_sessions(self):
         self.login()
         with self.web.auth_lock:
