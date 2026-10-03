@@ -7,7 +7,7 @@ root = Path(__file__).resolve().parents[2]
 version = (root / "contrib/umbrel/VERSION").read_text().strip()
 manifest = (root / "uqda-network/umbrel-app.yml").read_text()
 compose = (root / "uqda-network/docker-compose.yml").read_text()
-assert re.fullmatch(r"26\.0\.4-umbrel\.\d+", version)
+assert re.fullmatch(r"\d+\.\d+\.\d+-umbrel\.[1-9]\d*", version)
 assert "id: uqda-network\n" in manifest
 assert 'version: "' + version + '"' in manifest
 assert "deterministicPassword: true" in manifest
