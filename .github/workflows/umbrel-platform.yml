@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [codex/umbrel-uqda]
-    paths: ['.github/workflows/umbrel-platform.yml', 'tests/umbrel/platform.integration.test.ts']
+    paths: ['.github/workflows/umbrel-platform.yml', 'tests/umbrel/platform.integration.test.ts', 'tests/umbrel/development-service-timeout.conf']
 permissions:
   contents: read
 concurrency:
@@ -42,6 +42,12 @@ jobs:
           UMBREL_DEV_SKIP_CACHE_EXPORT: 'false'
         run: |
           npm run dev start
+          # Bound only the empty development service's pre-test stop (upstream
+          # defaults to 15 minutes). App-manager restart tests remain unchanged.
+          docker exec umbrel-dev mkdir -p /etc/systemd/system/umbrel.service.d
+          docker cp "$GITHUB_WORKSPACE/core/tests/umbrel/development-service-timeout.conf" umbrel-dev:/etc/systemd/system/umbrel.service.d/ci-timeout.conf
+          docker exec umbrel-dev systemctl daemon-reload
+          test "$(docker exec umbrel-dev systemctl show umbrel.service --property TimeoutStopUSec --value)" = '30s'
           npm run --prefix packages/umbreld test:umbrel-dev:prepare
       - name: Test published package through real Umbrel app manager
         working-directory: upstream/worktrees/codex/uqda-platform

@@ -177,6 +177,11 @@ update, and uninstall/fresh-install identity replacement. A manifest-only update
 is not a binary upgrade test. Consult the run result before claiming these gates
 passed; the test source alone is not evidence.
 
+The CI fixture limits the initial empty development service's pre-test stop to
+30 seconds instead of upstream's 15 minutes. Systemd may force-stop that fixture
+after the deadline; this is not proof of graceful production OS shutdown. Actual
+Uqda app restart/update operations use the unchanged official app manager.
+
 Plain Docker tests do not establish actual Umbrel app-store/proxy behavior. A
 development-instance test does not establish production boot or hardware-specific
 behavior. Record these results separately; neither requires buying a device.
