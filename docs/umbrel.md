@@ -182,8 +182,11 @@ The gate starts LAN ingress
 on the normal internal server port (the upstream test factory's default port 0
 intentionally disables it). It checks anonymous gateway rejection, actual owner
 session cookies plus the separate dashboard password, restart, a manifest-only
-update, and uninstall/fresh-install identity replacement. A manifest-only update
-is not a binary upgrade test. Consult the run result before claiming these gates
+update, and uninstall/fresh-install identity replacement. The source matrix also
+switches to the previous published wrapper then upgrades to the freshly built
+image, checking identity retention and the new read-auth boundary. The published
+matrix's manifest-only update is not a binary upgrade test.
+Consult the run result before claiming these gates
 passed; the test source alone is not evidence.
 
 The CI fixture limits the initial empty development service's pre-test stop to

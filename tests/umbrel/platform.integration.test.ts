@@ -13,6 +13,7 @@ let platform: Awaited<ReturnType<typeof createTestUmbreld>> | undefined
 let store: Awaited<ReturnType<typeof runGitServer>> | undefined
 const appId = 'uqda-network'
 let identity = ''
+let publishedImage = ''
 const base = 'http://127.0.0.1:8926'
 let cookie = '', csrf = ''
 
@@ -70,6 +71,7 @@ beforeAll(async () => {
     }
     const composePath = path.join(store.directory, appId, 'docker-compose.yml')
     const compose: any = yaml.load(await fse.readFile(composePath, 'utf8'))
+    publishedImage = compose.services.core.image
     for (const service of ['core', 'dashboard']) compose.services[service].image = sourceImage
     await fse.writeFile(composePath, yaml.dump(compose))
   }
@@ -138,21 +140,42 @@ test.sequential('restart through Umbrel preserves identity and invalidates UI se
   expect((await nodeStatus()).identity.address).toBe(identity)
 })
 
-test.sequential('manifest update through Umbrel preserves identity', async () => {
+test.sequential('manifest update and optional published-to-source image upgrade preserve identity', async () => {
   const manifestPath = path.join(store!.directory, appId, 'umbrel-app.yml')
   const manifest: any = yaml.load(await fse.readFile(manifestPath, 'utf8'))
-  manifest.version = '26.0.4-umbrel.1-platform-test'
-  await fse.writeFile(manifestPath, yaml.dump(manifest))
-  const git = $({cwd:store!.directory})
-  await git`git add .`
-  await git`git commit -m ${'Change only disposable store manifest version'}`
-  await platform!.instance.appStore.update()
-  await platform!.client.apps.update.mutate({appId})
-  await ready()
-  await login()
-  expect((await nodeStatus()).identity.address).toBe(identity)
-  const installed = (await platform!.client.apps.list.query()).find(app => app.id === appId)
-  expect(installed && !('error' in installed) && installed.version).toBe(manifest.version)
+  const sourceImage = process.env.UQDA_PLATFORM_IMAGE
+  // Source matrix first moves to the real previous published image, then upgrades
+  // to the actual newly built digest. Nothing is changed in the public store.
+  const images = sourceImage ? [publishedImage, sourceImage] : ['']
+  for (const [index, image] of images.entries()) {
+    manifest.version = `26.0.4-umbrel.1-platform-test-${index}`
+    await fse.writeFile(manifestPath, yaml.dump(manifest))
+    if (image) {
+      const composePath = path.join(store!.directory, appId, 'docker-compose.yml')
+      const compose: any = yaml.load(await fse.readFile(composePath, 'utf8'))
+      for (const service of ['core', 'dashboard']) compose.services[service].image = image
+      await fse.writeFile(composePath, yaml.dump(compose))
+    }
+    const git = $({cwd:store!.directory})
+    await git`git add .`
+    await git`git commit -m ${'Update disposable store fixture stage ' + index}`
+    await platform!.instance.appStore.update()
+    await platform!.client.apps.update.mutate({appId})
+    await ready()
+    if (image) {
+      for (const service of ['core', 'dashboard']) {
+        const actual = await $`docker inspect --format ${'{{.Config.Image}}'} ${appId + '_' + service + '_1'}`
+        expect(actual.stdout.trim()).toBe(image)
+      }
+    }
+    await login()
+    expect((await nodeStatus()).identity.address).toBe(identity)
+    const installed = (await platform!.client.apps.list.query()).find(app => app.id === appId)
+    expect(installed && !('error' in installed) && installed.version).toBe(manifest.version)
+    if (sourceImage && image === sourceImage) {
+      expect((await request('/api/status', undefined, true, '')).status).toBe(401)
+    }
+  }
 })
 
 test.sequential('uninstall and fresh install produce a new identity after data removal', async () => {
