@@ -83,7 +83,15 @@ jobs:
             sleep 10
           done
           test "$available" = true
-          npm run dev exec:noninteractive -- env OPENSSL_CONF=/etc/ssl/openssl.cnf UQDA_PACKAGE_SOURCE=/umbrel-dev/uqda-package UQDA_PLATFORM_IMAGE="$UQDA_PLATFORM_IMAGE" npm --prefix /umbrel-dev/packages/umbreld test -- uqda-platform.integration.test.ts
+          # API fixtures run directly from source, outside the development UI
+          # service. Build the real dashboard and put it at the server's source
+          # static path; never replace it with synthetic HTML or bypass auth.
+          if test -n "$UQDA_PLATFORM_IMAGE"; then
+            docker exec umbrel-dev npm --prefix /umbrel-dev/packages/ui run build
+            docker exec umbrel-dev mkdir -p /umbrel-dev/packages/umbreld/source/ui
+            docker exec umbrel-dev cp -R /umbrel-dev/packages/ui/dist/. /umbrel-dev/packages/umbreld/source/ui/
+          fi
+          npm run dev exec:noninteractive -- env OPENSSL_CONF=/etc/ssl/openssl.cnf UMBREL_UI_PROXY= UQDA_PACKAGE_SOURCE=/umbrel-dev/uqda-package UQDA_PLATFORM_IMAGE="$UQDA_PLATFORM_IMAGE" npm --prefix /umbrel-dev/packages/umbreld test -- uqda-platform.integration.test.ts
       - name: Platform logs
         if: always()
         run: docker logs --tail 120 umbrel-dev || true

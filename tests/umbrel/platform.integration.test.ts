@@ -131,6 +131,13 @@ beforeAll(async () => {
   await platform.instance.stop()
   platform.instance.port = 22080
   await platform.instance.start()
+  if (process.env.UQDA_PLATFORM_IMAGE) {
+    // Fail locally first if the official UI build is missing. A healthy API
+    // fixture alone cannot prove that the actual Umbrel dashboard is served.
+    const home = await fetch('http://127.0.0.1/', {signal:AbortSignal.timeout(5000)})
+    expect(home.status).toBe(200)
+    expect((await home.text()).toLowerCase()).toContain('<html')
+  }
   await platform.signup()
   await platform.login()
   await platform.client.appStore.addRepository.mutate({url:store.url})
@@ -223,7 +230,17 @@ test.sequential('actual Umbrel dashboard and authenticated app gateway work over
     }
     await configurePeer(group)
     const dashboardRequest = {address:identity,port:80,path:'/'}
-    await pWaitFor(async () => (await peerHttp(dashboardRequest)).status === 200, {interval:1000,timeout:45000})
+    let lastDashboard: any
+    try {
+      await pWaitFor(async () => {
+        lastDashboard = await peerHttp(dashboardRequest)
+        return lastDashboard.status === 200
+      }, {interval:1000,timeout:45000})
+    } catch {
+      // Only credential-free response metadata, never cookies/config or body.
+      throw new Error(`Remote dashboard failed: ${JSON.stringify({status:lastDashboard?.status,
+        unreachable:lastDashboard?.unreachable})}`)
+    }
     const home = await peerHttp(dashboardRequest)
     expect(home.body.toLowerCase()).toContain('<html')
     const anonymous = await peerHttp({address:identity,port:8926,path:'/api/status'})
