@@ -1,0 +1,117 @@
+name: Assemble verified release draft
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing validated final Core tag
+        required: true
+        type: string
+      package_run:
+        description: Successful Packages run built from the exact tag commit
+        required: true
+        type: string
+      oci_run:
+        description: Successful Export release container run for the tag
+        required: true
+        type: string
+      release_id:
+        description: Existing draft release ID (never creates or publishes a release)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      PACKAGE_RUN: ${{ inputs.package_run }}
+      OCI_RUN: ${{ inputs.oci_run }}
+      RELEASE_ID: ${{ inputs.release_id }}
+      GH_REPO: Uqda/Core
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+      - name: Verify successful runs and immutable tag identity
+        run: |
+          python3 - <<'PY'
+          import json, os, re, subprocess
+          def gh(endpoint):
+              return json.loads(subprocess.check_output(['gh', 'api', endpoint], text=True))
+          tag = os.environ['RELEASE_TAG']
+          assert re.fullmatch(r'v\d+\.\d+\.\d+', tag)
+          assert all(re.fullmatch(r'[1-9]\d*', os.environ[key]) for key in ['PACKAGE_RUN', 'OCI_RUN', 'RELEASE_ID'])
+          revision = subprocess.check_output(['git', 'rev-parse', tag + '^{commit}'], text=True).strip()
+          version = subprocess.check_output(['git', 'show', tag + ':src/version/VERSION'], text=True).strip()
+          assert tag == 'v' + version
+          for key, workflow in [('PACKAGE_RUN', '.github/workflows/pkg.yml'), ('OCI_RUN', '.github/workflows/export-release-container.yml')]:
+              run = gh('repos/Uqda/Core/actions/runs/' + os.environ[key])
+              assert run['conclusion'] == 'success' and run['head_sha'] == revision
+              assert run['repository']['full_name'] == 'Uqda/Core' and run['path'] == workflow
+          release = gh('repos/Uqda/Core/releases/' + os.environ['RELEASE_ID'])
+          assert release['draft'] and release['tag_name'] == tag and not release['prerelease']
+          print('Verified successful input runs, exact source tag and existing draft')
+          PY
+      - name: Download successful tag artifacts inside GitHub
+        run: |
+          gh run download "$PACKAGE_RUN" --repo Uqda/Core --dir "$RUNNER_TEMP/release-input/packages"
+          gh run download "$OCI_RUN" --repo Uqda/Core --name "uqda-${RELEASE_TAG#v}-oci" --dir "$RUNNER_TEMP/release-input/oci"
+      - name: Check complete payloads, checksum and upload only missing draft assets
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, shutil, subprocess
+          version = os.environ['RELEASE_TAG'][1:]
+          prefix = 'uqda-' + version + '-'
+          expected = {prefix + arch + '.deb' for arch in ['amd64','i386','mips','mipsel','armhf','armel','arm64']}
+          expected |= {prefix + name for name in ['linux-amd64.tar.gz','linux-arm64.tar.gz','macos-amd64.pkg','macos-arm64.pkg','x64.msi','x86.msi','arm64.msi','android.aar','apple-xcframework.zip','vendored.tar.gz','oci.tar']}
+          root = pathlib.Path(os.environ['RUNNER_TEMP'])
+          output = root / 'release-output'
+          output.mkdir()
+          sources = {}
+          for file in (root / 'release-input').rglob('*'):
+              if not file.is_file():
+                  continue
+              assert not file.is_symlink()
+              name = prefix + 'oci.tar' if file.name == 'uqda-image.oci.tar' else file.name
+              if name not in expected:
+                  raise AssertionError('Unexpected release input: ' + name)
+              assert name not in sources and file.stat().st_size > 0
+              sources[name] = file
+          assert set(sources) == expected and len(expected) == 18
+          for name, file in sources.items():
+              shutil.copyfile(file, output / name)
+          def digest(file):
+              with file.open('rb') as stream:
+                  return hashlib.file_digest(stream, 'sha256').hexdigest()
+          checksums = ''.join(digest(output / name) + '  ' + name + '\n' for name in sorted(expected))
+          (output / 'SHA256SUMS').write_text(checksums)
+          expected.add('SHA256SUMS')
+          manifest = {name:{'name':name, 'size':(output/name).stat().st_size, 'sha256':digest(output/name)} for name in sorted(expected)}
+          release = json.loads(subprocess.check_output(['gh','api','repos/Uqda/Core/releases/' + os.environ['RELEASE_ID']], text=True))
+          assert release['draft'] and release['tag_name'] == os.environ['RELEASE_TAG']
+          present = {}
+          for asset in release['assets']:
+              assert asset['name'] in manifest and asset['name'] not in present
+              item = manifest[asset['name']]
+              assert asset['size'] == item['size'] and asset['digest'] == 'sha256:' + item['sha256']
+              present[asset['name']] = asset
+          for name in sorted(expected - present.keys()):
+              subprocess.run(['gh','release','upload',os.environ['RELEASE_TAG'],str(output/name),'--repo','Uqda/Core'], check=True)
+          final = json.loads(subprocess.check_output(['gh','api','repos/Uqda/Core/releases/' + os.environ['RELEASE_ID']], text=True))
+          assert final['draft'] and len(final['assets']) == 19
+          for asset in final['assets']:
+              item = manifest[asset['name']]
+              assert asset['size'] == item['size'] and asset['digest'] == 'sha256:' + item['sha256']
+          # Public filenames/hashes only. No credentials, signed URLs or host data.
+          print('UQDA_RELEASE_MANIFEST=' + json.dumps(list(manifest.values()), separators=(',',':')))
+          print('Verified all 19 draft assets; publication remains a separate action')
+          PY
