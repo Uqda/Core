@@ -16,7 +16,7 @@ const appId = 'uqda-network'
 let identity = ''
 // Preserve the real previous-release upgrade boundary even when packaging moves
 // to the next wrapper version. This immutable image is used only in CI fixtures.
-const publishedImage = 'ghcr.io/uqda/core:26.0.4-umbrel.1@sha256:e68a42d1f2063e408272f96189a45c2f68beb09fee659700693b4ab6694a78ad'
+const publishedImage = 'ghcr.io/uqda/core:26.0.4-umbrel.2@sha256:6bb61d60bc3d04a60d42f7c29c78e7d03878574b2557a18f4c49458461bdb4b1'
 let packageVersion = ''
 let currentPublishedImage = ''
 const base = 'http://127.0.0.1:8926'

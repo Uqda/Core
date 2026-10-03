@@ -26,12 +26,12 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/uqda-release"
           cd "$RUNNER_TEMP/uqda-release"
-          curl -fL --retry 3 https://github.com/Uqda/Core/releases/download/v26.0.4/uqda-26.0.4-linux-amd64.tar.gz -o uqda-26.0.4-linux-amd64.tar.gz
-          curl -fL --retry 3 https://github.com/Uqda/Core/releases/download/v26.0.4/SHA256SUMS -o SHA256SUMS
-          awk '$2 == "uqda-26.0.4-linux-amd64.tar.gz" {print}' SHA256SUMS > selected.sha256
+          curl -fL --retry 3 https://github.com/Uqda/Core/releases/download/v26.0.5/uqda-26.0.5-linux-amd64.tar.gz -o uqda-26.0.5-linux-amd64.tar.gz
+          curl -fL --retry 3 https://github.com/Uqda/Core/releases/download/v26.0.5/SHA256SUMS -o SHA256SUMS
+          awk '$2 == "uqda-26.0.5-linux-amd64.tar.gz" {print}' SHA256SUMS > selected.sha256
           test -s selected.sha256
           sha256sum -c selected.sha256
-          tar -xzf uqda-26.0.4-linux-amd64.tar.gz
+          tar -xzf uqda-26.0.5-linux-amd64.tar.gz
       - name: Test authentication, local protocol and persistent identity
         env:
           UQDA_TEST_BINARY: ${{ runner.temp }}/uqda-release/uqda
