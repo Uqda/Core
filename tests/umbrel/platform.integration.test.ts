@@ -66,10 +66,13 @@ beforeAll(async () => {
   const git = $({cwd:store.directory})
   await git`git add .`
   await git`git commit -m ${'Add disposable Uqda store fixture'}`
-  platform = await createTestUmbreld({autoStart:false})
+  // Let the factory initialize valid API helper URLs before restarting on the
+  // production port. autoStart:false constructs URLs with an undefined port.
+  platform = await createTestUmbreld()
   // The official factory's port=0 intentionally skips LAN ingress. Use the
   // production internal port before starting so the real gateway is exercised.
   // The workflow has stopped the development service; all data remains temporary.
+  await platform.instance.stop()
   platform.instance.port = 22080
   await platform.instance.start()
   await platform.signup()

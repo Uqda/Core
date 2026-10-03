@@ -96,6 +96,13 @@ uses the real Debian `/etc/ssl/openssl.cnf`. It does not bypass TLS verification
 The isolated pre-test development service also has a documented 30-second stop
 deadline; it does not certify graceful production shutdown.
 
+The subsequent run passed HTTPS setup but exposed another harness-order issue:
+https://github.com/Uqda/Core/actions/runs/37129687909
+With `autoStart:false`, the upstream helper constructed API URLs containing an
+undefined port; registration failed and four app tests were skipped. The fixture
+now first initializes its real API helpers, then stops/restarts the actual server
+on the production internal port before registration. No API response is mocked.
+
 That gate distinguishes a manifest-only app update from a binary/image upgrade.
 The first fixture isolated dashboard-password tests by disabling the outer auth
 layer in temporary test data. The revised test never disables either layer: it
