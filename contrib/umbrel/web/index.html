@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0c1719">
+  <title>Uqda Network</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <a class="brand" href="/"><img src="/icon.svg" width="42" height="42" alt=""><span>Uqda <small>NETWORK</small></span></a>
+      <div class="toolbar"><button id="language" type="button">العربية</button><button id="logout" class="quiet" type="button" hidden data-i18n="signOut">Sign out</button></div>
+    </header>
+    <main>
+      <div class="intro"><span class="eyebrow" data-i18n="eyebrow">YOUR UMBREL. CONNECTED.</span><h1 data-i18n="heading">A connection you control.</h1><p data-i18n="intro">Manage your encrypted IPv6 connection from one place.</p></div>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+      <section id="login" class="card login">
+        <h2 data-i18n="loginTitle">Open your dashboard</h2>
+        <p data-i18n="loginHint">Use the app password shown in Umbrel's Uqda app details.</p>
+        <form id="loginForm"><label for="loginPassword" data-i18n="appPassword">App password</label><input id="loginPassword" type="password" autocomplete="current-password" required maxlength="1024"><button class="primary" type="submit" data-i18n="signIn">Sign in</button></form>
+      </section>
+      <div id="dashboard" hidden>
+        <section class="card usage-guide">
+          <h2 data-i18n="purposeTitle">Why use Uqda on Umbrel?</h2>
+          <p data-i18n="purposeText">Give your Umbrel host a persistent encrypted IPv6 address and manage trusted connections without editing configuration files. Use a private group to connect your own devices.</p>
+          <details><summary data-i18n="setupTitle">Before using a service</summary>
+            <ol>
+              <li data-i18n="setupPeer">Connect a trusted peer. Private-group members must use the same strong group password.</li>
+              <li data-i18n="setupTest">From another group member, run sudo uqda test followed by the address shown below. A green peer badge alone does not verify end-to-end connectivity.</li>
+              <li data-i18n="setupService">Then test the intended service separately. It must listen on IPv6 and its firewall must allow access. Docker apps are not exposed automatically.</li>
+            </ol>
+            <h3 data-i18n="recoveryTitle">Keep your identity</h3>
+            <p data-i18n="recoveryText">Update and restart through Umbrel. Back up app data first: deleting it removes your node identity and group settings. Never restore one identity onto two active nodes.</p>
+          </details>
+        </section>
+        <section class="card status-card" aria-label="Node status">
+          <div class="section-head"><h2 data-i18n="nodeStatus">Your node</h2><span id="connection" class="badge">—</span></div>
+          <div class="address-row"><div><span class="label" data-i18n="nodeAddress">Uqda IPv6 address</span><code id="address">—</code></div><button id="copyAddress" type="button" data-i18n="copy">Copy</button></div>
+          <div class="stats"><div><span class="label" data-i18n="connectedPeers">Connected peers</span><strong id="peerCount">0</strong></div><div><span class="label" data-i18n="interface">Network interface</span><strong id="interfaceName">—</strong></div><div><span class="label" data-i18n="coreVersion">Core version</span><strong id="version">—</strong></div><div><span class="label" data-i18n="mode">Access mode</span><strong id="modeValue">—</strong></div></div>
+          <p class="small" data-i18n="accessHint">A connected transport peer does not prove private-group connectivity. Services also need to listen on IPv6 and allow access through their firewall.</p>
+        </section>
+        <div class="columns">
+          <section class="card settings-card">
+            <div class="section-head"><h2 data-i18n="settings">Connection settings</h2><span class="subtle" data-i18n="savedOnDevice">Saved on this device</span></div>
+            <p class="small" data-i18n="firstRun">New nodes start isolated. Add a trusted peer and your shared group password to connect.</p>
+            <form id="settingsForm">
+              <label for="peers" data-i18n="peerAddresses">Peer addresses</label>
+              <textarea id="peers" rows="4" maxlength="32768" spellcheck="false" dir="ltr" placeholder="tls://peer.example:443"></textarea>
+              <p class="field-hint" data-i18n="peersHint">One address per line. TLS, TCP, QUIC, WS and WSS are supported. No peer is added automatically.</p>
+              <label for="networkMode" data-i18n="mode">Access mode</label>
+              <select id="networkMode"><option value="private" data-i18n="privateGroup">Private group</option><option value="public" data-i18n="publicNetwork">Public network</option></select>
+              <div id="privateFields"><label for="groupPassword" data-i18n="groupPassword">Shared group password</label><input id="groupPassword" type="password" autocomplete="new-password" maxlength="1024"><p class="field-hint" data-i18n="groupHint">Use the same strong secret on all members. Leave blank to keep the current secret. Stored secrets are never shown here.</p></div>
+              <div id="publicFields" class="public-warning" hidden><label class="checkbox"><input id="confirmPublic" type="checkbox"><span data-i18n="publicConfirm">I understand that public mode removes private-group protection. This can make services listening on my Uqda IPv6 address reachable by other public nodes.</span></label></div>
+              <details><summary data-i18n="advanced">Incoming connections</summary><label for="listeners" data-i18n="listenerAddresses">Listener addresses (optional)</label><textarea id="listeners" rows="2" maxlength="8192" spellcheck="false" dir="ltr" placeholder="tls://[::]:9099"></textarea><p class="field-hint" data-i18n="listenerHint">Leave empty for outbound-only connections. Use TLS, TCP or QUIC and a port from 1024 to 65535. Router/firewall changes are separate.</p></details>
+              <button id="save" class="primary" type="submit" data-i18n="save">Save and reconnect</button><p class="field-hint" data-i18n="restartHint">Saving restarts Core. Your node identity stays the same.</p>
+            </form>
+          </section>
+          <div class="side">
+            <section class="card"><div class="section-head"><h2 data-i18n="peers">Peers</h2><button id="refresh" class="quiet" type="button" data-i18n="refresh">Refresh</button></div><div id="peerList"></div></section>
+            <section class="card compact"><h2 data-i18n="health">Local health</h2><ul id="checks" class="checks"></ul><button id="restart" type="button" data-i18n="restart">Restart Core</button></section>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer><span>Uqda Core · Umbrel</span><a href="https://github.com/Uqda/Core" target="_blank" rel="noopener noreferrer" data-i18n="project">Project & documentation ↗</a></footer>
+  </div>
+</body>
+</html>

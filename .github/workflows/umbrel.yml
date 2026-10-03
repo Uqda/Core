@@ -1,0 +1,160 @@
+name: Umbrel integration
+
+on:
+  pull_request:
+    paths: ['contrib/umbrel/**', 'tests/umbrel/**', 'uqda-network/**', 'umbrel-app-store.yml', '.github/workflows/umbrel.yml']
+  push:
+    branches: [main, codex/umbrel-uqda]
+    paths: ['contrib/umbrel/**', 'tests/umbrel/**', 'uqda-network/**', 'umbrel-app-store.yml', '.github/workflows/umbrel.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: umbrel-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Dashboard and configuration lifecycle
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Fetch and verify the pinned Core release
+        run: |
+          mkdir -p "$RUNNER_TEMP/uqda-release"
+          cd "$RUNNER_TEMP/uqda-release"
+          curl -fL --retry 3 https://github.com/Uqda/Core/releases/download/v26.0.4/uqda-26.0.4-linux-amd64.tar.gz -o uqda-26.0.4-linux-amd64.tar.gz
+          curl -fL --retry 3 https://github.com/Uqda/Core/releases/download/v26.0.4/SHA256SUMS -o SHA256SUMS
+          awk '$2 == "uqda-26.0.4-linux-amd64.tar.gz" {print}' SHA256SUMS > selected.sha256
+          test -s selected.sha256
+          sha256sum -c selected.sha256
+          tar -xzf uqda-26.0.4-linux-amd64.tar.gz
+      - name: Test authentication, local protocol and persistent identity
+        env:
+          UQDA_TEST_BINARY: ${{ runner.temp }}/uqda-release/uqda
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 -m unittest discover -s tests/umbrel -v
+      - name: Validate JavaScript and package structure
+        run: |
+          node --check contrib/umbrel/web/app.js
+          node tests/umbrel/ui_state.cjs
+          python3 tests/umbrel/package_check.py
+          git diff --check
+
+  docker:
+    name: Native host TUN and container lifecycle (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
+    needs: test
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Require native host TUN
+        run: |
+          sudo modprobe tun
+          test -c /dev/net/tun
+      - name: Install browser test runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/uqda-browser" playwright@1.51.1
+          "$RUNNER_TEMP/uqda-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Test Docker integration
+        env:
+          UQDA_TEST_PASSWORD: ci-dashboard-test-password-0123456789
+          UQDA_BROWSER_TEST: '1'
+          PLAYWRIGHT_MODULE: ${{ runner.temp }}/uqda-browser/node_modules/playwright
+          UQDA_SCREENSHOT_DIR: ${{ runner.temp }}/uqda-screenshots
+        run: python3 tests/umbrel/docker_smoke.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: uqda-dashboard-screenshots-${{ matrix.runner }}
+          path: ${{ runner.temp }}/uqda-screenshots
+
+  image:
+    name: Build multiarchitecture wrapper
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [test, docker]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Wrapper version
+        id: version
+        run: |
+          python3 - <<'PYTHON'
+          import os, pathlib, re
+          current = pathlib.Path('contrib/umbrel/VERSION').read_text().strip()
+          candidate_path = pathlib.Path('contrib/umbrel/CANDIDATE_VERSION')
+          candidate = candidate_path.is_file()
+          version = candidate_path.read_text().strip() if candidate else current
+          pattern = r'26\.0\.4-umbrel\.(\d+)'
+          assert re.fullmatch(pattern, version) and re.fullmatch(pattern, current)
+          if candidate:
+              assert int(re.fullmatch(pattern, version)[1]) > int(re.fullmatch(pattern, current)[1])
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'value={version}\ncandidate={str(candidate).lower()}\n')
+          PYTHON
+      - name: Log in to GHCR
+        if: github.event_name == 'push' && github.repository == 'Uqda/Core'
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check immutable published version
+        id: existing
+        if: github.event_name == 'push' && github.repository == 'Uqda/Core'
+        run: |
+          if docker buildx imagetools inspect "ghcr.io/uqda/core:${{ steps.version.outputs.value }}" > "$RUNNER_TEMP/existing-image.txt" 2>/dev/null; then
+            echo 'found=true' >> "$GITHUB_OUTPUT"
+            echo 'This wrapper version already exists; it will not be overwritten. Bump contrib/umbrel/VERSION for wrapper changes.'
+          fi
+      - name: Build amd64 and arm64
+        id: build
+        if: steps.existing.outputs.found != 'true'
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: contrib/umbrel/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name == 'push' && github.repository == 'Uqda/Core' }}
+          tags: ghcr.io/uqda/core:${{ steps.version.outputs.value }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/Uqda/Core
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.version.outputs.value }}
+          provenance: false
+      - name: Record published multiarchitecture digest
+        if: github.event_name == 'push' && github.repository == 'Uqda/Core'
+        run: |
+          docker buildx imagetools inspect "ghcr.io/uqda/core:${{ steps.version.outputs.value }}" > "$RUNNER_TEMP/image.txt"
+          DIGEST=$(awk '/^Digest:/ {print $2; exit}' "$RUNNER_TEMP/image.txt")
+          test -n "$DIGEST"
+          printf 'version=%s\ndigest=%s\nrevision=%s\n' '${{ steps.version.outputs.value }}' "$DIGEST" "$GITHUB_SHA" > "$RUNNER_TEMP/uqda-umbrel-image.txt"
+          echo "Published ghcr.io/uqda/core:${{ steps.version.outputs.value }}@$DIGEST" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: github.event_name == 'push' && github.repository == 'Uqda/Core'
+        with:
+          name: uqda-umbrel-image
+          path: ${{ runner.temp }}/uqda-umbrel-image.txt
+      - name: Export digest-pinned community store
+        if: github.event_name == 'push' && github.repository == 'Uqda/Core' && steps.version.outputs.candidate != 'true'
+        run: |
+          DIGEST=$(awk -F= '/^digest=/ {print $2; exit}' "$RUNNER_TEMP/uqda-umbrel-image.txt")
+          python3 contrib/umbrel/export_store.py --digest "$DIGEST" --icon-ref "$GITHUB_SHA" --output "$RUNNER_TEMP/uqda-umbrel-store.zip"
+          echo 'The exported store still requires actual Umbrel platform testing; the official development container or a production VM can be used without buying a device.' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: github.event_name == 'push' && github.repository == 'Uqda/Core' && steps.version.outputs.candidate != 'true'
+        with:
+          name: uqda-umbrel-store
+          path: ${{ runner.temp }}/uqda-umbrel-store.zip

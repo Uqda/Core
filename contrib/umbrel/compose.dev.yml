@@ -1,0 +1,47 @@
+# Local Docker smoke test. Umbrel installs the root uqda-network package instead.
+services:
+  core:
+    build:
+      context: ../..
+      dockerfile: contrib/umbrel/Dockerfile
+    image: uqda-umbrel:test
+    network_mode: host
+    cap_add: [NET_ADMIN]
+    devices: [/dev/net/tun:/dev/net/tun]
+    command: [control.py]
+    stop_grace_period: 30s
+    volumes:
+      - node-config:/etc/uqda
+      - node-control:/run/uqda-control
+    tmpfs:
+      - /run/uqda-core:mode=0700
+  dashboard:
+    image: uqda-umbrel:test
+    pull_policy: never
+    user: "1000:1000"
+    command: [dashboard.py]
+    depends_on: [core]
+    environment:
+      UQDA_DASHBOARD_PASSWORD: ${UQDA_TEST_PASSWORD:?Set a test password of at least 16 characters}
+    ports:
+      - "127.0.0.1:8926:8080"
+    volumes:
+      - node-control:/run/uqda-control
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  peer:
+    profiles: [network-test]
+    image: uqda-umbrel:test
+    pull_policy: never
+    cap_add: [NET_ADMIN]
+    devices: [/dev/net/tun:/dev/net/tun]
+    command: [control.py]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    tmpfs:
+      - /etc/uqda:mode=0700
+      - /run/uqda-core:mode=0700
+      - /run/uqda-control:mode=0700
+volumes:
+  node-config:
+  node-control:

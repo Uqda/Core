@@ -1,0 +1,45 @@
+"""Export only the installable community-store files, pinned to a verified image."""
+import argparse
+from pathlib import Path
+import re
+import zipfile
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def export(digest, output, icon_ref="main"):
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
+        raise ValueError("Supply the published multiarchitecture manifest digest.")
+    if not re.fullmatch(r"[a-zA-Z0-9_./-]+", icon_ref):
+        raise ValueError("Invalid icon source ref.")
+    version = (ROOT / "contrib/umbrel/VERSION").read_text().strip()
+    source = "ghcr.io/uqda/core:" + version
+    compose = (ROOT / "uqda-network/docker-compose.yml").read_text()
+    compose, count = re.subn(r"(?m)^([ \t]*image:[ \t]*)" + re.escape(source) +
+                            r"(?:@sha256:[0-9a-f]{64})?[ \t]*$",
+                            lambda match: match[1] + source + "@" + digest, compose)
+    if count != 2:
+        raise ValueError("Both Core and dashboard must reference the current wrapper version.")
+    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.write(ROOT / "umbrel-app-store.yml", "umbrel-app-store.yml")
+        archive.writestr("uqda-network/docker-compose.yml", compose)
+        # Never recursively package app data: it may contain private keys/backups.
+        for relative in ("umbrel-app.yml", "data/config/.gitkeep", "data/control/.gitkeep"):
+            path = ROOT / "uqda-network" / relative
+            # Placeholders are generated empty, never read from local app data.
+            data = b"" if path.name == ".gitkeep" else path.read_bytes()
+            if path.name == "umbrel-app.yml":
+                data = re.sub(rb"https://raw\.githubusercontent\.com/Uqda/Core/[^\s]+/contrib/umbrel/web/icon\.svg",
+                              lambda _match: ("https://raw.githubusercontent.com/Uqda/Core/" + icon_ref +
+                                              "/contrib/umbrel/web/icon.svg").encode(), data)
+            archive.writestr(path.relative_to(ROOT).as_posix(), data)
+        archive.writestr("README.md", "# Uqda Community App Store\n\nUpload these files to the root of a public GitHub repository. Add that repository URL to Umbrel's Community App Stores.\n\nCore 26.0.4 with the Umbrel dashboard. Login with the app password shown by Umbrel. Add a trusted peer and your shared group password. Configuration and identity are saved in app data.\n\nSee https://github.com/Uqda/Core/blob/" + icon_ref + "/docs/umbrel.md for setup, permissions, backups and validation limits.\n")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--digest", required=True)
+    parser.add_argument("--output", required=True)
+    parser.add_argument("--icon-ref", default="main")
+    options = parser.parse_args()
+    export(options.digest, options.output, options.icon_ref)
