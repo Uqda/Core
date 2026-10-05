@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Fetch and verify the pinned Core release
         run: |
           mkdir -p "$RUNNER_TEMP/uqda-release"
@@ -54,7 +54,7 @@ jobs:
         runner: [ubuntu-latest, ubuntu-24.04-arm]
     needs: test
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Require native host TUN
         run: |
           sudo modprobe tun
@@ -70,7 +70,7 @@ jobs:
           PLAYWRIGHT_MODULE: ${{ runner.temp }}/uqda-browser/node_modules/playwright
           UQDA_SCREENSHOT_DIR: ${{ runner.temp }}/uqda-screenshots
         run: python3 tests/umbrel/docker_smoke.py
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: uqda-dashboard-screenshots-${{ matrix.runner }}
@@ -85,9 +85,9 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Wrapper version
         id: version
         run: |
@@ -106,7 +106,7 @@ jobs:
           PYTHON
       - name: Log in to GHCR
         if: github.event_name == 'push' && github.repository == 'Uqda/Core'
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -122,7 +122,7 @@ jobs:
       - name: Build amd64 and arm64
         id: build
         if: steps.existing.outputs.found != 'true'
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: contrib/umbrel/Dockerfile
@@ -142,7 +142,7 @@ jobs:
           test -n "$DIGEST"
           printf 'version=%s\ndigest=%s\nrevision=%s\n' '${{ steps.version.outputs.value }}' "$DIGEST" "$GITHUB_SHA" > "$RUNNER_TEMP/uqda-umbrel-image.txt"
           echo "Published ghcr.io/uqda/core:${{ steps.version.outputs.value }}@$DIGEST" >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: github.event_name == 'push' && github.repository == 'Uqda/Core'
         with:
           name: uqda-umbrel-image
@@ -153,7 +153,7 @@ jobs:
           DIGEST=$(awk -F= '/^digest=/ {print $2; exit}' "$RUNNER_TEMP/uqda-umbrel-image.txt")
           python3 contrib/umbrel/export_store.py --digest "$DIGEST" --icon-ref "$GITHUB_SHA" --output "$RUNNER_TEMP/uqda-umbrel-store.zip"
           echo 'The exported store still requires actual Umbrel platform testing; the official development container or a production VM can be used without buying a device.' >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: github.event_name == 'push' && github.repository == 'Uqda/Core' && steps.version.outputs.candidate != 'true'
         with:
           name: uqda-umbrel-store
