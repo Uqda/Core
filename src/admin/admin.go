@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 	"os"
@@ -298,13 +299,32 @@ func (a *AdminSocket) Stop() error {
 	return nil
 }
 
+// Resource bounds for the admin API. The API is unauthenticated and meant to be
+// local, but any local user able to reach it should not be able to exhaust the
+// daemon's memory or goroutines with oversized, idle or excessive connections.
+const (
+	maxAdminConnections  = 64
+	maxAdminRequestBytes = 1 << 20 // per request, including JSON framing
+	adminIdleTimeout     = 5 * time.Minute
+)
+
 // listen is run by start and manages API connections.
 func (a *AdminSocket) listen() {
 	defer func() { _ = a.listener.Close() }()
+	slots := make(chan struct{}, maxAdminConnections)
 	for {
 		conn, err := a.listener.Accept()
 		if err == nil {
-			go a.handleRequest(conn)
+			select {
+			case slots <- struct{}{}:
+				go func() {
+					defer func() { <-slots }()
+					a.handleRequest(conn)
+				}()
+			default:
+				a.log.Debugln("Admin socket: too many concurrent connections, rejecting one")
+				_ = conn.Close()
+			}
 		} else {
 			select {
 			case <-a.done:
@@ -317,7 +337,8 @@ func (a *AdminSocket) listen() {
 
 // handleRequest calls the request handler for each request sent to the admin API.
 func (a *AdminSocket) handleRequest(conn net.Conn) {
-	decoder := json.NewDecoder(conn)
+	limited := &requestLimitReader{r: conn, remaining: maxAdminRequestBytes}
+	decoder := json.NewDecoder(limited)
 	decoder.DisallowUnknownFields()
 
 	encoder := json.NewEncoder(conn)
@@ -331,8 +352,16 @@ func (a *AdminSocket) handleRequest(conn net.Conn) {
 		var req AdminSocketRequest
 		var resp AdminSocketResponse
 		req.Arguments = []byte("{}")
+		limited.remaining = maxAdminRequestBytes
+		if err := conn.SetReadDeadline(time.Now().Add(adminIdleTimeout)); err != nil {
+			a.log.Debugln("Admin socket deadline error:", err)
+			return
+		}
 		if err := func() error {
 			if err = decoder.Decode(&buf); err != nil {
+				if errors.Is(err, errAdminRequestTooLarge) {
+					return err
+				}
 				return fmt.Errorf("failed to find request")
 			}
 			if err = json.Unmarshal(buf, &req); err != nil {
@@ -363,12 +392,33 @@ func (a *AdminSocket) handleRequest(conn net.Conn) {
 		if err = encoder.Encode(resp); err != nil {
 			a.log.Debugln("Encode error:", err)
 		}
-		if !req.KeepAlive {
+		if resp.Error == errAdminRequestTooLarge.Error() || !req.KeepAlive {
 			break
 		} else {
 			continue
 		}
 	}
+}
+
+var errAdminRequestTooLarge = fmt.Errorf("request exceeds %d bytes", maxAdminRequestBytes)
+
+// requestLimitReader fails reads once more than remaining bytes have been
+// consumed since the limit was last reset for a new request.
+type requestLimitReader struct {
+	r         io.Reader
+	remaining int64
+}
+
+func (l *requestLimitReader) Read(p []byte) (int, error) {
+	if l.remaining <= 0 {
+		return 0, errAdminRequestTooLarge
+	}
+	if int64(len(p)) > l.remaining {
+		p = p[:l.remaining]
+	}
+	n, err := l.r.Read(p)
+	l.remaining -= int64(n)
+	return n, err
 }
 
 // DataUnit formats byte counts for human-readable control output.
