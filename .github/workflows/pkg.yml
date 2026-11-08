@@ -321,6 +321,9 @@ jobs:
           $installRoot = if ('${{ matrix.pkgarch }}' -eq 'x86') { ${env:ProgramFiles(x86)} } else { $env:ProgramFiles }
           $uqda = Join-Path $installRoot 'Uqda\uqda.exe'
           $config = Join-Path $env:ProgramData 'Uqda\uqda.conf'
+          $installDir = (Split-Path $uqda).TrimEnd('\')
+          $machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine') -split ';' | ForEach-Object { $_.TrimEnd('\') }
+          if ($machinePath -notcontains $installDir) { throw "Install folder $installDir is not on the system PATH" }
           $reportedVersion = & $uqda --version
           if ($LASTEXITCODE -ne 0) { throw "Version command failed: $reportedVersion" }
           $expectedVersion = go run ./cmd/uqda -version
@@ -333,6 +336,8 @@ jobs:
           Invoke-Msi '/x' "$env:RUNNER_TEMP\uqda-remove.log"
           if (Test-Path $uqda) { throw 'MSI removal left the executable installed' }
           if (-not (Test-Path $config)) { throw 'MSI removal deleted the persistent identity' }
+          $machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine') -split ';' | ForEach-Object { $_.TrimEnd('\') }
+          if ($machinePath -contains $installDir) { throw 'MSI removal left the install folder on the system PATH' }
 
       - name: Upload artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

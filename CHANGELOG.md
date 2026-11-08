@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased (beta)
+
+- Windows: the installer puts the Uqda folder on the system `PATH`, so
+  `uqda status`, `uqda join` and the other commands work in a new terminal.
+  Uninstalling removes it again.
+
 ## Uqda 26.1
 
 Release date: 2026-11-08. Machine version: `26.1.0`; tag: `v26.1.0`.
