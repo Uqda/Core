@@ -107,6 +107,16 @@ func TestInboundHandshakeFloodIsBounded(t *testing.T) {
 	}
 	idle = nil
 
+	// Slots are released asynchronously once each handler sees EOF; wait for
+	// that rather than racing it (CallPeer does not retry a rejected dial).
+	if !waitForCondition(5*time.Second, func() bool {
+		nodeA.links.handshakes.mu.Lock()
+		defer nodeA.links.handshakes.mu.Unlock()
+		return nodeA.links.handshakes.total == 0
+	}) {
+		t.Fatal("pending-handshake slots were not released after the idle connections closed")
+	}
+
 	// The released slots must allow a legitimate peering from the same source.
 	requireNoError(t, nodeB.CallPeer(mustParseURL(t, "tcp://"+addr), ""))
 	if !waitForCondition(5*time.Second, func() bool { return len(nodeA.GetPeers()) == 1 }) {
