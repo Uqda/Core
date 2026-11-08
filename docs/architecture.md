@@ -54,5 +54,5 @@ identity. See [security](security.md) for controls and limitations and
 `build` and `build.bat` produce `uqda` and `uqdactl`. Packaging and service
 integration live in `contrib/`; CI lives in `.github/workflows/`. `misc/`
 contains manual network-namespace experiments. Dependency versions are pinned
-in `go.mod` and `go.sum`. Go 1.25 or newer is required by this module.
+in `go.mod` and `go.sum`. Go 1.26 or newer is required by this module.
 There is no built-in automatic updater. Attribution is in [NOTICE](../NOTICE.md).

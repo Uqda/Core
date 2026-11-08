@@ -15,7 +15,7 @@ administrator PowerShell and leave out `sudo`.
 | Windows (x64, x86, ARM64) | Download and run `uqda-VERSION-ARCH.msi` from [Releases](https://github.com/Uqda/Core/releases) |
 | Umbrel home server | Add the community store `https://github.com/Uqda/umbrel-app-store`, install **Uqda Network**. See [Umbrel](umbrel.md). |
 | Docker | See [installation](installation.md#docker) |
-| From source | Go 1.25+, then `./build` (or `build.bat`). See [installation](installation.md). |
+| From source | Go 1.26+, then `./build` (or `build.bat`). See [installation](installation.md). |
 
 Check it worked:
 
