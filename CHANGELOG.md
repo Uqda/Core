@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased (beta)
+## Uqda 26.1 Beta 1
+
+Prerelease date: 2026-11-08. Machine version: `26.1-beta.1`; tag: `v26.1-beta.1`.
+Full notes: [26.1 Beta 1](docs/releases/v26.1-beta.1.md). Uqda is an experimental project.
 
 - `uqda setup [mode=private|public] [country=NAME] [peers=0..5]` sets up a node
   in one step. On a new device it creates an identity, a private network with

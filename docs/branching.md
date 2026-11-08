@@ -26,7 +26,16 @@ git merge --ff-only origin/beta
 git push origin main
 ```
 
-Use a fast-forward so `main` and `beta` point at the same commits. If the
+Use a fast-forward so `main` and `beta` point at the same commits.
+
+## Releases
+
+- **Prereleases** (`vX.Y-beta.N`, such as `v26.1-beta.1`) are tagged on `beta`
+  after its CI passes, built by the Packages and Export release container
+  workflows from that tag, and published as GitHub prereleases. Homebrew and
+  the Umbrel store stay on the latest stable release.
+- **Stable releases** (`vX.Y.Z`) are tagged on `main` after promoting a
+  `beta` that has been tested as a prerelease. If the
 fast-forward fails, something was committed to `main` directly: bring it into
 `beta` first, test, then promote. Tag releases on `main` after promotion; see
 [releasing](releasing.md).
