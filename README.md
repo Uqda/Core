@@ -1,46 +1,71 @@
-# Uqda
+# Uqda · عُقدة
 
-[العربية](README.ar.md) · [Documentation](docs/README.md) · [Releases](https://github.com/Uqda/Core/releases) · [Report a problem](https://github.com/Uqda/Core/issues/new?template=bug_report.yml)
+[العربية](README.ar.md) · [How it works](docs/how-it-works.md) · [Build on Uqda](docs/build-on-uqda.md) · [Documentation](docs/README.md) · [Releases](https://github.com/Uqda/Core/releases)
 
-**Uqda is an encrypted network for your devices that no company runs.** There is
-no account to create, no coordination server, and no subscription. Each device
-gets a permanent IPv6 address derived from its own key, and devices reach each
-other over end-to-end encrypted sessions, across the internet or straight over
-your local network.
+**Uqda is a worldwide encrypted network made only of its users' devices.**
 
-Uqda (عُقدة, "knot" or "node") is an independently maintained implementation
-compatible with the existing [Yggdrasil](https://yggdrasil-network.github.io/)
-network. It does not create a separate network and does not imply upstream
-endorsement.
+*Uqda* (عُقدة) is Arabic for *node*, and that is the whole idea. Every device
+that installs Uqda becomes a node. Every node gets a permanent encrypted
+address, connects to the nodes around it, and helps carry the network's
+traffic. There is no company in the middle, no account to create, and no
+server that can be switched off. The network is its users, and it grows each
+time someone joins.
 
-> **Experimental project.** Uqda is under active development. It is tested
-> extensively but has not had an independent security audit. Do not rely on it
-> where a failure would put people or critical systems at risk.
+> **Experimental project.** Uqda is tested extensively but has not had an
+> independent security audit. Do not rely on it where a failure would put
+> people or critical systems at risk.
 
-## Why Uqda
+## A network that builds itself
 
-| | Uqda | Typical mesh VPN (Tailscale, ZeroTier, NetBird) |
+```
+        your phone ─── your laptop ─── your home server
+                            │                 │
+              (same Wi-Fi, no internet)    internet
+                                              │
+   a friend's PC ─── public node ─── public node ─── a server abroad
+```
+
+1. **Install, and you are a node.** Your device generates its own key pair and
+   an IPv6 address calculated from it, such as `200:1a2b:3c4d::7`. Nobody
+   issues it, and nobody else can use it.
+2. **Nodes find each other.** Uqda connects to nearby nodes on your local network
+   by itself, and to fast public nodes on the internet.
+3. **Every node carries traffic.** Packets travel node to node until they arrive,
+   encrypted end to end. Nodes in the middle forward what they cannot read.
+4. **The network grows.** Each new node is one more path for everyone.
+
+Uqda runs inside the existing worldwide [Yggdrasil](https://yggdrasil-network.github.io/)
+network and speaks its protocol, so a new Uqda node joins thousands of existing
+nodes on day one: a global network inside the global internet.
+[How it works](docs/how-it-works.md) explains identity, routing and encryption
+in detail.
+
+## Why use it
+
+| | Uqda | Typical VPN or mesh service |
 |---|---|---|
-| Account required | No | Yes |
-| Central coordination server | None: nothing to shut down, block or reprice | Required (hosted, or self-hosted) |
-| Works on a local network without internet | Yes (local discovery) | Limited |
-| Add a device | `uqda invite`, then `uqda join` (one-time, expiring, no password inside) | Sign in to the vendor |
-| Who may reach each service | Built-in firewall, rules by device key | ACLs on the vendor's server |
-| Replay-protected peer handshake | Yes, between Uqda nodes | Yes |
-| Direct connections through NAT | Through peer nodes (relays) | Yes, hole punching |
+| Who runs the network | Its users' nodes | A company |
+| Account | None | Required |
+| Can it be switched off, blocked at one server, or repriced? | No central server to do it to | Yes |
+| Works between devices with no internet | Yes, on the local network | Usually no |
+| Reach a device behind NAT without opening ports | Yes | Yes |
+| Add a device | `uqda invite`, then `uqda join` | Sign in to the vendor |
+| Who may reach your services | Built-in firewall, rules by device key | The vendor's dashboard |
 
-The last row is where the others are stronger today; see the [roadmap](docs/roadmap.md).
+Where others are stronger today: they open direct paths through NAT, while
+Uqda's traffic sometimes goes through other nodes.
 
-## Two kinds of network
+## Two kinds of network, one infrastructure
 
-- **Private group:** only devices that share your group secret can talk to
-  you. Use it for your own devices, a family or a team. This is the default.
-- **Public network:** reach and be reached by any node on the worldwide
-  overlay, with the firewall deciding what is open.
+- **Private group:** only devices that share your group secret can talk to you,
+  even though public nodes still carry the encrypted traffic. For your own
+  devices, a family, a team. This is the default.
+- **Public network:** reach, and be reached by, any node in the world, with the
+  firewall deciding what is open. For services you want everyone to use.
 
-[Networks](docs/networks.md) explains both, and when to use each.
+See [networks](docs/networks.md).
 
-## Install and start in three commands
+## Start in three commands
 
 Install for your system ([all options](docs/installation.md)):
 
@@ -55,13 +80,26 @@ Install for your system ([all options](docs/installation.md)):
 Then:
 
 ```sh
-sudo uqda setup country=germany   # private network, firewall and two fast peers
+sudo uqda setup country=germany   # identity, private network, firewall, fast peers kept healthy
 sudo systemctl restart uqda       # setup prints the right command for your system
 sudo uqda invite                  # on each new device: sudo uqda join <invite>
 ```
 
-`uqda find` lists countries with public peers. The full walk-through, including
-how to reach a service on another device, is in [getting started](docs/getting-started.md).
+`uqda find` lists countries with public nodes. [Getting started](docs/getting-started.md)
+walks through everything, including reaching a service on another device.
+
+## Build on Uqda
+
+Uqda gives every node an address that proves who it is. The rest is up to you:
+websites, chat, file sharing, games, tools, smart-home control, apps.
+**Anything that listens on IPv6 already works on Uqda.**
+
+```sh
+python3 -m http.server 8080 --bind ::      # then open http://[your-address]:8080/
+```
+
+[Build on Uqda](docs/build-on-uqda.md) covers hosting, using addresses as
+identity, the admin API for tools, and the mobile SDKs.
 
 ## Everyday commands
 
@@ -69,37 +107,39 @@ how to reach a service on another device, is in [getting started](docs/getting-s
 |---|---|
 | `uqda status` | Health checks, each with its fix |
 | `uqda info` | Your address and public key |
-| `uqda peers` | Peer links, traffic and latency |
+| `uqda peers` | Your node's links, traffic and latency |
+| `uqda autopeers` | Automatically kept public peers |
 | `uqda firewall` | Firewall rules and blocked packets |
 | `uqda test ADDRESS` | Reachability and packet loss to another node |
 | `uqda help COMMAND` | Help for any command |
 
 ## Security in brief
 
-- **Identity:** Ed25519 keys. Your address is derived from your key and cannot be claimed without it.
-- **Sessions:** end-to-end encrypted. Relays carry traffic but cannot read it.
-- **Private groups:** the group secret is stretched with Argon2id. Nodes outside the group cannot open sessions with you.
-- **Inbound firewall:** on by default for new nodes. Only replies to your own connections, and the services you allow, get in.
-- **Peer handshake:** Uqda nodes prove their key on every connection, so a recorded handshake cannot be replayed. Floods of half-open connections are capped.
-- **Invites:** TLS 1.3 pinned to the inviting node's key. They are one-time, expire and are rate-limited.
+- **Identity:** Ed25519 keys; your address is derived from your key and cannot be claimed without it.
+- **Encryption:** sessions use X25519 and XSalsa20-Poly1305 with ephemeral, ratcheted keys, giving forward secrecy and replay protection. Relays carry traffic they cannot read.
+- **Private groups:** the group secret is stretched with Argon2id; outsiders cannot open sessions with members.
+- **Firewall:** on by default for new nodes; only replies and the services you allow get in.
+- **Handshake:** Uqda nodes prove their key on every connection, so recorded handshakes cannot be replayed. Connection floods are capped.
+- **Invites:** one-time and expiring, verified over TLS 1.3 against the inviting node's key.
 
-Uqda does **not** provide anonymity, and the admin API has no authentication
-(it stays local). Read the [security model](docs/security.md), and report
+Uqda does **not** provide anonymity, and the admin API is local and has no
+authentication. Read the [security model](docs/security.md); report
 vulnerabilities privately as described in [SECURITY](SECURITY.md).
 
-## Project
+## The project
 
-- Two branches: `main` is stable and `beta` gets new work first; see [branching](docs/branching.md).
-- Every change runs the full test suite on Linux, macOS and Windows. That covers race detection,
-  fuzzing, packaging on every supported system, and a compatibility gate against the official
-  Yggdrasil implementation; see [testing](docs/testing.md).
-- Contributions are welcome: see [CONTRIBUTING](CONTRIBUTING.md). Changes are listed in the [CHANGELOG](CHANGELOG.md).
+- Every change runs the full test suite on Linux, macOS and Windows: race
+  detection, fuzzing, packaging for every supported system, and a compatibility
+  gate against the official Yggdrasil implementation. See [testing](docs/testing.md).
+- `beta` gets new work first; `main` holds stable releases. See [branching](docs/branching.md).
+- Contributions are welcome: see [CONTRIBUTING](CONTRIBUTING.md), the
+  [roadmap](docs/roadmap.md) and the [CHANGELOG](CHANGELOG.md).
 
 ## License and attribution
 
 Uqda Core is licensed under LGPLv3 with the linking exception in [LICENSE](LICENSE).
-Routing and encrypted sessions come from Ironwood. See [NOTICE](NOTICE.md) for
-Yggdrasil, Ironwood and other upstream attribution.
+It is derived from Yggdrasil, and routing and encrypted sessions come from
+Ironwood; see [NOTICE](NOTICE.md). Uqda does not imply upstream endorsement.
 
 ---
 
