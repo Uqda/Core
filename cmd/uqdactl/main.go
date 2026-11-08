@@ -21,6 +21,7 @@ import (
 	"github.com/Uqda/Core/src/admin"
 	"github.com/Uqda/Core/src/core"
 	"github.com/Uqda/Core/src/firewall"
+	"github.com/Uqda/Core/src/invite"
 	"github.com/Uqda/Core/src/multicast"
 	"github.com/Uqda/Core/src/tun"
 	"github.com/Uqda/Core/src/version"
@@ -52,6 +53,9 @@ func run() int {
 	if len(cmdLineEnv.args) > 0 && strings.EqualFold(cmdLineEnv.args[0], "test") {
 		pledge += " proc exec"
 	}
+	if len(cmdLineEnv.args) > 0 && strings.EqualFold(cmdLineEnv.args[0], "join") {
+		pledge += " wpath cpath fattr"
+	}
 	if err := protect.Pledge(pledge); err != nil {
 		return fail(logger, logbuffer, "apply initial process restrictions: %v", err)
 	}
@@ -63,6 +67,9 @@ func run() int {
 
 	if len(cmdLineEnv.args) > 0 && strings.EqualFold(cmdLineEnv.args[0], "find") {
 		return runFind(cmdLineEnv.args[1:], cmdLineEnv.injson)
+	}
+	if len(cmdLineEnv.args) > 0 && strings.EqualFold(cmdLineEnv.args[0], "join") {
+		return runJoin(cmdLineEnv.args[1:], cmdLineEnv.injson)
 	}
 	if err := cmdLineEnv.setEndpoint(logger); err != nil {
 		return fail(logger, logbuffer, "%v", err)
@@ -297,6 +304,22 @@ func run() int {
 			_ = table.Append([]string{"Interface MTU:", fmt.Sprintf("%d", resp.MTU)})
 		}
 		_ = table.Render()
+
+	case "createinvite":
+		var resp invite.Created
+		if err := json.Unmarshal(recv.Response, &resp); err != nil {
+			return fail(logger, logbuffer, "decode createInvite response: %v", err)
+		}
+		fmt.Println("Invite created. On the new device, run:")
+		fmt.Println()
+		fmt.Println("  uqda join " + resp.Token)
+		fmt.Println()
+		cli.QR(os.Stdout, resp.Token)
+		fmt.Printf("Works %d time(s) until %s, and stops if this node restarts.\n", resp.Uses, resp.Expires)
+		fmt.Println("Treat it like a password until then. Cancel all invites with: uqdactl cancelInvites")
+		if resp.Warning != "" {
+			fmt.Println("Note: " + resp.Warning + ".")
+		}
 
 	case "getfirewall":
 		var resp firewall.Status

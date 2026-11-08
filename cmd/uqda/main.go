@@ -24,6 +24,7 @@ import (
 	"github.com/Uqda/Core/src/admin"
 	"github.com/Uqda/Core/src/config"
 	"github.com/Uqda/Core/src/firewall"
+	"github.com/Uqda/Core/src/invite"
 	"github.com/Uqda/Core/src/ipv6rwc"
 
 	"github.com/Uqda/Core/internal/cli"
@@ -38,9 +39,13 @@ type node struct {
 	tun       *tun.TunAdapter
 	multicast *multicast.Multicast
 	admin     *admin.AdminSocket
+	invites   *invite.Manager
 }
 
 func (n *node) stop() {
+	if n.invites != nil {
+		n.invites.Stop()
+	}
 	if n.admin != nil {
 		_ = n.admin.Stop()
 	}
@@ -364,6 +369,10 @@ func run() int {
 		}
 		if n.admin != nil {
 			firewall.SetupAdminHandlers(n.admin, rwc.Firewall)
+		}
+		if n.admin != nil {
+			n.invites = invite.New(cfg.Certificate, publicKey, cfg.InvitePort, inviteGrant(cfg, publicKey), logger)
+			invite.SetupAdminHandlers(n.admin, n.invites)
 		}
 		if n.tun, err = tun.New(rwc, logger, options...); err != nil {
 			n.stop()
