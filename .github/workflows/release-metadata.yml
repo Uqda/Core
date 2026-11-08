@@ -22,3 +22,4 @@ jobs:
         with:
           name: release-metadata
           path: release-metadata.json
+          retention-days: 14

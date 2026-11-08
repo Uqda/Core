@@ -63,3 +63,4 @@ jobs:
           path: ${{ runner.temp }}/uqda-image.oci.tar
           if-no-files-found: error
           compression-level: 0
+          retention-days: 14

@@ -101,6 +101,7 @@ jobs:
           name: Portable Linux (${{ matrix.arch }})
           path: "uqda-*-linux-${{ matrix.arch }}.tar.gz"
           if-no-files-found: error
+          retention-days: 14
 
   homebrew-cask-smoke:
     name: Homebrew cask lifecycle (${{ matrix.runner }})
@@ -159,6 +160,7 @@ jobs:
           name: Vendored sources
           path: "*.tar.gz"
           if-no-files-found: error
+          retention-days: 14
 
   build-packages-debian:
     strategy:
@@ -204,6 +206,7 @@ jobs:
           name: Debian package (${{ matrix.pkgarch }})
           path: "*.deb"
           if-no-files-found: error
+          retention-days: 14
 
   build-packages-macos:
     strategy:
@@ -265,6 +268,7 @@ jobs:
           name: macOS package (${{ matrix.pkgarch }})
           path: "*.pkg"
           if-no-files-found: error
+          retention-days: 14
 
   build-packages-windows:
     strategy:
@@ -336,6 +340,7 @@ jobs:
           name: Windows package (${{ matrix.pkgarch }})
           path: "*.msi"
           if-no-files-found: error
+          retention-days: 14
 
   build-mobile-android:
     name: Mobile package (Android AAR)
@@ -365,6 +370,7 @@ jobs:
           name: Android AAR
           path: "uqda-*-android.aar"
           if-no-files-found: error
+          retention-days: 14
 
   build-mobile-apple:
     name: Mobile package (Apple XCFramework)
@@ -395,3 +401,4 @@ jobs:
           name: Apple XCFramework
           path: "uqda-*-apple-xcframework.zip"
           if-no-files-found: error
+          retention-days: 14

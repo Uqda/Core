@@ -77,6 +77,7 @@ jobs:
         with:
           name: uqda-dashboard-screenshots-${{ matrix.runner }}
           path: ${{ runner.temp }}/uqda-screenshots
+          retention-days: 14
 
   image:
     name: Build multiarchitecture wrapper
@@ -149,6 +150,7 @@ jobs:
         with:
           name: uqda-umbrel-image
           path: ${{ runner.temp }}/uqda-umbrel-image.txt
+          retention-days: 14
       - name: Export digest-pinned community store
         if: github.event_name == 'push' && github.repository == 'Uqda/Core' && steps.version.outputs.candidate != 'true'
         run: |
@@ -160,3 +162,4 @@ jobs:
         with:
           name: uqda-umbrel-store
           path: ${{ runner.temp }}/uqda-umbrel-store.zip
+          retention-days: 14
