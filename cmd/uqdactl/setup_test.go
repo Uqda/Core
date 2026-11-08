@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -71,7 +72,9 @@ func TestSetupCreatesPrivateNodeWithFirewallAndPeers(t *testing.T) {
 	if !cfg.Firewall.Enabled || len(cfg.Peers) != 2 {
 		t.Fatalf("expected firewall and 2 peers, got firewall=%v peers=%v", cfg.Firewall.Enabled, cfg.Peers)
 	}
-	if info, err := os.Stat(path); err == nil && info.Mode().Perm()&0o077 != 0 {
+	// Unix permission bits are not meaningful on Windows, where the
+	// installer's directory ACLs protect the file.
+	if info, err := os.Stat(path); err == nil && runtime.GOOS != "windows" && info.Mode().Perm()&0o077 != 0 {
 		t.Fatalf("configuration is readable by others: %v", info.Mode())
 	}
 	if !strings.Contains(strings.Join(res.Next, " "), "uqda invite") {
