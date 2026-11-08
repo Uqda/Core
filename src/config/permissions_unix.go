@@ -8,10 +8,10 @@ import "os"
 // permission bits reflect real Unix-style file permissions.
 const permissionCheckMeaningful = true
 
-// filePermissionsAreUnsafe reports whether mode grants any access
-// (read, write, or execute) to group or other - a sensitive file such as
-// a private key or a config file embedding one should be readable only by
-// its owner.
+// filePermissionsAreUnsafe reports whether mode grants access to other
+// users, or lets the group change or execute the file. Group read alone is
+// allowed: packages store uqda.conf as root:uqda 0640 so that the service's
+// dedicated group can read it, the same pattern as /etc/shadow.
 func filePermissionsAreUnsafe(mode os.FileMode) bool {
-	return mode.Perm()&0o077 != 0
+	return mode.Perm()&0o037 != 0
 }
