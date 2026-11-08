@@ -170,6 +170,26 @@ cat > wix.xml << EOF
               KeyPath="yes"/>
           </Component>
 
+          <!-- Put uqda.exe and uqdactl.exe on the system PATH so "uqda status"
+               works in a new terminal; removed again on uninstall. -->
+          <Component Id="PathEntry" Guid="383c00ea-e167-41be-aa1e-6748cfc87b29">
+            <Environment
+              Id="UqdaPath"
+              Name="PATH"
+              Value="[UqdaInstallFolder]"
+              Permanent="no"
+              Part="last"
+              Action="set"
+              System="yes" />
+            <RegistryValue
+              Root="HKLM"
+              Key="Software\Uqda"
+              Name="PathEntry"
+              Type="integer"
+              Value="1"
+              KeyPath="yes" />
+          </Component>
+
           <Component Id="ConfigScript" Guid="145c5c70-2cc5-45c5-adc3-0a9b4dc2cdf5">
             <File
               Id="Configbat"
@@ -186,6 +206,7 @@ cat > wix.xml << EOF
       <ComponentRef Id="MainExecutable" />
       <ComponentRef Id="CtrlExecutable" />
       <ComponentRef Id="ConfigScript" />
+      <ComponentRef Id="PathEntry" />
     </Feature>
 
     <CustomAction

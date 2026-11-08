@@ -1,8 +1,8 @@
 cask "uqda" do
   arch arm: "arm64", intel: "amd64"
-  version "26.0.5"
-  sha256 arm:   "a33059c14babd23baa4f24aa0c907d47d2f1eeeacab792707f880880d32cc2e9",
-         intel: "c86078e58498353e5858bc3008a38642e502dd22c5f9a72caa3a7a20cccac1a2"
+  version "26.1.0"
+  sha256 arm:   "434faf1b782865d587e4e6337cfc1faa52e7956415843317555625c92d8434d9",
+         intel: "62d31ed664e78305cbf7e5a64402ff2946a8d6a6d3ee40eace3b36d39aab64b4"
   url "https://github.com/Uqda/Core/releases/download/v#{version}/uqda-#{version}-macos-#{arch}.pkg"
 
   name "Uqda Core"
@@ -14,7 +14,6 @@ cask "uqda" do
   uninstall launchctl: "io.github.uqda.core",
             pkgutil:   "io.github.uqda.core"
 
-  # The identity is deliberately retained by a normal uninstall.
-  # --zap explicitly discards it and its logs.
+  # A normal uninstall retains the node identity.
   zap delete: ["/etc/uqda", "/Library/Logs/Uqda"]
 end

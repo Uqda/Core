@@ -123,8 +123,10 @@ jobs:
           # have passed validation and are published. Do not compare it to a
           # newer, not-yet-released source version.
           CASK_VERSION=$(brew info --cask --json=v2 uqda/ci/uqda | python3 -c 'import json,sys; print(json.load(sys.stdin)["casks"][0]["version"])')
-          test "$(/usr/local/bin/uqda --version)" = "Uqda Core $CASK_VERSION"
-          test "$(/usr/local/bin/uqdactl version)" = "Uqda Core $CASK_VERSION"
+          # Releases display without trailing .0 fields: 26.1.0 is "Uqda Core 26.1".
+          CASK_DISPLAY=$(printf '%s' "$CASK_VERSION" | sed -E 's/\.0$//; s/\.0$//')
+          test "$(/usr/local/bin/uqda --version)" = "Uqda Core $CASK_DISPLAY"
+          test "$(/usr/local/bin/uqdactl version)" = "Uqda Core $CASK_DISPLAY"
           sudo /usr/local/bin/uqda -useconffile /etc/uqda/uqda.conf -checkconf
           IDENTITY=$(sudo shasum -a 256 /etc/uqda/uqda.conf)
           brew reinstall --cask uqda/ci/uqda
@@ -321,6 +323,9 @@ jobs:
           $installRoot = if ('${{ matrix.pkgarch }}' -eq 'x86') { ${env:ProgramFiles(x86)} } else { $env:ProgramFiles }
           $uqda = Join-Path $installRoot 'Uqda\uqda.exe'
           $config = Join-Path $env:ProgramData 'Uqda\uqda.conf'
+          $installDir = (Split-Path $uqda).TrimEnd('\')
+          $machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine') -split ';' | ForEach-Object { $_.TrimEnd('\') }
+          if ($machinePath -notcontains $installDir) { throw "Install folder $installDir is not on the system PATH" }
           $rule = Get-NetFirewallRule -DisplayName 'Uqda (local network)' -ErrorAction SilentlyContinue
           if (-not $rule) { throw 'Installer did not add the Uqda local-network firewall rule' }
           if (($rule | Get-NetFirewallAddressFilter).RemoteAddress -notcontains 'LocalSubnet') { throw 'Firewall rule is not limited to the local subnet' }
@@ -338,6 +343,8 @@ jobs:
           if (Test-Path $uqda) { throw 'MSI removal left the executable installed' }
           if (Get-NetFirewallRule -DisplayName 'Uqda (local network)' -ErrorAction SilentlyContinue) { throw 'MSI removal left the firewall rule' }
           if (-not (Test-Path $config)) { throw 'MSI removal deleted the persistent identity' }
+          $machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine') -split ';' | ForEach-Object { $_.TrimEnd('\') }
+          if ($machinePath -contains $installDir) { throw 'MSI removal left the install folder on the system PATH' }
 
       - name: Upload artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
