@@ -123,8 +123,10 @@ jobs:
           # have passed validation and are published. Do not compare it to a
           # newer, not-yet-released source version.
           CASK_VERSION=$(brew info --cask --json=v2 uqda/ci/uqda | python3 -c 'import json,sys; print(json.load(sys.stdin)["casks"][0]["version"])')
-          test "$(/usr/local/bin/uqda --version)" = "Uqda Core $CASK_VERSION"
-          test "$(/usr/local/bin/uqdactl version)" = "Uqda Core $CASK_VERSION"
+          # Releases display without trailing .0 fields: 26.1.0 is "Uqda Core 26.1".
+          CASK_DISPLAY=$(printf '%s' "$CASK_VERSION" | sed -E 's/\.0$//; s/\.0$//')
+          test "$(/usr/local/bin/uqda --version)" = "Uqda Core $CASK_DISPLAY"
+          test "$(/usr/local/bin/uqdactl version)" = "Uqda Core $CASK_DISPLAY"
           sudo /usr/local/bin/uqda -useconffile /etc/uqda/uqda.conf -checkconf
           IDENTITY=$(sudo shasum -a 256 /etc/uqda/uqda.conf)
           brew reinstall --cask uqda/ci/uqda
