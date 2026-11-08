@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Uqda/Core/src/admin"
+	"github.com/Uqda/Core/src/firewall"
 	"github.com/Uqda/Core/src/tun"
 )
 
@@ -147,6 +148,24 @@ func diagnoseNode(endpoint string) doctorReport {
 	} else {
 		report.Checks = append(report.Checks, doctorCheck{Name: "Interface", Status: "pass", Detail: "TUN is enabled."})
 	}
+
+	var fw firewall.Status
+	if err := doctorRequest(endpoint, "getFirewall", &fw); err != nil {
+		// Daemons older than the firewall do not offer getFirewall.
+		if !strings.Contains(err.Error(), "unknown action") {
+			report.Checks = append(report.Checks, doctorCheck{
+				Name: "Firewall", Status: "warn", Detail: "Could not read the firewall state.",
+				Hint: "Run uqda firewall and inspect the daemon log.",
+			})
+		}
+	} else if !fw.Enabled {
+		report.Checks = append(report.Checks, doctorCheck{
+			Name: "Firewall", Status: "warn", Detail: "Inbound firewall is off: any node that can reach your address can reach its services.",
+			Hint: "Add Firewall: { Enabled: true, AllowPing: true, Rules: [] } to uqda.conf, allow the services you need, then restart Uqda.",
+		})
+	} else {
+		report.Checks = append(report.Checks, doctorCheck{Name: "Firewall", Status: "pass", Detail: fmt.Sprintf("Inbound firewall is on with %d rule(s).", len(fw.Rules))})
+	}
 	return report
 }
 
@@ -181,7 +200,7 @@ func doctorRequest(endpoint, name string, result interface{}) error {
 		return err
 	}
 	if response.Status != "success" {
-		return fmt.Errorf("admin request failed")
+		return fmt.Errorf("admin request failed: %s", response.Error)
 	}
 	return json.Unmarshal(response.Response, result)
 }

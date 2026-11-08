@@ -157,6 +157,11 @@ class Supervisor:
             config.update(Peers=[], Listen=[], MulticastInterfaces=[],
                           GroupPassword=secrets.token_urlsafe(32), NodeInfoPrivacy=True,
                           IfName=self.tun_name, IfMTU=1280)
+            # On Umbrel the random private group is the access boundary, and
+            # reaching saved services from the owner's devices is the point of
+            # the app. Keep the overlay firewall off until the dashboard can
+            # manage its rules, so new installs behave like existing ones.
+            config["Firewall"] = {"Enabled": False, "AllowPing": True, "Rules": []}
         # The raw admin API is never placed in the dashboard's shared directory.
         config["AdminListen"] = "unix://" + str(self.admin_path)
         self.validate(config)

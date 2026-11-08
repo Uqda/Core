@@ -10,7 +10,7 @@ No independent external security audit is claimed.
 | Direct-peer handshake (`src/core/version.go`, `link.go`) | Bounded metadata fields, length checks, full reads and handshake deadline | No global cap on simultaneous handshakes |
 | Established peers (Ironwood) | Peer liveness deadlines and keepalives | Liveness does not prevent low-throughput connection hoarding |
 | Local discovery (`src/multicast/advertisement.go`) | Header and hash bounds checks | A valid advertisement is not evidence of a trusted operator |
-| Decrypted IPv6 (`src/ipv6rwc`) | Address/header processing before delivery to TUN | Host network stack and exposed services remain attack surfaces |
+| Decrypted IPv6 (`src/ipv6rwc`, `src/firewall`) | Address/header processing before delivery to TUN; stateful inbound firewall (default deny on new configurations) with rules by authenticated key, address or /64, protocol and port; fuzzed parser | Allowed services remain attack surfaces; existing configurations keep the firewall off until enabled. See [firewall](firewall.md) |
 | Admin API (`src/admin`) | Local defaults, Unix socket permissions, warning on non-loopback TCP | No authentication; local TCP is accessible to other local users |
 | Identity (`src/config`) | Unix permission warnings; Ansible vault files use 0600 | Warnings do not repair permissions; Windows ACLs require operator review |
 | Dependencies | Pinned module versions and vulnerability scanning | Scan results age and do not establish absence of vulnerabilities |

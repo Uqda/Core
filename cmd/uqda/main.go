@@ -23,6 +23,7 @@ import (
 	"github.com/Uqda/Core/src/address"
 	"github.com/Uqda/Core/src/admin"
 	"github.com/Uqda/Core/src/config"
+	"github.com/Uqda/Core/src/firewall"
 	"github.com/Uqda/Core/src/ipv6rwc"
 
 	"github.com/Uqda/Core/internal/cli"
@@ -154,6 +155,9 @@ func run() int {
 
 	case *genconf:
 		cfg.AdminListen = ""
+		// New nodes start with the inbound firewall on. Existing
+		// configurations without a Firewall section keep it off.
+		cfg.Firewall = config.DefaultFirewall()
 		var bs []byte
 		if *confjson {
 			bs, err = json.MarshalIndent(cfg, "", "  ")
@@ -345,7 +349,23 @@ func run() int {
 			tun.InterfaceName(cfg.IfName),
 			tun.InterfaceMTU(cfg.IfMTU),
 		}
-		if n.tun, err = tun.New(ipv6rwc.NewReadWriteCloser(n.core), logger, options...); err != nil {
+		rwc := ipv6rwc.NewReadWriteCloser(n.core)
+		fw, err := firewall.New(cfg.Firewall)
+		if err != nil {
+			n.stop()
+			logger.Errorln("Unable to start the firewall:", err)
+			return 1
+		}
+		rwc.SetFirewall(fw)
+		if fw == nil {
+			logger.Warnln("Inbound firewall is disabled: any node that can reach this address can reach its services. Set Firewall.Enabled in the configuration to restrict access.")
+		} else {
+			logger.Infof("Inbound firewall enabled with %d rule(s); ping %s", len(cfg.Firewall.Rules), map[bool]string{true: "allowed", false: "blocked"}[cfg.Firewall.AllowPing])
+		}
+		if n.admin != nil {
+			firewall.SetupAdminHandlers(n.admin, rwc.Firewall)
+		}
+		if n.tun, err = tun.New(rwc, logger, options...); err != nil {
 			n.stop()
 			logger.Errorln("Unable to start the TUN interface:", err)
 			return 1

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/net/icmp"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/Uqda/Core/src/address"
 	"github.com/Uqda/Core/src/core"
+	"github.com/Uqda/Core/src/firewall"
 )
 
 const keyStoreTimeout = 2 * time.Minute
@@ -32,6 +34,7 @@ type keyStore struct {
 	subnetToInfo map[address.Subnet]*keyInfo
 	subnetBuffer map[address.Subnet]*buffer
 	mtu          uint64
+	firewall     atomic.Pointer[firewall.Firewall]
 }
 
 type keyInfo struct {
@@ -223,9 +226,15 @@ func (k *keyStore) readPC(p []byte) (int, error) {
 		if dstAddr != k.address && dstSubnet != k.subnet {
 			continue // bad local address/subnet
 		}
-		info := k.update(ed25519.PublicKey(from.(iwt.Addr)))
+		fromKey := ed25519.PublicKey(from.(iwt.Addr))
+		info := k.update(fromKey)
 		if srcAddr != info.address && srcSubnet != info.subnet {
 			continue // bad remote address/subnet
+		}
+		// The source is now authenticated to fromKey, so the firewall can
+		// trust it when matching rules.
+		if fw := k.firewall.Load(); fw != nil && !fw.Inbound(bs, fromKey) {
+			continue
 		}
 		n = copy(p, bs)
 		return n, nil
@@ -255,6 +264,7 @@ func (k *keyStore) writePC(bs []byte) (int, error) {
 		strErr := fmt.Sprint("incorrect source address: ", net.IP(srcAddr[:]).String())
 		return 0, errors.New(strErr)
 	}
+	k.firewall.Load().Outbound(bs)
 	if dstAddr.IsValid() {
 		k.sendToAddress(dstAddr, bs)
 	} else if dstSubnet.IsValid() {
@@ -308,6 +318,17 @@ func (rwc *ReadWriteCloser) Address() address.Address {
 // Subnet returns the local Yggdrasil-compatible IPv6 subnet.
 func (rwc *ReadWriteCloser) Subnet() address.Subnet {
 	return rwc.subnet
+}
+
+// SetFirewall installs f as the inbound overlay firewall. A nil f removes it,
+// allowing all inbound traffic. It is safe to call while packets flow.
+func (rwc *ReadWriteCloser) SetFirewall(f *firewall.Firewall) {
+	rwc.firewall.Store(f)
+}
+
+// Firewall returns the installed firewall, or nil if none is installed.
+func (rwc *ReadWriteCloser) Firewall() *firewall.Firewall {
+	return rwc.firewall.Load()
 }
 
 func (rwc *ReadWriteCloser) Read(p []byte) (n int, err error) {

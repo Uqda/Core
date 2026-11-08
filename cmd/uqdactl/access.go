@@ -40,6 +40,8 @@ func accessHint(command, platform string, uid int) string {
 		example = "sudo uqda info"
 	case "getpeers", "peers":
 		example = "sudo uqda peers"
+	case "getfirewall", "firewall":
+		example = "sudo uqda firewall"
 	case "list", "commands":
 		example = "sudo uqda commands"
 	case "doctor":

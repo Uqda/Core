@@ -14,6 +14,7 @@ import (
 	"github.com/Uqda/Core/src/address"
 	"github.com/Uqda/Core/src/config"
 	"github.com/Uqda/Core/src/core"
+	"github.com/Uqda/Core/src/firewall"
 	"github.com/Uqda/Core/src/ipv6rwc"
 	"github.com/Uqda/Core/src/multicast"
 	"github.com/Uqda/Core/src/tun"
@@ -129,6 +130,13 @@ func (m *Uqda) StartJSON(configjson []byte) error {
 
 	mtu := m.config.IfMTU
 	m.iprwc = ipv6rwc.NewReadWriteCloser(m.core)
+	fw, err := firewall.New(m.config.Firewall)
+	if err != nil {
+		m.core.Stop()
+		m.core = nil
+		return fmt.Errorf("start firewall: %w", err)
+	}
+	m.iprwc.SetFirewall(fw)
 	if m.iprwc.MaxMTU() < mtu {
 		mtu = m.iprwc.MaxMTU()
 	}

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased (beta)
+
+- Inbound overlay firewall. New configurations from `-genconf` and the
+  installers drop unsolicited inbound traffic and allow replies to this node's
+  own connections, ping and ICMPv6 errors. Rules allow traffic by
+  authenticated public key, address or /64, protocol and port. Existing
+  configurations keep it off; `uqda status` warns until it is enabled.
+  `uqda firewall` and `uqdactl getFirewall` show rules and counters. The
+  mobile SDK applies the same configuration. Umbrel keeps it off for now.
+  See [firewall](docs/firewall.md).
+- Bound pending peer handshakes (256 per node, 8 per source) and admin API
+  resources (64 connections, 1 MiB requests, five-minute idle timeout).
+
 ## Uqda 26.0.5
 
 Release date: 2026-10-03. Machine version: `26.0.5`; tag: `v26.0.5`.
