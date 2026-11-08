@@ -1,6 +1,6 @@
 # Contributing
 
-Install Go 1.25 or newer, clone `Uqda/Core`, and run `./build` (`build.bat` on
+Install Go 1.26 or newer, clone `Uqda/Core`, and run `./build` (`build.bat` on
 Windows). Read the [architecture](docs/architecture.md), [compatibility contract](docs/compatibility.md)
 and [testing instructions](docs/testing.md).
 

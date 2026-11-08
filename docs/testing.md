@@ -1,6 +1,6 @@
 # Testing
 
-Run from the repository root with Go 1.25 or newer:
+Run from the repository root with Go 1.26 or newer:
 
 ```sh
 gofmt -w $(git ls-files '*.go')

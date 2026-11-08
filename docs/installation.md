@@ -5,7 +5,7 @@ adding devices in five steps. This page has the details for each system.
 
 Releases are published on [GitHub Releases](https://github.com/Uqda/Core/releases).
 Download an artifact and verify it against that release's `SHA256SUMS`, or build
-with Go 1.25 or newer using `./build` or `build.bat`. `uqda version` and
+with Go 1.26 or newer using `./build` or `build.bat`. `uqda version` and
 `uqdactl version` show the installed release. For everyday status, run `uqda`;
 see the [command guide](commands.md).
 
