@@ -11,6 +11,7 @@ import (
 	"github.com/Uqda/Core/src/address"
 	"github.com/Uqda/Core/src/config"
 	"github.com/Uqda/Core/src/core"
+	"github.com/Uqda/Core/src/firewall"
 )
 
 // validateConfig returns human-readable descriptions of configuration errors.
@@ -36,6 +37,8 @@ func validateConfig(cfg *config.NodeConfig) []string {
 			problems = append(problems, fmt.Sprintf("AllowedPublicKeys entry is %d bytes, expected %d", len(key), ed25519.PublicKeySize))
 		}
 	}
+
+	problems = append(problems, firewall.Validate(cfg.Firewall)...)
 
 	for _, raw := range cfg.Listen {
 		if err := validateListenURI(raw); err != nil {

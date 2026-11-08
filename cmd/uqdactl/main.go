@@ -20,6 +20,7 @@ import (
 	"github.com/Uqda/Core/internal/cli"
 	"github.com/Uqda/Core/src/admin"
 	"github.com/Uqda/Core/src/core"
+	"github.com/Uqda/Core/src/firewall"
 	"github.com/Uqda/Core/src/multicast"
 	"github.com/Uqda/Core/src/tun"
 	"github.com/Uqda/Core/src/version"
@@ -295,6 +296,33 @@ func run() int {
 			_ = table.Append([]string{"Interface name:", resp.Name})
 			_ = table.Append([]string{"Interface MTU:", fmt.Sprintf("%d", resp.MTU)})
 		}
+		_ = table.Render()
+
+	case "getfirewall":
+		var resp firewall.Status
+		if err := json.Unmarshal(recv.Response, &resp); err != nil {
+			return fail(logger, logbuffer, "decode getFirewall response: %v", err)
+		}
+		if !resp.Enabled {
+			_ = table.Append([]string{"Firewall:", "OFF - any node can reach services on this address"})
+			_ = table.Render()
+			break
+		}
+		_ = table.Append([]string{"Firewall:", "ON - unsolicited inbound traffic is dropped"})
+		_ = table.Append([]string{"Ping:", map[bool]string{true: "allowed", false: "blocked"}[resp.AllowPing]})
+		if len(resp.Rules) == 0 {
+			_ = table.Append([]string{"Rules:", "none (only replies to your own connections)"})
+		}
+		for i, rule := range resp.Rules {
+			label := ""
+			if i == 0 {
+				label = "Rules:"
+			}
+			_ = table.Append([]string{label, rule})
+		}
+		_ = table.Append([]string{"Active flows:", fmt.Sprintf("%d", resp.ActiveFlows)})
+		_ = table.Append([]string{"Allowed packets:", fmt.Sprintf("%d", resp.Allowed)})
+		_ = table.Append([]string{"Dropped packets:", fmt.Sprintf("%d", resp.Dropped)})
 		_ = table.Render()
 
 	case "addpeer", "removepeer":

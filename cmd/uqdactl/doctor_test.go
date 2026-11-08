@@ -30,12 +30,13 @@ func TestDoctorReportsHealthyNodeWithoutSensitivePeerData(t *testing.T) {
 				"up": true, "remote": "tls://node.example?password=secret", "last_error": "secret",
 			}},
 		},
-		"getTun": map[string]interface{}{"enabled": true, "name": "uqda0"},
+		"getTun":      map[string]interface{}{"enabled": true, "name": "uqda0"},
+		"getFirewall": map[string]interface{}{"enabled": true, "allow_ping": true, "rules": []string{"allow tcp port 22 from *"}},
 	})
 	defer stop()
 	report := diagnoseNode(endpoint)
-	if len(report.Checks) != 4 {
-		t.Fatalf("expected four checks, got %+v", report.Checks)
+	if len(report.Checks) != 5 {
+		t.Fatalf("expected five checks, got %+v", report.Checks)
 	}
 	for _, check := range report.Checks {
 		if check.Status != "pass" {
@@ -63,6 +64,42 @@ func TestDoctorReportsNoPeersAndRouterOnly(t *testing.T) {
 		t.Fatalf("expected actionable warnings: %+v", report.Checks)
 	}
 }
+
+func TestDoctorWarnsWhenFirewallIsOff(t *testing.T) {
+	endpoint, stop := startDoctorServer(t, map[string]interface{}{
+		"getSelf":     map[string]interface{}{"key": strings.Repeat("d", 64), "address": "200:1234::1"},
+		"getPeers":    map[string]interface{}{"peers": []interface{}{map[string]interface{}{"up": true}}},
+		"getTun":      map[string]interface{}{"enabled": true},
+		"getFirewall": map[string]interface{}{"enabled": false},
+	})
+	defer stop()
+	report := diagnoseNode(endpoint)
+	last := report.Checks[len(report.Checks)-1]
+	if last.Name != "Firewall" || last.Status != "warn" || !strings.Contains(last.Hint, "Firewall") {
+		t.Fatalf("expected a firewall warning with a fix: %+v", report.Checks)
+	}
+}
+
+func TestDoctorSkipsFirewallOnOlderDaemons(t *testing.T) {
+	endpoint, stop := startDoctorServer(t, map[string]interface{}{
+		"getSelf":     map[string]interface{}{"key": strings.Repeat("e", 64), "address": "200:1234::1"},
+		"getPeers":    map[string]interface{}{"peers": []interface{}{map[string]interface{}{"up": true}}},
+		"getTun":      map[string]interface{}{"enabled": true},
+		"getFirewall": errorReply("unknown action 'getfirewall', try 'list' for help"),
+	})
+	defer stop()
+	report := diagnoseNode(endpoint)
+	for _, check := range report.Checks {
+		if check.Name == "Firewall" {
+			t.Fatalf("older daemons without getFirewall should not get a firewall check: %+v", report.Checks)
+		}
+	}
+	if len(report.Checks) != 4 {
+		t.Fatalf("expected the four original checks: %+v", report.Checks)
+	}
+}
+
+type errorReply string
 
 func TestDoctorRetriesWhileAdminSocketStarts(t *testing.T) {
 	attempts := 0
@@ -120,6 +157,10 @@ func startDoctorServer(t *testing.T, replies map[string]interface{}) (string, fu
 				}
 				payload, ok := replies[request.Name]
 				if !ok {
+					return
+				}
+				if message, ok := payload.(errorReply); ok {
+					_ = json.NewEncoder(conn).Encode(admin.AdminSocketResponse{Status: "error", Error: string(message)})
 					return
 				}
 				if responder, ok := payload.(func() interface{}); ok {

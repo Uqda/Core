@@ -86,6 +86,7 @@ var commandGuide = []guideEntry{
 	{"status", "uqda [status|doctor]", "Read-only health checks: daemon, identity, peers and TUN interface. status and doctor are aliases. Example: uqda status --json."},
 	{"peers", "uqda peers", "Show direct connections, traffic and latency. Example: uqda peers --json. The raw admin equivalent is uqdactl getPeers; sort=uptime or sort=cost changes ordering."},
 	{"info", "uqda info", "Show your IPv6 address, subnet and public key. The admin equivalent is uqdactl getSelf."},
+	{"firewall", "uqda firewall", "Show whether the inbound firewall is on, its allow rules, active flows and allowed/dropped packet counts. The admin equivalent is uqdactl getFirewall. Rules live in the Firewall section of uqda.conf; restart the daemon after editing them."},
 	{"test", "uqda test IP [count=N] [idle=DURATION]", "Probe overlay reachability. count is 1..20 (default 5); idle is 0s..5m. Example: uqda test 200:1234::1 count=10 idle=75s. Use count=10, not --count=10. Requires TUN and an OS ping utility. Timings include process startup, not just network RTT."},
 	{"version", "uqda version", "Show the installed release without contacting the daemon. uqdactl version shows its own installed release."},
 	{"commands", "uqda commands / uqdactl list", "Discover the running daemon's supported operations and parameter names. Custom or disabled components may change this list."},
@@ -123,7 +124,7 @@ var lifecycleGuide = []guideEntry{
 }
 
 func HelpTopic(w io.Writer, program, release, topic string) bool {
-	aliases := map[string]string{"doctor": "status", "getself": "info", "getpeers": "peers", "list": "commands"}
+	aliases := map[string]string{"doctor": "status", "getself": "info", "getpeers": "peers", "getfirewall": "firewall", "list": "commands"}
 	if name, ok := aliases[strings.ToLower(topic)]; ok {
 		topic = name
 	}

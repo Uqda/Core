@@ -55,7 +55,7 @@ gaps are mostly in *usability and control*, not in core encryption.
 
 ## Priority 2: what makes the network useful day to day
 
-6. **Node firewall / access rules.** Filter decrypted traffic at `ipv6rwc` by
+6. **Node firewall / access rules.** *Done: see [firewall](firewall.md).* Filter decrypted traffic at `ipv6rwc` by
    remote public key, protocol and port before it reaches TUN, for example
    "only these three keys may reach port 22". This is the most requested
    professional feature, and it is entirely local, so there is no wire change.
@@ -85,6 +85,8 @@ gaps are mostly in *usability and control*, not in core encryption.
     would break wire compatibility, so it cannot ship unilaterally. *Research.*
 
 ## Done in this review
+
+- Stateful inbound firewall, on by default for new nodes ([firewall](firewall.md)).
 
 - Bounded pending inbound handshakes (256 per node, 8 per source) and admin API
   resources (64 connections, 1 MiB per request, five-minute idle timeout).

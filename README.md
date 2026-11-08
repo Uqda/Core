@@ -24,6 +24,8 @@ an acronym. A network node connects to other nodes and may forward traffic.
 - Local administration through `uqdactl` and the admin socket.
 - One-command local health checks with `uqdactl doctor` (or `uqdactl status`).
 - Active remote reachability and loss checks with `uqdactl test <Uqda IPv6>`.
+- A stateful inbound firewall, on by default for new nodes: only replies to
+  your own connections and the services you allow get in. See [firewall](docs/firewall.md).
 - Configuration validation with `-checkconf`, Unix key-permission warnings,
   non-local admin exposure warnings and jittered peer reconnect delays.
 
@@ -102,7 +104,7 @@ Report vulnerabilities privately using [SECURITY](SECURITY.md).
 - [Architecture](docs/architecture.md)
 - [Configuration](docs/configuration.md) and [installation](docs/installation.md)
 - [Compatibility](docs/compatibility.md) and [mobile API](docs/mobile.md)
-- [Security model](docs/security.md)
+- [Security model](docs/security.md) and [inbound firewall](docs/firewall.md)
 - [Doctor health check](docs/doctor.md)
 - [Testing](docs/testing.md) and [contributing](CONTRIBUTING.md)
 - [Packaging](docs/packaging.md) and [release conventions](docs/releasing.md)

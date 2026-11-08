@@ -10,15 +10,16 @@ No independent external security audit is claimed.
 | Direct-peer handshake (`src/core/version.go`, `link.go`, `link_limits.go`) | Bounded metadata fields, length checks, full reads, handshake deadline; at most 256 pending inbound handshakes per node and 8 per source (IPv4 address or IPv6 /64), excess connections closed immediately | Distributed floods from many sources can still occupy the global slots and delay new legitimate peerings; the handshake signature is not bound to a fresh challenge (see below) |
 | Established peers (Ironwood) | Peer liveness deadlines and keepalives | Liveness does not prevent low-throughput connection hoarding |
 | Local discovery (`src/multicast/advertisement.go`) | Header and hash bounds checks | A valid advertisement is not evidence of a trusted operator |
-| Decrypted IPv6 (`src/ipv6rwc`) | Address/header processing before delivery to TUN | Host network stack and exposed services remain attack surfaces |
+| Decrypted IPv6 (`src/ipv6rwc`, `src/firewall`) | Address/header processing before delivery to TUN; stateful inbound firewall (default deny on new configurations) with rules by authenticated key, address or /64, protocol and port; fuzzed parser | Allowed services remain attack surfaces; existing configurations keep the firewall off until enabled. See [firewall](firewall.md) |
 | Admin API (`src/admin`) | Local defaults, Unix socket permissions, warning on non-loopback TCP; at most 64 concurrent connections, 1 MiB per request and a five-minute idle timeout | No authentication; local TCP is accessible to other local users |
 | Identity (`src/config`) | Unix permission warnings; Ansible vault files use 0600 | Warnings do not repair permissions; Windows ACLs require operator review |
 | Dependencies | Pinned module versions and vulnerability scanning | Scan results age and do not establish absence of vulnerabilities |
 | Logs and diagnostics | Admin response types expose public identifiers and connection data | Logs/configuration exports need careful handling; no exhaustive logging audit is claimed |
 
-`FuzzVersionMetadataDecode` and `FuzzMulticastAdvertisementUnmarshalBinary`
-exercise the two local binary parsers. See [testing](testing.md) for commands.
-The IPv6 payload surface does not have equivalent fuzz coverage in this tree.
+`FuzzVersionMetadataDecode`, `FuzzMulticastAdvertisementUnmarshalBinary` and the
+firewall's `FuzzParse` exercise the local binary parsers. See [testing](testing.md) for commands.
+The firewall parser covers IPv6 and extension headers; the rest of the decrypted
+IPv6 path (`src/ipv6rwc`) does not yet have its own fuzz target.
 
 Ironwood manages read deadlines on established links. Adding a second deadline
 manager on the same `net.Conn` can overwrite its deadlines. Configure and test

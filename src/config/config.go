@@ -34,13 +34,34 @@ type NodeConfig struct {
 	Listen              []string                   `comment:"Listen addresses for incoming connections. You will need to add\nlisteners in order to accept incoming peerings from non-local nodes.\nThis is not required if you wish to establish outbound peerings only.\nMulticast peer discovery will work regardless of any listeners set\nhere. Each listener should be specified in URI format as above, e.g.\ntls://0.0.0.0:0 or tls://[::]:0 to listen on all interfaces."`
 	AdminListen         string                     `json:",omitempty" comment:"Listen address for admin connections. Default is to listen for local\nconnections either on TCP/9001 or a UNIX socket depending on your\nplatform. Use this value for uqdactl -endpoint=X. To disable\nthe admin socket, use the value \"none\" instead."`
 	MulticastInterfaces []MulticastInterfaceConfig `comment:"Configuration for which interfaces multicast peer discovery should be\nenabled on. Regex is a regular expression which is matched against an\ninterface name, and interfaces use the first configuration that they\nmatch against. Beacon controls whether or not your node advertises its\npresence to others, whereas Listen controls whether or not your node\nlistens out for and tries to connect to other advertising nodes. See\nhttps://yggdrasil-network.github.io/configurationref.html#multicastinterfaces\nfor more supported options."`
-	AllowedPublicKeys   []string                   `comment:"List of peer public keys to allow incoming peering connections\nfrom. If left empty/undefined then all connections will be allowed\nby default. This does not affect outgoing peerings, nor does it\naffect link-local peers discovered via multicast.\nWARNING: THIS IS NOT A FIREWALL and DOES NOT limit who can reach\nopen ports or services running on your machine, for that see the\nGroupPassword option below."`
+	AllowedPublicKeys   []string                   `comment:"List of peer public keys to allow incoming peering connections\nfrom. If left empty/undefined then all connections will be allowed\nby default. This does not affect outgoing peerings, nor does it\naffect link-local peers discovered via multicast.\nWARNING: THIS IS NOT A FIREWALL and DOES NOT limit who can reach\nopen ports or services running on your machine; for that see the\nFirewall and GroupPassword options below."`
 	GroupPassword       string                     `comment:"Traffic is only allowed to/from nodes with the same group password.\nIf you want to form a private sub-network or ensure that other public\nusers cannot connect to your machines, choose a strong group password\nand then configure the same password only with other group members.\nIf left empty or not specified, public connectivity will be permitted.\nIf specified, you WILL NOT be able to reach public services or hosts.\nThis option DOES NOT affect peering connections or traffic routing."`
 	IfName              string                     `comment:"Local network interface name for TUN adapter, or \"auto\" to select\nan interface automatically, or \"none\" to run without TUN."`
 	IfMTU               uint64                     `comment:"Maximum Transmission Unit (MTU) size for your local TUN interface.\nDefault is the largest supported size for your platform. The lowest\npossible value is 1280."`
 	LogLookups          bool                       `json:",omitempty"`
 	NodeInfoPrivacy     bool                       `comment:"By default, nodeinfo contains some defaults including the platform,\narchitecture and Uqda build version. These can help when surveying\nthe network and diagnosing network routing problems. Enabling\nnodeinfo privacy prevents this, so that only items specified in\n\"NodeInfo\" are sent back if specified."`
 	NodeInfo            map[string]interface{}     `comment:"Optional nodeinfo. This must be a { \"key\": \"value\", ... } map\nor set as null. This is entirely optional but, if set, is visible\nto the whole network on request."`
+	Firewall            FirewallConfig             `comment:"Inbound firewall for traffic arriving over the Uqda network. When\nenabled, replies to connections this node opened are always allowed and\nany other inbound traffic is dropped unless a rule below allows it.\nWithout it, every service listening on your Uqda address is reachable\nby any node that can route to you. New configurations enable it."`
+}
+
+// FirewallConfig controls the inbound overlay firewall.
+type FirewallConfig struct {
+	Enabled   bool           `comment:"Drop unsolicited inbound traffic that no rule allows."`
+	AllowPing bool           `comment:"Answer ICMPv6 echo requests (ping) from any node."`
+	Rules     []FirewallRule `comment:"Inbound allow rules, for example:\n{ Sources: [\"200:1234::1\"], Protocol: \"tcp\", Ports: [\"22\"], Comment: \"laptop SSH\" }\nSources are public keys in hex, Uqda addresses, /64 subnets or \"*\".\nProtocol is tcp, udp, icmp or any. Ports are numbers or ranges such\nas \"8000-8100\"; leave them out to allow every port."`
+}
+
+// FirewallRule allows inbound traffic from some sources to some ports.
+type FirewallRule struct {
+	Sources  []string
+	Protocol string
+	Ports    []string `json:",omitempty"`
+	Comment  string   `json:",omitempty"`
+}
+
+// DefaultFirewall is the firewall written into newly generated configurations.
+func DefaultFirewall() FirewallConfig {
+	return FirewallConfig{Enabled: true, AllowPing: true, Rules: []FirewallRule{}}
 }
 
 // MulticastInterfaceConfig controls discovery on matching network interfaces.

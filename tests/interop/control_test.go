@@ -92,9 +92,12 @@ func TestControlCLIWithLiveDaemon(t *testing.T) {
 		if err := json.Unmarshal(output, &report); err != nil {
 			t.Fatalf("invalid doctor JSON: %v\n%s", err, output)
 		}
-		if len(report.Checks) != 4 || report.Checks[0].Status != "pass" ||
+		// Daemon and identity pass; no peers, no TUN and a configuration
+		// without a Firewall section (firewall off) each warn.
+		if len(report.Checks) != 5 || report.Checks[0].Status != "pass" ||
 			report.Checks[1].Status != "pass" || report.Checks[2].Status != "warn" ||
-			report.Checks[3].Status != "warn" {
+			report.Checks[3].Status != "warn" || report.Checks[4].Name != "Firewall" ||
+			report.Checks[4].Status != "warn" {
 			t.Fatalf("unexpected doctor checks: %+v", report.Checks)
 		}
 	})
