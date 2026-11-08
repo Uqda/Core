@@ -2,8 +2,13 @@
 
 ## Start here
 
+- [How Uqda works](how-it-works.md): a network made only of nodes; identity, routing and encryption.
 - [Getting started](getting-started.md): install, set up, add devices, reach a service.
 - [Public network and private groups](networks.md): how the two modes work and which to choose.
+
+## Building on Uqda
+
+- [Build on Uqda](build-on-uqda.md): host websites and services, use addresses as identity, write tools and apps.
 
 ## Using Uqda
 
