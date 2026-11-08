@@ -81,7 +81,7 @@ func connClosedSoon(conn net.Conn, d time.Duration) bool {
 	for {
 		if _, err := conn.Read(buf); err != nil {
 			ne, ok := err.(net.Error)
-			return !(ok && ne.Timeout())
+			return !ok || !ne.Timeout()
 		}
 	}
 }
