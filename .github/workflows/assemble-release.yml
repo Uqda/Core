@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing validated final Core tag
+        description: Existing validated Core tag (vX.Y.Z, or vX.Y-beta.N for a prerelease)
         required: true
         type: string
       package_run:
@@ -48,7 +48,9 @@ jobs:
           def gh(endpoint):
               return json.loads(subprocess.check_output(['gh', 'api', endpoint], text=True))
           tag = os.environ['RELEASE_TAG']
-          assert re.fullmatch(r'v\d+\.\d+\.\d+', tag)
+          # Final releases are vX.Y.Z; prereleases follow the beta convention vX.Y-beta.N.
+          is_beta = re.fullmatch(r'v\d+\.\d+-beta\.[1-9]\d*', tag) is not None
+          assert is_beta or re.fullmatch(r'v\d+\.\d+\.\d+', tag)
           assert all(re.fullmatch(r'[1-9]\d*', os.environ[key]) for key in ['PACKAGE_RUN', 'OCI_RUN', 'RELEASE_ID'])
           revision = subprocess.check_output(['git', 'rev-parse', tag + '^{commit}'], text=True).strip()
           version = subprocess.check_output(['git', 'show', tag + ':src/version/VERSION'], text=True).strip()
@@ -58,7 +60,8 @@ jobs:
               assert run['conclusion'] == 'success' and run['head_sha'] == revision
               assert run['repository']['full_name'] == 'Uqda/Core' and run['path'] == workflow
           release = gh('repos/Uqda/Core/releases/' + os.environ['RELEASE_ID'])
-          assert release['draft'] and release['tag_name'] == tag and not release['prerelease']
+          # A beta tag must be a prerelease draft, and a final tag must not be.
+          assert release['draft'] and release['tag_name'] == tag and release['prerelease'] == is_beta
           print('Verified successful input runs, exact source tag and existing draft')
           PY
       - name: Download successful tag artifacts inside GitHub
