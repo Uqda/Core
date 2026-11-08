@@ -2,6 +2,8 @@ version: 2
 updates:
   - package-ecosystem: gomod
     directory: /
+    # New work lands on beta; main only receives tested beta merges.
+    target-branch: beta
     schedule:
       interval: weekly
       day: monday
@@ -13,6 +15,8 @@ updates:
 
   - package-ecosystem: github-actions
     directory: /
+    # New work lands on beta; main only receives tested beta merges.
+    target-branch: beta
     schedule:
       interval: weekly
       day: monday

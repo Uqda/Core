@@ -4,7 +4,7 @@ on:
   pull_request:
     paths: ['contrib/umbrel/**', 'tests/umbrel/**', 'uqda-network/**', 'umbrel-app-store.yml', '.github/workflows/umbrel.yml']
   push:
-    branches: [main, codex/umbrel-uqda]
+    branches: [main]
     paths: ['contrib/umbrel/**', 'tests/umbrel/**', 'uqda-network/**', 'umbrel-app-store.yml', '.github/workflows/umbrel.yml']
   workflow_dispatch:
 

@@ -2,7 +2,7 @@ name: Umbrel platform validation
 on:
   workflow_dispatch:
   push:
-    branches: [codex/umbrel-uqda]
+    branches: [beta]
     paths: ['.github/workflows/umbrel-platform.yml', 'tests/umbrel/**', 'contrib/umbrel/**', 'uqda-network/**']
 permissions:
   contents: read

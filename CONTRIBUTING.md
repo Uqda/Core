@@ -8,6 +8,7 @@ Use `gofmt`, add regression coverage for behavioral fixes, and run build, vet,
 tests and vulnerability scanning. Preserve wire compatibility, identity and
 upstream attribution. Describe the user-visible problem, behavior change and
 actual validation in pull requests; distinguish authored tests from executed tests.
+Open pull requests against `beta`, never `main`; see [branching](docs/branching.md).
 Report security issues privately as described in [SECURITY](SECURITY.md).
 
 Use Uqda for the product and عُقدة in Arabic prose; Yggdrasil refers to the
