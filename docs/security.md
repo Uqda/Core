@@ -7,11 +7,11 @@ No independent external security audit is claimed.
 
 | Boundary | Controls | Remaining exposure |
 |---|---|---|
-| Direct-peer handshake (`src/core/version.go`, `link.go`) | Bounded metadata fields, length checks, full reads and handshake deadline | No global cap on simultaneous handshakes |
+| Direct-peer handshake (`src/core/version.go`, `link.go`, `link_limits.go`) | Bounded metadata fields, length checks, full reads, handshake deadline; at most 256 pending inbound handshakes per node and 8 per source (IPv4 address or IPv6 /64), excess connections closed immediately | Distributed floods from many sources can still occupy the global slots and delay new legitimate peerings; the handshake signature is not bound to a fresh challenge (see below) |
 | Established peers (Ironwood) | Peer liveness deadlines and keepalives | Liveness does not prevent low-throughput connection hoarding |
 | Local discovery (`src/multicast/advertisement.go`) | Header and hash bounds checks | A valid advertisement is not evidence of a trusted operator |
 | Decrypted IPv6 (`src/ipv6rwc`) | Address/header processing before delivery to TUN | Host network stack and exposed services remain attack surfaces |
-| Admin API (`src/admin`) | Local defaults, Unix socket permissions, warning on non-loopback TCP | No authentication; local TCP is accessible to other local users |
+| Admin API (`src/admin`) | Local defaults, Unix socket permissions, warning on non-loopback TCP; at most 64 concurrent connections, 1 MiB per request and a five-minute idle timeout | No authentication; local TCP is accessible to other local users |
 | Identity (`src/config`) | Unix permission warnings; Ansible vault files use 0600 | Warnings do not repair permissions; Windows ACLs require operator review |
 | Dependencies | Pinned module versions and vulnerability scanning | Scan results age and do not establish absence of vulnerabilities |
 | Logs and diagnostics | Admin response types expose public identifiers and connection data | Logs/configuration exports need careful handling; no exhaustive logging audit is claimed |
@@ -33,6 +33,14 @@ memory-constrained cost profile (64 MiB, three passes, four lanes). This is not 
 PAKE or a guarantee against offline guessing: use a random strong password. The
 shared protocol salt is deterministic, not unique to each group. Older private
 groups must migrate all members together; no weak legacy fallback is accepted.
+
+The peer handshake signs the node's public key (keyed by the link password),
+not a fresh per-connection challenge, which is inherited from the Yggdrasil wire
+format. Someone who records a handshake on an unencrypted `tcp://` link can replay
+it to open a transport link that claims that key, including past
+`AllowedPublicKeys`. They cannot decrypt or forge end-to-end sessions without the
+private key. Prefer `tls://` or `quic://` between known peers, and use a
+per-link `password` for restricted peerings.
 
 Protect configuration backups and external PEM keys as carefully as active keys.
 A stolen private key permits node impersonation. Keep the admin API local and
