@@ -43,7 +43,16 @@ type NodeConfig struct {
 	NodeInfo              map[string]interface{}     `comment:"Optional nodeinfo. This must be a { \"key\": \"value\", ... } map\nor set as null. This is entirely optional but, if set, is visible\nto the whole network on request."`
 	InvitePort            uint16                     `json:",omitempty" comment:"TCP port for redeeming invites from 'uqda invite' while one is active.\n0 (the default) picks a random port each time; set a fixed port if a\nhost firewall must allow it. The port is closed when no invite is active."`
 	RequireFreshHandshake bool                       `json:",omitempty" comment:"Reject peers that cannot prove possession of their key for each new\nconnection. Uqda nodes always do this with each other; Yggdrasil nodes and\nolder Uqda releases cannot, so enable it only for all-Uqda networks. It\nprevents a recorded handshake from being replayed to impersonate a peer."`
+	AutoPeers             AutoPeersConfig            `comment:"Keep this node connected to healthy public peers automatically. When\nfewer than Count outbound peers are up, Uqda adds the fastest reachable\npublic TLS peers in Country, replaces one it added if it stays down for\nfive minutes, and swaps one for a much faster peer on each check. Peers\nyou list in Peers are never removed. Uses the public peer catalog at\npublicpeers.neilalexander.dev, which sees your IP address when it is\nfetched, as do the peers being measured."`
 	Firewall              FirewallConfig             `comment:"Inbound firewall for traffic arriving over the Uqda network. When\nenabled, replies to connections this node opened are always allowed and\nany other inbound traffic is dropped unless a rule below allows it.\nWithout it, every service listening on your Uqda address is reachable\nby any node that can route to you. New configurations enable it."`
+}
+
+// AutoPeersConfig controls automatic public peer selection.
+type AutoPeersConfig struct {
+	Enabled  bool
+	Country  string `comment:"Catalog country name, for example germany. Run uqda find for the list."`
+	Count    int    `json:",omitempty" comment:"Wanted number of healthy outbound peers, 1 to 5 (default 2)."`
+	Interval string `json:",omitempty" comment:"How often to re-measure candidates, from 10m to 24h (default 30m)."`
 }
 
 // FirewallConfig controls the inbound overlay firewall.

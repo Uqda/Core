@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Uqda/Core/internal/autopeer"
 	"github.com/Uqda/Core/src/admin"
 	"github.com/Uqda/Core/src/firewall"
 	"github.com/Uqda/Core/src/tun"
@@ -165,6 +166,24 @@ func diagnoseNode(endpoint string) doctorReport {
 		})
 	} else {
 		report.Checks = append(report.Checks, doctorCheck{Name: "Firewall", Status: "pass", Detail: fmt.Sprintf("Inbound firewall is on with %d rule(s).", len(fw.Rules))})
+	}
+
+	// Automatic peers are optional; report them only when they are on.
+	var ap autopeer.Status
+	if err := doctorRequest(endpoint, "getAutoPeers", &ap); err == nil && ap.Enabled {
+		switch {
+		case ap.Healthy >= ap.Count:
+			report.Checks = append(report.Checks, doctorCheck{Name: "Auto peers", Status: "pass",
+				Detail: fmt.Sprintf("%d healthy outbound peer(s), target %d in %s.", ap.Healthy, ap.Count, ap.Country)})
+		case ap.LastError != "":
+			report.Checks = append(report.Checks, doctorCheck{Name: "Auto peers", Status: "warn",
+				Detail: fmt.Sprintf("%d of %d wanted peers are up, and the public peer list could not be refreshed.", ap.Healthy, ap.Count),
+				Hint:   "Check outbound HTTPS access to publicpeers.neilalexander.dev, or try another AutoPeers.Country (uqda find)."})
+		default:
+			report.Checks = append(report.Checks, doctorCheck{Name: "Auto peers", Status: "warn",
+				Detail: fmt.Sprintf("%d of %d wanted peers are up; Uqda is still connecting or replacing peers.", ap.Healthy, ap.Count),
+				Hint:   "Wait a few minutes and run uqda status again; peers that stay down are replaced after five minutes."})
+		}
 	}
 	return report
 }

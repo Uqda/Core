@@ -20,6 +20,7 @@ import (
 	"github.com/hjson/hjson-go/v4"
 	"github.com/kardianos/minwinsvc"
 
+	"github.com/Uqda/Core/internal/autopeer"
 	"github.com/Uqda/Core/src/address"
 	"github.com/Uqda/Core/src/admin"
 	"github.com/Uqda/Core/src/config"
@@ -39,10 +40,14 @@ type node struct {
 	tun       *tun.TunAdapter
 	multicast *multicast.Multicast
 	admin     *admin.AdminSocket
+	autoPeers context.CancelFunc
 	invites   *invite.Manager
 }
 
 func (n *node) stop() {
+	if n.autoPeers != nil {
+		n.autoPeers()
+	}
 	if n.invites != nil {
 		n.invites.Stop()
 	}
@@ -348,6 +353,23 @@ func run() int {
 		}
 		if n.admin != nil && n.multicast != nil {
 			n.multicast.SetupAdminHandlers(n.admin)
+		}
+	}
+
+	// Keep healthy public peers, if enabled.
+	{
+		apCfg, err := autoPeersConfig(cfg.AutoPeers)
+		if err != nil {
+			n.stop()
+			logger.Errorln("Unable to start automatic peers:", err)
+			return 1
+		}
+		var manager *autopeer.Manager
+		if cfg.AutoPeers.Enabled {
+			manager, n.autoPeers = startAutoPeers(apCfg, n.core, logger)
+		}
+		if n.admin != nil {
+			autopeer.SetupAdminHandlers(n.admin, manager)
 		}
 	}
 

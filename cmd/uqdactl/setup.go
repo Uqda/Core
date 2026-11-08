@@ -165,6 +165,16 @@ func executeSetup(ctx context.Context, args []string, inJSON bool, out, errOut i
 		} else {
 			result.Changes = append(result.Changes, fmt.Sprintf("added %d fast public peer(s) in %s", len(result.PeersAdded), opts.country))
 		}
+		// Keep that many healthy peers from now on: the daemon replaces a
+		// peer that goes down and moves to a much faster one when it appears.
+		if !cfg.AutoPeers.Enabled {
+			cfg.AutoPeers = config.AutoPeersConfig{Enabled: true, Country: opts.country, Count: opts.peers}
+			result.Changes = append(result.Changes, "turned on automatic peer selection, so peers that go down are replaced")
+			dirty = true
+		}
+	}
+	if len(cfg.Peers) > 0 && !cfg.AutoPeers.Enabled && opts.country != "" && opts.peers > 0 && len(result.PeersAdded) == 0 {
+		result.Next = append(result.Next, "to replace peers that go down automatically, add AutoPeers: { Enabled: true, Country: \""+opts.country+"\" } to the configuration")
 	}
 
 	if dirty {

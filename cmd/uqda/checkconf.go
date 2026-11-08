@@ -39,6 +39,9 @@ func validateConfig(cfg *config.NodeConfig) []string {
 	}
 
 	problems = append(problems, firewall.Validate(cfg.Firewall)...)
+	if _, err := autoPeersConfig(cfg.AutoPeers); err != nil {
+		problems = append(problems, err.Error())
+	}
 
 	for _, raw := range cfg.Listen {
 		if err := validateListenURI(raw); err != nil {

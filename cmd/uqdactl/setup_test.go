@@ -69,6 +69,9 @@ func TestSetupCreatesPrivateNodeWithFirewallAndPeers(t *testing.T) {
 	if !res.Created || res.Mode != "private" || len(cfg.GroupPassword) < 32 || res.GroupPassword != cfg.GroupPassword {
 		t.Fatalf("expected a new private node: %+v", res)
 	}
+	if !cfg.AutoPeers.Enabled || cfg.AutoPeers.Country != "germany" || cfg.AutoPeers.Count != 2 {
+		t.Fatalf("setup should turn on automatic peers for the chosen country: %+v", cfg.AutoPeers)
+	}
 	if !cfg.Firewall.Enabled || len(cfg.Peers) != 2 {
 		t.Fatalf("expected firewall and 2 peers, got firewall=%v peers=%v", cfg.Firewall.Enabled, cfg.Peers)
 	}
