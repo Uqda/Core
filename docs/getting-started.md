@@ -23,6 +23,12 @@ Check it worked:
 uqda version
 ```
 
+On Windows, open a **new** PowerShell window *as administrator* after
+installing, so it picks up the updated `PATH`. Releases up to 26.1 did not add
+Uqda to `PATH`; with those, use the full path instead:
+`& "C:\Program Files\Uqda\uqda.exe" status` (or `Program Files (x86)` for the
+x86 package).
+
 Every release lists `SHA256SUMS`; the Linux installer checks it for you. Details
 for each system, updates and removal are in [installation](installation.md) and
 [quick install](quick-install.md).
