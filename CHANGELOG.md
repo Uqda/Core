@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased (beta)
+## Uqda 26.1
+
+Release date: 2026-11-08. Machine version: `26.1.0`; tag: `v26.1.0`.
+Full notes: [Uqda 26.1](docs/releases/v26.1.0.md). Uqda is an experimental project.
+
+Everything in 26.1 Beta 1 below, plus:
 
 - Automatic peer selection. `AutoPeers: { Enabled: true, Country: "germany",
   Count: 2 }` keeps that many healthy outbound peers: Uqda adds the fastest
