@@ -45,6 +45,11 @@ square brackets:
 http://[200:1a2b:3c4d::7]:8080/
 ```
 
+On Windows, also allow the port in Defender Firewall, which filters the Uqda
+adapter separately. Limit it to Uqda addresses:
+`New-NetFirewallRule -DisplayName "My website over Uqda" -Direction Inbound -Protocol TCP -LocalPort 8080 -RemoteAddress 200::/7 -Action Allow`
+(administrator PowerShell).
+
 Any Uqda user can open it in a normal browser. For a private group only, use
 the address of each member in `Sources` instead of `"*"`.
 
