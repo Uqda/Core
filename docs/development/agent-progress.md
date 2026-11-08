@@ -28,7 +28,8 @@ from `beta`; stable releases from `main`.
 
 | PR | What | State |
 |---|---|---|
-| #41 | Upstream user requests: password files, `MaxInboundPeers`, log spam, table width, `uqda0` name, key strength; listener leak fix; URI redaction in logs (CodeQL go/clear-text-logging) | CI rerun pending after the CodeQL fix |
+| #41 | Upstream user requests: password files, `MaxInboundPeers`, log spam, table width, `uqda0` name, key strength; listener leak fix; URI redaction in logs | All CI passes except the CodeQL gate (alert #7, see decisions). Waiting for owner review |
+| feat/interface-dns | `IfDNSServers` / `IfDNSDomains` (upstream #1125), settings table in configuration.md | Stacked on #41; local tests pass |
 
 ### Next, in order
 
@@ -44,6 +45,23 @@ from `beta`; stable releases from `main`.
 8. Android app on the existing AAR (design first).
 
 ### Decisions that need the owner
+
+- **CodeQL alert #7** (go/clear-text-logging, `src/core/core.go:136`, PR #41).
+  The real leak on that line, `?password=` in the logged listener URI, is
+  fixed by `RedactURI`. The remaining flow CodeQL reports goes from
+  `groupPassword` into `NewPacketConnWithPassword` and then, through the Core
+  object, to the listener error. Every error `links.listen` can return
+  (network errors, invalid priority, password-file errors with paths only)
+  was checked: none contains the group password. Recommended: dismiss as a
+  false positive in Security → Code scanning. Dismissing alerts was left to
+  the owner on purpose.
+- **CodeQL alert #5** (go/disabled-certificate-check, `src/invite/redeem.go`).
+  `InsecureSkipVerify` is paired with `VerifyPeerCertificate`, which accepts
+  only a certificate whose Ed25519 key equals the key pinned in the invite.
+  TLS 1.3 CertificateVerify proves possession of it, and
+  `TestImpostorNodeIsRejected` covers an impostor at the same address.
+  Recommended: dismiss as a false positive, or as "used in tests" if
+  preferred.
 
 - Paid code-signing certificates (Windows Authenticode, Apple notarization).
 - App Store and Google Play accounts.
