@@ -42,7 +42,7 @@ gaps are mostly in *usability and control*, not in core encryption.
    users can verify that a binary came from this repository's CI rather than
    trusting `SHA256SUMS` hosted next to the files. *Small.* Requires a public
    repository (or GitHub Enterprise).
-3. **Replay-resistant handshake extension.** The current handshake signs only
+3. **Replay-resistant handshake extension.** *Done: the fresh handshake (see [security](security.md)).* The current handshake signs only
    the public key (see [security](security.md)). Add an optional second round,
    negotiated through a new metadata field that Yggdrasil nodes ignore, in which
    both sides sign fresh nonces. Add a `RequireFreshHandshake` option for
@@ -85,6 +85,8 @@ gaps are mostly in *usability and control*, not in core encryption.
     would break wire compatibility, so it cannot ship unilaterally. *Research.*
 
 ## Done in this review
+
+- Replay-resistant fresh handshake between Uqda nodes, with `RequireFreshHandshake`.
 
 - One-step onboarding with secure invites ([invites](invites.md)).
 

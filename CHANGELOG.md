@@ -2,6 +2,13 @@
 
 ## Unreleased (beta)
 
+- Fresh handshake. Uqda nodes add a random nonce to the peer handshake and,
+  when both sides support it, each signs the other's nonce before the link
+  starts, so a recorded handshake can no longer be replayed to impersonate a
+  peer or pass `AllowedPublicKeys`. Yggdrasil peers are unaffected. The new
+  `RequireFreshHandshake` option rejects peers without it, for all-Uqda
+  networks. `getPeers` reports `fresh_handshake`.
+
 - Invites. `uqda invite [expires=15m] [uses=1] [name=TEXT]` prints a one-time,
   expiring invite as text and a QR code. `uqda join INVITE` contacts the
   inviting node over TLS 1.3 pinned to its public key, proves possession of

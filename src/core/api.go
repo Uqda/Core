@@ -39,6 +39,7 @@ type PeerInfo struct {
 	TXRate        uint64
 	Uptime        time.Duration
 	Latency       time.Duration
+	Fresh         bool // the peer proved its key for this connection
 }
 
 // TreeEntryInfo describes one routing-tree entry.
@@ -97,6 +98,7 @@ func (c *Core) GetPeers() []PeerInfo {
 				peerinfo.RXRate = atomic.LoadUint64(&c.rxrate)
 				peerinfo.TXRate = atomic.LoadUint64(&c.txrate)
 				peerinfo.Uptime = time.Since(c.up)
+				peerinfo.Fresh = c.fresh.Load()
 			}
 			if p, ok := conns[conn]; ok {
 				peerinfo.Key = p.Key

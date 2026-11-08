@@ -20,6 +20,7 @@ type versionMetadata struct {
 	minorVer  uint16
 	publicKey ed25519.PublicKey
 	priority  uint8
+	nonce     []byte // Uqda fresh-handshake nonce; absent from Yggdrasil peers
 }
 
 const (
@@ -37,6 +38,15 @@ const (
 	metaPublicKey                  // [32]byte
 	metaPriority                   // uint8
 )
+
+// metaUqdaFreshNonce carries a random per-connection nonce for the Uqda
+// fresh-handshake extension. The value is far outside the range Yggdrasil
+// allocates sequentially, so it cannot collide with a future upstream field,
+// and Yggdrasil decoders skip fields they do not know.
+const metaUqdaFreshNonce uint16 = 0x7571
+
+// freshNonceSize is the length of a fresh-handshake nonce.
+const freshNonceSize = 32
 
 type handshakeError string
 
@@ -80,6 +90,12 @@ func (m *versionMetadata) encode(privateKey ed25519.PrivateKey, password []byte)
 	bs = binary.BigEndian.AppendUint16(bs, metaPriority)
 	bs = binary.BigEndian.AppendUint16(bs, 1)
 	bs = append(bs, m.priority)
+
+	if len(m.nonce) == freshNonceSize {
+		bs = binary.BigEndian.AppendUint16(bs, metaUqdaFreshNonce)
+		bs = binary.BigEndian.AppendUint16(bs, freshNonceSize)
+		bs = append(bs, m.nonce...)
+	}
 
 	hasher, err := blake2b.New512(password)
 	if err != nil {
@@ -151,6 +167,12 @@ func (m *versionMetadata) decode(r io.Reader, password []byte) error {
 				return ErrHandshakeInvalidLength
 			}
 			m.priority = field[0]
+
+		case metaUqdaFreshNonce:
+			if len(field) != freshNonceSize {
+				return ErrHandshakeInvalidLength
+			}
+			m.nonce = append(m.nonce[:0], field...)
 		}
 		bs = bs[oplen:]
 	}

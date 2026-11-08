@@ -278,6 +278,9 @@ func run() int {
 		if cfg.GroupPassword != "" {
 			options = append(options, core.GroupPassword(cfg.GroupPassword))
 		}
+		if cfg.RequireFreshHandshake {
+			options = append(options, core.RequireFreshHandshake(true))
+		}
 		for intf, peers := range cfg.InterfacePeers {
 			for _, peer := range peers {
 				options = append(options, core.Peer{URI: peer, SourceInterface: intf})
