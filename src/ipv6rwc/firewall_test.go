@@ -98,7 +98,7 @@ func TestFirewallFiltersRealOverlayTraffic(t *testing.T) {
 	sentOutbound := false
 	tick := time.NewTicker(100 * time.Millisecond)
 	defer tick.Stop()
-	for !(gotAllowed && gotReply) {
+	for !gotAllowed || !gotReply {
 		select {
 		case <-tick.C:
 			_, _ = rwcB.Write(allowed)
