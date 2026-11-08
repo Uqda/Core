@@ -53,7 +53,7 @@ func run() int {
 	if len(cmdLineEnv.args) > 0 && strings.EqualFold(cmdLineEnv.args[0], "test") {
 		pledge += " proc exec"
 	}
-	if len(cmdLineEnv.args) > 0 && strings.EqualFold(cmdLineEnv.args[0], "join") {
+	if len(cmdLineEnv.args) > 0 && (strings.EqualFold(cmdLineEnv.args[0], "join") || strings.EqualFold(cmdLineEnv.args[0], "setup")) {
 		pledge += " wpath cpath fattr"
 	}
 	if err := protect.Pledge(pledge); err != nil {
@@ -70,6 +70,9 @@ func run() int {
 	}
 	if len(cmdLineEnv.args) > 0 && strings.EqualFold(cmdLineEnv.args[0], "join") {
 		return runJoin(cmdLineEnv.args[1:], cmdLineEnv.injson)
+	}
+	if len(cmdLineEnv.args) > 0 && strings.EqualFold(cmdLineEnv.args[0], "setup") {
+		return runSetup(cmdLineEnv.args[1:], cmdLineEnv.injson)
 	}
 	if err := cmdLineEnv.setEndpoint(logger); err != nil {
 		return fail(logger, logbuffer, "%v", err)

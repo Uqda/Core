@@ -67,11 +67,25 @@ is required before distribution. See [installation](docs/installation.md).
 
 ## Quick start
 
+After installing, three commands get a private network running:
+
+```sh
+sudo uqda setup country=germany   # identity, private network, firewall, 2 fast peers
+sudo systemctl restart uqda       # setup prints the right command for your system
+sudo uqda invite                  # then on each new device: sudo uqda join <invite>
+```
+
+`uqda find` lists countries with public peers. `uqda setup mode=public` joins
+the public network instead. Existing nodes keep their identity: `setup` only
+adds what is missing. See [invites](docs/invites.md) and [firewall](docs/firewall.md).
+
+### Everyday commands
+
 Use the compact terminal dashboard: `uqda`, `uqda peers`, `uqda info` and
 `uqda test <IPv6>`. The controller commands below remain supported for advanced
 administration. See the [command guide](docs/commands.md).
 
-For a **new** node, create a protected configuration file once:
+To create a configuration by hand instead, for a **new** node:
 
 ```sh
 umask 077

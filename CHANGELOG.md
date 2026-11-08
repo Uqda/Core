@@ -2,6 +2,13 @@
 
 ## Unreleased (beta)
 
+- `uqda setup [mode=private|public] [country=NAME] [peers=0..5]` sets up a node
+  in one step. On a new device it creates an identity, a private network with
+  a random 192-bit group password, the inbound firewall, and the fastest
+  healthy public TLS peers in the chosen country. On an existing node it keeps
+  the identity and adds only what is missing. Switching a private node to
+  public needs `confirm=yes`; a backup is kept as `PATH.before-setup`.
+
 - Fresh handshake. Uqda nodes add a random nonce to the peer handshake and,
   when both sides support it, each signs the other's nonce before the link
   starts, so a recorded handshake can no longer be replayed to impersonate a
