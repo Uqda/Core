@@ -1,133 +1,106 @@
 # Uqda
 
-[العربية](README.ar.md)
+[العربية](README.ar.md) · [Documentation](docs/README.md) · [Releases](https://github.com/Uqda/Core/releases) · [Report a problem](https://github.com/Uqda/Core/issues/new?template=bug_report.yml)
 
-**Uqda Core is an independently maintained implementation compatible with the
-existing Yggdrasil network, with security hardening and operational improvements.**
-It provides encrypted IPv6 connectivity over IPv4 or IPv6 peer connections.
-Uqda is derived from the open-source Yggdrasil implementation; it does not create
-a separate network and does not imply upstream endorsement.
+**Uqda is an encrypted network for your devices that no company runs.** There is
+no account to create, no coordination server, and no subscription. Each device
+gets a permanent IPv6 address derived from its own key, and devices reach each
+other over end-to-end encrypted sessions, across the internet or straight over
+your local network.
 
-**Current release: Uqda 26.0.5 (`v26.0.5`).** It is ready for public use and testing;
-report any problems through the
-[bug report form](https://github.com/Uqda/Core/issues/new?template=bug_report.yml).
-See [CHANGELOG](CHANGELOG.md) for the tested scope and known limitations.
+Uqda (عُقدة, "knot" or "node") is an independently maintained implementation
+compatible with the existing [Yggdrasil](https://yggdrasil-network.github.io/)
+network. It does not create a separate network and does not imply upstream
+endorsement.
 
-Uqda comes from **عُقدة**, meaning a knot, connection point or node. It is not
-an acronym. A network node connects to other nodes and may forward traffic.
+> **Experimental project.** Uqda is under active development. It is tested
+> extensively but has not had an independent security audit. Do not rely on it
+> where a failure would put people or critical systems at risk.
 
-## Capabilities
+## Why Uqda
 
-- Public-key-derived IPv6 addresses and end-to-end encrypted sessions.
-- TCP, TLS, QUIC, WebSocket, SOCKS and Unix-socket peer connectivity.
-- Local multicast discovery and TUN integration.
-- Local administration through `uqdactl` and the admin socket.
-- One-command local health checks with `uqdactl doctor` (or `uqdactl status`).
-- Active remote reachability and loss checks with `uqdactl test <Uqda IPv6>`.
-- One-step device onboarding: `uqda invite` shows a one-time, expiring invite
-  (text and QR code), and `uqda join` adds the new device. No secret is stored
-  in the invite. See [invites](docs/invites.md).
-- A stateful inbound firewall, on by default for new nodes: only replies to
-  your own connections and the services you allow get in. See [firewall](docs/firewall.md).
-- Configuration validation with `-checkconf`, Unix key-permission warnings,
-  non-local admin exposure warnings and jittered peer reconnect delays.
+| | Uqda | Typical mesh VPN (Tailscale, ZeroTier, NetBird) |
+|---|---|---|
+| Account required | No | Yes |
+| Central coordination server | None: nothing to shut down, block or reprice | Required (hosted, or self-hosted) |
+| Works on a local network without internet | Yes (local discovery) | Limited |
+| Add a device | `uqda invite`, then `uqda join` (one-time, expiring, no password inside) | Sign in to the vendor |
+| Who may reach each service | Built-in firewall, rules by device key | ACLs on the vendor's server |
+| Replay-protected peer handshake | Yes, between Uqda nodes | Yes |
+| Direct connections through NAT | Through peer nodes (relays) | Yes, hole punching |
 
-Routing and encrypted sessions build on Ironwood. Wire compatibility is a
-requirement; the independent pinned-upstream gate checks real daemon peering and IPv6 packet
-delivery over TCP/TLS, including reconnect and multi-hop forwarding. See [compatibility](docs/compatibility.md).
+The last row is where the others are stronger today; see the [roadmap](docs/roadmap.md).
 
-## Using your Umbrel services
+## Two kinds of network
 
-Uqda can provide an encrypted IPv6 path between your Umbrel host and another
-Uqda-connected device. The useful outcome is access to an existing service,
-such as your files or SSH, after configuring that service's IPv6 listening,
-authentication and firewall. A connected peer alone is not proof that an app
-is reachable. Apps are not published automatically, and opening the dashboard
-on a phone does not connect the phone to the overlay.
-See the [Umbrel service-access guide](docs/umbrel.md#your-services-over-uqda)
-for the deliberate setup flow and the status of the new address-book workflow.
-For whole-dashboard access through Umbrel's existing app gateways, see the
-[private remote-access workflow and compatibility boundaries](docs/umbrel-remote-access.md).
+- **Private group:** only devices that share your group secret can talk to
+  you. Use it for your own devices, a family or a team. This is the default.
+- **Public network:** reach and be reached by any node on the worldwide
+  overlay, with the firewall deciding what is open.
 
-## Installation
+[Networks](docs/networks.md) explains both, and when to use each.
 
-Install Go 1.25 or newer, then build from source:
+## Install and start in three commands
 
-```sh
-git clone https://github.com/Uqda/Core.git
-cd Core
-./build
-./uqda --version
-./uqdactl version
-```
+Install for your system ([all options](docs/installation.md)):
 
-On Windows use `build.bat`. The binaries are `uqda` and `uqdactl`. Packaging
-sources target Debian, Windows MSI, macOS and Docker; native package validation
-is required before distribution. See [installation](docs/installation.md).
+| System | Install |
+|---|---|
+| Linux | `curl -fsSLo uqda-install.sh https://raw.githubusercontent.com/Uqda/Core/main/contrib/install/linux.sh && sudo sh uqda-install.sh install` |
+| macOS | `brew install --cask Uqda/tap/uqda` |
+| Windows | The `.msi` for your system from [Releases](https://github.com/Uqda/Core/releases) |
+| Debian / Ubuntu | The `.deb` from [Releases](https://github.com/Uqda/Core/releases) |
+| Umbrel | Community store `https://github.com/Uqda/umbrel-app-store` → **Uqda Network** |
 
-## Quick start
-
-After installing, three commands get a private network running:
+Then:
 
 ```sh
-sudo uqda setup country=germany   # identity, private network, firewall, 2 fast peers
+sudo uqda setup country=germany   # private network, firewall and two fast peers
 sudo systemctl restart uqda       # setup prints the right command for your system
-sudo uqda invite                  # then on each new device: sudo uqda join <invite>
+sudo uqda invite                  # on each new device: sudo uqda join <invite>
 ```
 
-`uqda find` lists countries with public peers. `uqda setup mode=public` joins
-the public network instead. Existing nodes keep their identity: `setup` only
-adds what is missing. See [invites](docs/invites.md) and [firewall](docs/firewall.md).
+`uqda find` lists countries with public peers. The full walk-through, including
+how to reach a service on another device, is in [getting started](docs/getting-started.md).
 
-### Everyday commands
+## Everyday commands
 
-Use the compact terminal dashboard: `uqda`, `uqda peers`, `uqda info` and
-`uqda test <IPv6>`. The controller commands below remain supported for advanced
-administration. See the [command guide](docs/commands.md).
+| Command | What it does |
+|---|---|
+| `uqda status` | Health checks, each with its fix |
+| `uqda info` | Your address and public key |
+| `uqda peers` | Peer links, traffic and latency |
+| `uqda firewall` | Firewall rules and blocked packets |
+| `uqda test ADDRESS` | Reachability and packet loss to another node |
+| `uqda help COMMAND` | Help for any command |
 
-To create a configuration by hand instead, for a **new** node:
+## Security in brief
 
-```sh
-umask 077
-./uqda -genconf > uqda.conf
-./uqda -useconffile uqda.conf -checkconf
-./uqda -useconffile uqda.conf
-```
+- **Identity:** Ed25519 keys. Your address is derived from your key and cannot be claimed without it.
+- **Sessions:** end-to-end encrypted. Relays carry traffic but cannot read it.
+- **Private groups:** the group secret is stretched with Argon2id. Nodes outside the group cannot open sessions with you.
+- **Inbound firewall:** on by default for new nodes. Only replies to your own connections, and the services you allow, get in.
+- **Peer handshake:** Uqda nodes prove their key on every connection, so a recorded handshake cannot be replayed. Floods of half-open connections are capped.
+- **Invites:** TLS 1.3 pinned to the inviting node's key. They are one-time, expire and are rate-limited.
 
-Do not overwrite an existing configuration: it contains your persistent identity.
-Add trusted peer URIs to `Peers`, or use multicast discovery on a trusted local
-network. Creating the TUN interface normally requires administrator privileges;
-Linux can use `CAP_NET_ADMIN`. See [configuration](docs/configuration.md).
+Uqda does **not** provide anonymity, and the admin API has no authentication
+(it stays local). Read the [security model](docs/security.md), and report
+vulnerabilities privately as described in [SECURITY](SECURITY.md).
 
-```sh
-./uqdactl getSelf
-./uqdactl getPeers
-./uqdactl doctor
-./uqdactl test 200:1234::1
-```
+## Project
 
-The doctor check explains daemon, identity, peer and TUN status without changing
-configuration or showing peer passwords. See [doctor](docs/doctor.md).
-
-`uqda -autoconf` uses a new random identity on each startup. For migration,
-retain your existing key and follow [compatibility](docs/compatibility.md).
-
-## Security and documentation
-
-Uqda does not provide anonymity. The admin API has no authentication: keep it
-local and restrict access. Applications on the node still need their own security.
-Report vulnerabilities privately using [SECURITY](SECURITY.md).
-
-- [Architecture](docs/architecture.md)
-- [Configuration](docs/configuration.md) and [installation](docs/installation.md)
-- [Compatibility](docs/compatibility.md) and [mobile API](docs/mobile.md)
-- [Security model](docs/security.md) and [inbound firewall](docs/firewall.md)
-- [Doctor health check](docs/doctor.md)
-- [Testing](docs/testing.md) and [contributing](CONTRIBUTING.md)
-- [Packaging](docs/packaging.md) and [release conventions](docs/releasing.md)
-- [Roadmap and gap analysis](docs/roadmap.md)
+- Two branches: `main` is stable and `beta` gets new work first; see [branching](docs/branching.md).
+- Every change runs the full test suite on Linux, macOS and Windows. That covers race detection,
+  fuzzing, packaging on every supported system, and a compatibility gate against the official
+  Yggdrasil implementation; see [testing](docs/testing.md).
+- Contributions are welcome: see [CONTRIBUTING](CONTRIBUTING.md). Changes are listed in the [CHANGELOG](CHANGELOG.md).
 
 ## License and attribution
 
 Uqda Core is licensed under LGPLv3 with the linking exception in [LICENSE](LICENSE).
-See [NOTICE](NOTICE.md) for Yggdrasil, Ironwood and other upstream attribution.
+Routing and encrypted sessions come from Ironwood. See [NOTICE](NOTICE.md) for
+Yggdrasil, Ironwood and other upstream attribution.
+
+---
+
+*Uqda is an experimental project, provided as is and without warranty.*

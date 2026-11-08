@@ -164,7 +164,19 @@ func writeConfig(path string, cfg *config.NodeConfig, existing []byte, backupSuf
 		return "", fmt.Errorf("write %s: %w (on macOS and Linux, run with sudo)", path, err)
 	}
 	defer os.Remove(tmp.Name())
-	if err := tmp.Chmod(0o600); err != nil && runtime.GOOS != "windows" {
+	// Keep the existing file's owner, group and permissions: installers
+	// give the service account read access (for example uqda:uqda 0600 or
+	// root:uqda 0640), and a root-owned replacement would lock it out.
+	// Permissions for other users are never kept.
+	mode := os.FileMode(0o600)
+	if info, err := os.Stat(path); err == nil {
+		mode = info.Mode().Perm() &^ 0o007
+		if err := preserveOwner(tmp, info); err != nil {
+			_ = tmp.Close()
+			return "", fmt.Errorf("keep the owner of %s: %w", path, err)
+		}
+	}
+	if err := tmp.Chmod(mode); err != nil && runtime.GOOS != "windows" {
 		_ = tmp.Close()
 		return "", err
 	}

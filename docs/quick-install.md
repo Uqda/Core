@@ -1,6 +1,6 @@
 # Quick installation lifecycle
 
-The macOS Homebrew tap and Linux quick installer use the published `v26.0.2`
+The macOS Homebrew tap and Linux quick installer use the latest published
 release. Uqda still needs a trusted peer or a trusted local multicast network
 to connect.
 

@@ -1,11 +1,38 @@
 # Installation
 
-Uqda 26.0.2 is published as GitHub release `v26.0.2`. Download an
-artifact from that release and verify it against `SHA256SUMS`, or build with Go
-1.25 or newer using `./build` or `build.bat`. Run `uqda --version` and
-`uqdactl version` to check the local product identity. Both display
-`Uqda Core 26.0.2`. For everyday status, simply run `uqda`; see the
-[command guide](commands.md).
+New here? [Getting started](getting-started.md) covers install, setup and
+adding devices in five steps. This page has the details for each system.
+
+Releases are published on [GitHub Releases](https://github.com/Uqda/Core/releases).
+Download an artifact and verify it against that release's `SHA256SUMS`, or build
+with Go 1.25 or newer using `./build` or `build.bat`. `uqda version` and
+`uqdactl version` show the installed release. For everyday status, run `uqda`;
+see the [command guide](commands.md).
+
+## Packages
+
+| System | How | Guide |
+|---|---|---|
+| Linux with systemd (x86-64, arm64) | Quick installer, with checksum checks and identity-preserving updates | [quick install](quick-install.md#linux-systemd-x86-64-or-arm64) |
+| Debian, Ubuntu (amd64, arm64, armhf, armel, i386, mips, mipsel) | `.deb` from Releases | below |
+| macOS (Intel, Apple Silicon) | Homebrew cask `Uqda/tap/uqda` | [quick install](quick-install.md#macos-homebrew) |
+| Windows (x64, x86, ARM64) | `.msi` from Releases | [quick install](quick-install.md) |
+| Umbrel | Community app store | [Umbrel](umbrel.md) |
+| Android, iOS apps | SDKs (`.aar`, `.xcframework`) for app developers; no ready-made app yet | [mobile](mobile.md) |
+
+After installing, run `sudo uqda setup country=NAME` (see [getting started](getting-started.md)).
+
+## Docker
+
+```sh
+docker build -t uqda-core .
+docker run -d --name uqda --cap-add NET_ADMIN --device /dev/net/tun   --network host -v uqda-config:/etc/uqda uqda-core
+```
+
+Persist `/etc/uqda`: it holds the node identity, and a container without its
+volume gets a new address. Keep the admin endpoint private.
+
+## Details
 
 Source builds require the complete repository checkout: it contains the pinned,
 locally patched Ironwood dependency. `go install ...@version` is not a supported

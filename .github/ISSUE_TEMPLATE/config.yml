@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Uqda/Core/security/advisories/new
+    about: Report vulnerabilities privately, never in a public issue.
+  - name: Getting started guide
+    url: https://github.com/Uqda/Core/blob/main/docs/getting-started.md
+    about: Install, set up, add devices and reach services.
