@@ -37,6 +37,7 @@ type PeerEntry struct {
 	TXRate        DataUnit      `json:"rate_sent,omitempty"`
 	Uptime        float64       `json:"uptime,omitempty"`
 	Latency       time.Duration `json:"latency,omitempty"`
+	Fresh         bool          `json:"fresh_handshake"`
 	LastErrorTime time.Duration `json:"last_error_time,omitempty"`
 	LastError     string        `json:"last_error,omitempty"`
 }
@@ -58,6 +59,7 @@ func (a *AdminSocket) getPeersHandler(req *GetPeersRequest, res *GetPeersRespons
 			TXRate:   DataUnit(p.TXRate),
 			Uptime:   p.Uptime.Seconds(),
 		}
+		peer.Fresh = p.Fresh
 		if p.Latency > 0 {
 			peer.Latency = p.Latency
 		}

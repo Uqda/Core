@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"context"
+	crand "crypto/rand"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -705,6 +706,11 @@ func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, s
 	meta := versionGetBaseMetadata()
 	meta.publicKey = l.core.public
 	meta.priority = options.priority
+	meta.nonce = make([]byte, freshNonceSize)
+	if _, err := crand.Read(meta.nonce); err != nil {
+		return fmt.Errorf("failed to generate handshake nonce: %w", err)
+	}
+	localNonce := meta.nonce
 	metaBytes, err := meta.encode(l.core.secret, options.password)
 	if err != nil {
 		return fmt.Errorf("failed to generate handshake: %w", err)
@@ -730,6 +736,21 @@ func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, s
 			fmt.Sprintf("%d.%d", base.majorVer, base.minorVer),
 			fmt.Sprintf("%d.%d", meta.majorVer, meta.minorVer),
 		)
+	}
+	// Uqda fresh handshake: when both sides sent a nonce, each signs the
+	// other's. A recorded handshake replayed later cannot do this.
+	fresh := false
+	switch {
+	case len(meta.nonce) == freshNonceSize:
+		if err := freshExchange(conn, l.core.secret, l.core.public, meta.publicKey, localNonce, meta.nonce); err != nil {
+			return err
+		}
+		fresh = true
+	case l.core.config.requireFresh:
+		return ErrHandshakeNotFresh
+	}
+	if lc, ok := conn.(*linkConn); ok {
+		lc.fresh.Store(fresh)
 	}
 	if err = conn.SetDeadline(time.Time{}); err != nil {
 		return fmt.Errorf("failed to clear handshake deadline: %w", err)
@@ -855,6 +876,7 @@ type linkConn struct {
 	lastrx uint64
 	lasttx uint64
 	up     time.Time
+	fresh  atomic.Bool // the peer proved its key for this connection
 	net.Conn
 }
 

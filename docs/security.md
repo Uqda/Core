@@ -35,13 +35,21 @@ PAKE or a guarantee against offline guessing: use a random strong password. The
 shared protocol salt is deterministic, not unique to each group. Older private
 groups must migrate all members together; no weak legacy fallback is accepted.
 
-The peer handshake signs the node's public key (keyed by the link password),
-not a fresh per-connection challenge, which is inherited from the Yggdrasil wire
-format. Someone who records a handshake on an unencrypted `tcp://` link can replay
-it to open a transport link that claims that key, including past
-`AllowedPublicKeys`. They cannot decrypt or forge end-to-end sessions without the
-private key. Prefer `tls://` or `quic://` between known peers, and use a
-per-link `password` for restricted peerings.
+The Yggdrasil handshake signs only the node's public key (keyed by the link
+password), not a fresh per-connection challenge, so a recorded handshake can be
+replayed. Uqda adds a **fresh handshake**: each Uqda node sends a random 32-byte
+nonce in an extra metadata field, and when both sides sent one, each signs the
+other's nonce together with both keys before the link is handed to Ironwood. A
+replayed handshake cannot produce that signature and is rejected, which also
+protects `AllowedPublicKeys` and pinned `?key=` peerings. `uqdactl getPeers -json`
+reports `fresh_handshake` for each link.
+
+Yggdrasil nodes and older Uqda releases do not send the nonce and are still
+accepted, because compatibility is a requirement. An attacker can strip the
+field from a recorded handshake to look like such a node. In networks where
+every node runs this Uqda release or later, set `RequireFreshHandshake: true`
+to reject them and close that downgrade. Elsewhere, prefer `tls://` or `quic://`
+between known peers and a per-link `password` for restricted peerings.
 
 Protect configuration backups and external PEM keys as carefully as active keys.
 A stolen private key permits node impersonation. Keep the admin API local and

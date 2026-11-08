@@ -83,6 +83,9 @@ func (m *Uqda) StartJSON(configjson []byte) error {
 		if m.config.GroupPassword != "" {
 			options = append(options, core.GroupPassword(m.config.GroupPassword))
 		}
+		if m.config.RequireFreshHandshake {
+			options = append(options, core.RequireFreshHandshake(true))
+		}
 		for _, peer := range m.config.Peers {
 			options = append(options, core.Peer{URI: peer})
 		}

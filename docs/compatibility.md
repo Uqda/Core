@@ -6,6 +6,13 @@ existing Yggdrasil network and preserves its wire messages, peer negotiation,
 Ed25519 identity format and IPv6 address derivation. Ironwood owns routing and
 session framing. There is no separate Uqda wire protocol or mandatory extension.
 
+One optional extension exists: the **fresh handshake**. Uqda adds a metadata
+field `0x7571` holding a random nonce. Yggdrasil decoders skip unknown fields,
+so Yggdrasil peers handshake exactly as before. Only when both sides sent the
+field do they exchange one 64-byte signature each, before Ironwood starts.
+`RequireFreshHandshake` (off by default) rejects peers without it and is meant
+for all-Uqda networks.
+
 The product version is independent of protocol metadata in `src/core/version.go`.
 A product version does not certify compatibility with every upstream release.
 

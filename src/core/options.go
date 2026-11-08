@@ -36,6 +36,8 @@ func (c *Core) _applyOption(opt SetupOption) (err error) {
 		c.config._allowedPublicKeys[pk] = struct{}{}
 	case GroupPassword:
 		c.config.groupPassword = string(v)
+	case RequireFreshHandshake:
+		c.config.requireFresh = bool(v)
 	}
 	return
 }
@@ -69,10 +71,15 @@ type PeerFilter func(net.IP) bool
 // GroupPassword separates encrypted session traffic into a private group.
 type GroupPassword string
 
-func (a ListenAddress) isSetupOption()    {}
-func (a Peer) isSetupOption()             {}
-func (a NodeInfo) isSetupOption()         {}
-func (a NodeInfoPrivacy) isSetupOption()  {}
-func (a AllowedPublicKey) isSetupOption() {}
-func (a PeerFilter) isSetupOption()       {}
-func (a GroupPassword) isSetupOption()    {}
+// RequireFreshHandshake rejects peers that cannot prove possession of their
+// key for this specific connection (Yggdrasil nodes and older Uqda releases).
+type RequireFreshHandshake bool
+
+func (a ListenAddress) isSetupOption()         {}
+func (a Peer) isSetupOption()                  {}
+func (a NodeInfo) isSetupOption()              {}
+func (a NodeInfoPrivacy) isSetupOption()       {}
+func (a AllowedPublicKey) isSetupOption()      {}
+func (a PeerFilter) isSetupOption()            {}
+func (a GroupPassword) isSetupOption()         {}
+func (a RequireFreshHandshake) isSetupOption() {}
