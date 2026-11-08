@@ -33,6 +33,7 @@ type Multicast struct {
 	_listeners  map[string]*listenerInfo
 	_interfaces map[string]*interfaceInfo
 	_timer      *time.Timer
+	warns       *warnLimiter
 	config      struct {
 		_groupAddr  GroupAddress
 		_interfaces map[MulticastInterface]struct{}
@@ -64,6 +65,7 @@ func New(core *core.Core, log core.Logger, opts ...SetupOption) (*Multicast, err
 		log:         log,
 		_listeners:  make(map[string]*listenerInfo),
 		_interfaces: make(map[string]*interfaceInfo),
+		warns:       newWarnLimiter(),
 	}
 	m.config._interfaces = map[MulticastInterface]struct{}{}
 	m.config._groupAddr = GroupAddress("[ff02::114]:9001")
@@ -149,7 +151,11 @@ func (m *Multicast) _updateInterfaces() {
 		// 'anet' package is used here to avoid https://github.com/golang/go/issues/40569
 		addrs, err := anet.InterfaceAddrsByInterface(&info.iface)
 		if err != nil {
-			m.log.Warnf("Failed up get addresses for interface %s: %s", name, err)
+			if m.warns.allow(warnKey(name, "addresses", err)) {
+				m.log.Warnf("Failed to get addresses for interface %s: %s (repeats are logged at debug level)", name, err)
+			} else {
+				m.log.Debugf("Failed to get addresses for interface %s: %s", name, err)
+			}
 			delete(interfaces, name)
 			continue
 		}
@@ -330,11 +336,16 @@ func (m *Multicast) _announce() {
 				}
 				if li, err := m.core.ListenLocal(u, iface.Name); err == nil {
 					m.log.Debugln("Started multicasting on", iface.Name)
+					m.warns.reset(iface.Name)
 					// Store the listener so that we can stop it later if needed
 					linfo = &listenerInfo{listener: li, time: time.Now(), port: info.port}
 					m._listeners[iface.Name] = linfo
 				} else {
-					m.log.Warnln("Not multicasting on", iface.Name, "due to error:", err)
+					if m.warns.allow(warnKey(iface.Name, "listen", err)) {
+						m.log.Warnln("Not multicasting on", iface.Name, "due to error:", err, "(repeats are logged at debug level)")
+					} else {
+						m.log.Debugln("Not multicasting on", iface.Name, "due to error:", err)
+					}
 				}
 			} else {
 				// An existing listener was found
@@ -361,7 +372,11 @@ func (m *Multicast) _announce() {
 			}
 			destAddr.Zone = iface.Name
 			if _, err = m.sock.WriteTo(msg, nil, destAddr); err != nil {
-				m.log.Warnln("Failed to send multicast beacon: " + err.Error())
+				if m.warns.allow(warnKey(iface.Name, "beacon", err)) {
+					m.log.Warnln("Failed to send multicast beacon on", iface.Name+":", err, "(repeats are logged at debug level)")
+				} else {
+					m.log.Debugln("Failed to send multicast beacon on", iface.Name+":", err)
+				}
 			}
 			if linfo.interval.Seconds() < 15 {
 				linfo.interval += time.Second

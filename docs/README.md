@@ -35,4 +35,5 @@
 - [Testing](testing.md): how to run the test suites.
 - [Release notes](releases/): one page per release.
 - [Reviews](reviews/): recorded engineering reviews.
+- [What Yggdrasil users ask for](upstream/issues.md): upstream requests and where Uqda stands.
 - [Upstream](upstream/): inherited Yggdrasil history and assets.

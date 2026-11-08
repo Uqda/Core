@@ -3,6 +3,8 @@ package config
 import (
 	"bytes"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -51,5 +53,30 @@ func TestReadFromPreservesIdentity(t *testing.T) {
 	}
 	if !bytes.Equal(original.PrivateKey, loaded.PrivateKey) {
 		t.Fatal("loading configuration changed identity")
+	}
+}
+
+func TestResolveGroupPassword(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "group")
+	if err := os.WriteFile(file, []byte("group-secret\r\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg := GenerateConfig()
+	cfg.GroupPassword = "inline"
+	if pw, err := cfg.ResolveGroupPassword(); err != nil || pw != "inline" {
+		t.Fatalf("inline: %q %v", pw, err)
+	}
+	cfg.GroupPasswordFile = file
+	if _, err := cfg.ResolveGroupPassword(); err == nil {
+		t.Fatal("setting both must be an error")
+	}
+	cfg.GroupPassword = ""
+	if pw, err := cfg.ResolveGroupPassword(); err != nil || pw != "group-secret" {
+		t.Fatalf("file: %q %v", pw, err)
+	}
+	cfg.GroupPasswordFile = filepath.Join(dir, "missing")
+	if _, err := cfg.ResolveGroupPassword(); err == nil {
+		t.Fatal("missing file must be an error")
 	}
 }

@@ -66,6 +66,7 @@ func main() {
 
 func run() int {
 	genconf := flag.Bool("genconf", false, "print a new config to stdout")
+	strength := flag.Int("strength", 0, "with -genconf, search for a key with at least this many leading zero bits (0-24); each step doubles the work and makes the address harder to collide with")
 	useconf := flag.Bool("useconf", false, "read HJSON/JSON config from stdin")
 	useconffile := flag.String("useconffile", "", "read HJSON/JSON config from specified file path")
 	normaliseconf := flag.Bool("normaliseconf", false, "use in combination with either -useconf or -useconffile, outputs your configuration normalised")
@@ -159,6 +160,12 @@ func run() int {
 		}
 
 	case *genconf:
+		if *strength > 0 {
+			if err := cfg.NewPrivateKeyWithStrength(*strength); err != nil {
+				logger.Errorln("Unable to generate a key:", err)
+				return 2
+			}
+		}
 		cfg.AdminListen = ""
 		// New nodes start with the inbound firewall on. Existing
 		// configurations without a Firewall section keep it off.
@@ -195,6 +202,15 @@ func run() int {
 
 	if cfg.PrivateKeyPath != "" {
 		warnIfConfigFilePermissionsAreUnsafe(cfg.PrivateKeyPath, logger)
+	}
+
+	groupPassword, err := cfg.ResolveGroupPassword()
+	if err != nil {
+		logger.Errorln("Unable to read the group password:", err)
+		return 1
+	}
+	if cfg.GroupPasswordFile != "" {
+		warnIfConfigFilePermissionsAreUnsafe(cfg.GroupPasswordFile, logger)
 	}
 
 	privateKey := ed25519.PrivateKey(cfg.PrivateKey)
@@ -275,11 +291,14 @@ func run() int {
 		for _, peer := range cfg.Peers {
 			options = append(options, core.Peer{URI: peer})
 		}
-		if cfg.GroupPassword != "" {
-			options = append(options, core.GroupPassword(cfg.GroupPassword))
+		if groupPassword != "" {
+			options = append(options, core.GroupPassword(groupPassword))
 		}
 		if cfg.RequireFreshHandshake {
 			options = append(options, core.RequireFreshHandshake(true))
+		}
+		if cfg.MaxInboundPeers > 0 {
+			options = append(options, core.MaxInboundPeers(cfg.MaxInboundPeers))
 		}
 		for intf, peers := range cfg.InterfacePeers {
 			for _, peer := range peers {
@@ -374,7 +393,7 @@ func run() int {
 			firewall.SetupAdminHandlers(n.admin, rwc.Firewall)
 		}
 		if n.admin != nil {
-			n.invites = invite.New(cfg.Certificate, publicKey, cfg.InvitePort, inviteGrant(cfg, publicKey), logger)
+			n.invites = invite.New(cfg.Certificate, publicKey, cfg.InvitePort, inviteGrant(cfg, groupPassword, publicKey), logger)
 			invite.SetupAdminHandlers(n.admin, n.invites)
 		}
 		if n.tun, err = tun.New(rwc, logger, options...); err != nil {

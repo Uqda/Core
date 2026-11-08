@@ -8,7 +8,9 @@ import (
 // changed. The node's identity is never touched.
 func Apply(cfg *config.NodeConfig, g Grant) []string {
 	var changes []string
-	if g.GroupPassword != cfg.GroupPassword {
+	if cfg.GroupPasswordFile != "" {
+		// The file is the source of truth; join checks it matches first.
+	} else if g.GroupPassword != cfg.GroupPassword {
 		switch {
 		case g.GroupPassword == "":
 			changes = append(changes, "joined a public network (no group password)")

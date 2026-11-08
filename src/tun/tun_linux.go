@@ -14,7 +14,10 @@ import (
 // Configures the TUN adapter with the correct IPv6 address and MTU.
 func (tun *TunAdapter) setup(ifname string, addr string, mtu uint64) error {
 	if ifname == "auto" {
-		ifname = "\000"
+		// The kernel replaces %d with the first free number, giving uqda0,
+		// uqda1 and so on: a name that does not collide with the tun0 used
+		// by OpenVPN, ssh and other tunnels.
+		ifname = "uqda%d"
 	}
 	iface, err := wgtun.CreateTUN(ifname, int(mtu))
 	if err != nil {

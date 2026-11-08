@@ -39,6 +39,12 @@ func validateConfig(cfg *config.NodeConfig) []string {
 	}
 
 	problems = append(problems, firewall.Validate(cfg.Firewall)...)
+	if cfg.MaxInboundPeers < 0 {
+		problems = append(problems, "MaxInboundPeers must be 0 (no limit) or a positive number")
+	}
+	if _, err := cfg.ResolveGroupPassword(); err != nil {
+		problems = append(problems, err.Error())
+	}
 
 	for _, raw := range cfg.Listen {
 		if err := validateListenURI(raw); err != nil {
