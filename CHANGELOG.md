@@ -1,5 +1,57 @@
 # Changelog
 
+## Uqda 26.0.5
+
+Release date: 2026-10-03. Machine version: `26.0.5`; tag: `v26.0.5`.
+Full notes: [release-notes-v26.0.5](docs/release-notes-v26.0.5.md).
+
+- Fix the mobile embedding SDK silently ignoring `GroupPassword`. Android and
+  Apple bindings now enforce the configured private group; upgrade previously
+  distributed bindings before relying on private-group isolation.
+- Add the Umbrel service address book and private-group dashboard-access
+  workflow in source, with Arabic/English guidance and bounded local-only TCP
+  checks. The UI ships through the separately versioned Umbrel wrapper
+  (`umbrel-26.0.5-1`).
+- Preserve Umbrel's existing login and app gateway; nothing automatically
+  exposes apps, changes firewall/routes or bypasses authentication.
+- Generalize immutable Umbrel wrapper version validation for the new Core line.
+
+The mobile artifacts are embedding SDKs, not ready-made phone VPN applications.
+Installers remain unsigned.
+
+## Uqda 26.0.4
+
+Release date: 2026-10-02. Machine version: `26.0.4`; tag: `v26.0.4`.
+Full notes: [release-notes-v26.0.4](docs/release-notes-v26.0.4.md).
+
+- `uqda find` lists read-only public TLS peer suggestions by country from the
+  public peers catalog, without contacting peers or reading node configuration.
+- `uqda find country=<name> limit=<n>` checks up to eight online TLS candidates
+  and ranks reachable TCP ports by connection time, with text and `--json` output.
+- Bounded parsing, HTTPS redirect restrictions, stale-snapshot rejection and
+  public-IP-only DNS validation protect the discovery path; credential-bearing
+  URIs are never suggested.
+- Catalog fuzz testing; the two-daemon harness reserves admin and peer ports
+  together to avoid duplicate port selection.
+
+Discovery never adds peers or changes `GroupPassword`. A successful TCP check is
+not a TLS handshake, key verification or overlay ping.
+
+## Uqda 26.0.3
+
+Release date: 2026-10-02. Machine version: `26.0.3`; tag: `v26.0.3`.
+Full notes: [release-notes-v26.0.3](docs/release-notes-v26.0.3.md).
+
+- `uqda help` documents every admin operation, alias, daemon flag, exit code and
+  installation lifecycle; `uqda help COMMAND` and `uqdactl help COMMAND` work
+  offline even when the daemon is stopped.
+- Unix admin-socket permission failures suggest rerunning with `sudo` instead of
+  implying daemon failure, return immediately and never echo arguments that may
+  contain peer passwords. No automatic elevation or relaxed socket permissions.
+- The two-node CLI test harness waits for both daemon startups.
+
+No wire-format or private-group authentication change relative to 26.0.2.
+
 ## Uqda 26.0.2
 
 Release date: 2026-10-02. Machine version: `26.0.2`; tag: `v26.0.2`.
