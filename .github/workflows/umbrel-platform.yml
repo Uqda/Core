@@ -1,9 +1,8 @@
 name: Umbrel platform validation
 on:
+  # A 55-minute run against the official Umbrel platform. Run it on demand
+  # before an Umbrel release rather than on every push.
   workflow_dispatch:
-  push:
-    branches: [beta]
-    paths: ['.github/workflows/umbrel-platform.yml', 'tests/umbrel/**', 'contrib/umbrel/**', 'uqda-network/**']
 permissions:
   contents: read
 concurrency:
