@@ -55,6 +55,10 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@d8073367669608af8fbcc5f63dd0a0d52bb90cff # v4
+        with:
+          # Uploading to code scanning needs GitHub Advanced Security on private
+          # repositories. Still analyse there, and upload once the repository is public.
+          upload: ${{ github.event.repository.private && 'never' || 'always' }}
 
   vet:
     name: go vet
