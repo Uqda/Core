@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased (beta)
+
+- Invites list at most four addresses, real LAN addresses first, and skip
+  virtual adapters (WSL, Hyper-V, Docker, VPN tunnels), so joining is faster
+  and the QR code is smaller and easier to scan.
+- Windows: the installer adds a firewall rule for `uqda.exe` limited to the
+  local subnet on private networks, so local discovery, LAN peerings and
+  invites are not silently blocked. Removed on uninstall.
+- `uqda info` shows the release name ("Uqda Core 26.1") like the other
+  commands.
+
 ## Uqda 26.1
 
 Release date: 2026-11-08. Machine version: `26.1.0`; tag: `v26.1.0`.

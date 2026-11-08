@@ -321,6 +321,10 @@ jobs:
           $installRoot = if ('${{ matrix.pkgarch }}' -eq 'x86') { ${env:ProgramFiles(x86)} } else { $env:ProgramFiles }
           $uqda = Join-Path $installRoot 'Uqda\uqda.exe'
           $config = Join-Path $env:ProgramData 'Uqda\uqda.conf'
+          $rule = Get-NetFirewallRule -DisplayName 'Uqda (local network)' -ErrorAction SilentlyContinue
+          if (-not $rule) { throw 'Installer did not add the Uqda local-network firewall rule' }
+          if (($rule | Get-NetFirewallAddressFilter).RemoteAddress -notcontains 'LocalSubnet') { throw 'Firewall rule is not limited to the local subnet' }
+          if ($rule.Profile -ne 'Private') { throw "Firewall rule profile is $($rule.Profile), expected Private only" }
           $reportedVersion = & $uqda --version
           if ($LASTEXITCODE -ne 0) { throw "Version command failed: $reportedVersion" }
           $expectedVersion = go run ./cmd/uqda -version
@@ -332,6 +336,7 @@ jobs:
           if ((Get-FileHash -Algorithm SHA256 $config).Hash -ne $identity) { throw 'MSI repair changed the node identity' }
           Invoke-Msi '/x' "$env:RUNNER_TEMP\uqda-remove.log"
           if (Test-Path $uqda) { throw 'MSI removal left the executable installed' }
+          if (Get-NetFirewallRule -DisplayName 'Uqda (local network)' -ErrorAction SilentlyContinue) { throw 'MSI removal left the firewall rule' }
           if (-not (Test-Path $config)) { throw 'MSI removal deleted the persistent identity' }
 
       - name: Upload artifacts

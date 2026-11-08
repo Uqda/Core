@@ -196,7 +196,11 @@ func run() int {
 		if err := json.Unmarshal(recv.Response, &resp); err != nil {
 			return fail(logger, logbuffer, "decode getSelf response: %v", err)
 		}
-		cli.Header(os.Stdout, "NODE IDENTITY", resp.BuildName+" "+resp.BuildVersion)
+		release := resp.BuildName + " " + resp.BuildVersion
+		if resp.BuildName == version.BuildName() {
+			release = version.DisplayNameFor(resp.BuildVersion)
+		}
+		cli.Header(os.Stdout, "NODE IDENTITY", release)
 		cli.Field(os.Stdout, "Address", resp.IPAddress)
 		cli.Field(os.Stdout, "Subnet", resp.Subnet)
 		cli.Field(os.Stdout, "Routes", fmt.Sprintf("%d", resp.RoutingEntries))
