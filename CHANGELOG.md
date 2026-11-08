@@ -2,6 +2,14 @@
 
 ## Unreleased (beta)
 
+- Invites. `uqda invite [expires=15m] [uses=1] [name=TEXT]` prints a one-time,
+  expiring invite as text and a QR code. `uqda join INVITE` contacts the
+  inviting node over TLS 1.3 pinned to its public key, proves possession of
+  the invite's random secret, and receives the group password and peers,
+  keeping its own identity. Invites hold no password, are rate-limited and
+  vanish on restart. `uqdactl cancelInvites` revokes them; `InvitePort` fixes
+  the redemption port. See [invites](docs/invites.md).
+
 - Inbound overlay firewall. New configurations from `-genconf` and the
   installers drop unsolicited inbound traffic and allow replies to this node's
   own connections, ping and ICMPv6 errors. Rules allow traffic by

@@ -24,6 +24,9 @@ an acronym. A network node connects to other nodes and may forward traffic.
 - Local administration through `uqdactl` and the admin socket.
 - One-command local health checks with `uqdactl doctor` (or `uqdactl status`).
 - Active remote reachability and loss checks with `uqdactl test <Uqda IPv6>`.
+- One-step device onboarding: `uqda invite` shows a one-time, expiring invite
+  (text and QR code), and `uqda join` adds the new device. No secret is stored
+  in the invite. See [invites](docs/invites.md).
 - A stateful inbound firewall, on by default for new nodes: only replies to
   your own connections and the services you allow get in. See [firewall](docs/firewall.md).
 - Configuration validation with `-checkconf`, Unix key-permission warnings,

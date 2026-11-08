@@ -86,6 +86,9 @@ var commandGuide = []guideEntry{
 	{"status", "uqda [status|doctor]", "Read-only health checks: daemon, identity, peers and TUN interface. status and doctor are aliases. Example: uqda status --json."},
 	{"peers", "uqda peers", "Show direct connections, traffic and latency. Example: uqda peers --json. The raw admin equivalent is uqdactl getPeers; sort=uptime or sort=cost changes ordering."},
 	{"info", "uqda info", "Show your IPv6 address, subnet and public key. The admin equivalent is uqdactl getSelf."},
+	{"invite", "uqda invite [expires=15m] [uses=1] [name=TEXT]", "Create a one-time invite for another device, shown as text and as a QR code. It expires (default 15m, at most 24h), works for the given number of devices (at most 10), and stops working if this node restarts. The invite holds no password: the new device proves it has the invite to this node over TLS 1.3, then receives the group password and peers. Cancel with uqdactl cancelInvites. Set InvitePort in uqda.conf if a host firewall must allow the redemption port."},
+	{"join", "uqda join INVITE [config=PATH]", "Join another node's network using its invite. Contacts the inviting node directly, verifies its identity, then adds its group password and peers to your configuration, keeping your own identity. Creates a new configuration if none exists, and saves the previous one as PATH.before-join. Restart Uqda afterwards; the command prints how."},
+	{"cancelInvites", "uqdactl cancelInvites", "Revoke every active invite and close the redemption port."},
 	{"firewall", "uqda firewall", "Show whether the inbound firewall is on, its allow rules, active flows and allowed/dropped packet counts. The admin equivalent is uqdactl getFirewall. Rules live in the Firewall section of uqda.conf; restart the daemon after editing them."},
 	{"test", "uqda test IP [count=N] [idle=DURATION]", "Probe overlay reachability. count is 1..20 (default 5); idle is 0s..5m. Example: uqda test 200:1234::1 count=10 idle=75s. Use count=10, not --count=10. Requires TUN and an OS ping utility. Timings include process startup, not just network RTT."},
 	{"version", "uqda version", "Show the installed release without contacting the daemon. uqdactl version shows its own installed release."},
@@ -124,7 +127,7 @@ var lifecycleGuide = []guideEntry{
 }
 
 func HelpTopic(w io.Writer, program, release, topic string) bool {
-	aliases := map[string]string{"doctor": "status", "getself": "info", "getpeers": "peers", "getfirewall": "firewall", "list": "commands"}
+	aliases := map[string]string{"doctor": "status", "getself": "info", "getpeers": "peers", "getfirewall": "firewall", "createinvite": "invite", "list": "commands"}
 	if name, ok := aliases[strings.ToLower(topic)]; ok {
 		topic = name
 	}

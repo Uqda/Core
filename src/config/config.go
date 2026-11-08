@@ -41,6 +41,7 @@ type NodeConfig struct {
 	LogLookups          bool                       `json:",omitempty"`
 	NodeInfoPrivacy     bool                       `comment:"By default, nodeinfo contains some defaults including the platform,\narchitecture and Uqda build version. These can help when surveying\nthe network and diagnosing network routing problems. Enabling\nnodeinfo privacy prevents this, so that only items specified in\n\"NodeInfo\" are sent back if specified."`
 	NodeInfo            map[string]interface{}     `comment:"Optional nodeinfo. This must be a { \"key\": \"value\", ... } map\nor set as null. This is entirely optional but, if set, is visible\nto the whole network on request."`
+	InvitePort          uint16                     `json:",omitempty" comment:"TCP port for redeeming invites from 'uqda invite' while one is active.\n0 (the default) picks a random port each time; set a fixed port if a\nhost firewall must allow it. The port is closed when no invite is active."`
 	Firewall            FirewallConfig             `comment:"Inbound firewall for traffic arriving over the Uqda network. When\nenabled, replies to connections this node opened are always allowed and\nany other inbound traffic is dropped unless a rule below allows it.\nWithout it, every service listening on your Uqda address is reachable\nby any node that can route to you. New configurations enable it."`
 }
 

@@ -86,6 +86,8 @@ gaps are mostly in *usability and control*, not in core encryption.
 
 ## Done in this review
 
+- One-step onboarding with secure invites ([invites](invites.md)).
+
 - Stateful inbound firewall, on by default for new nodes ([firewall](firewall.md)).
 
 - Bounded pending inbound handshakes (256 per node, 8 per source) and admin API

@@ -91,6 +91,7 @@ type nodeSpec struct {
 	adminPort  int    // 0 allocates a single-node port.
 	listenPort int    // 0 means "do not listen"
 	peerAddr   string // "" means "no configured outbound peer"
+	group      string // "" means public mode
 }
 
 // nodeHandle is what exists once the node has actually been started.
@@ -118,6 +119,9 @@ func startNode(t *testing.T, binPath string, spec nodeSpec) *nodeHandle {
 	cfg.MulticastInterfaces = nil
 	if spec.listenPort != 0 {
 		cfg.Listen = []string{fmt.Sprintf("tcp://127.0.0.1:%d", spec.listenPort)}
+	}
+	if spec.group != "" {
+		cfg.GroupPassword = spec.group
 	}
 	if spec.peerAddr != "" {
 		cfg.Peers = []string{spec.peerAddr}

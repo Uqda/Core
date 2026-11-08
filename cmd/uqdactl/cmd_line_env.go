@@ -81,7 +81,7 @@ func (cmdLineEnv *cmdLineEnv) parseFlagsAndArgs(args []string, output io.Writer)
 		flags.Usage()
 		return flag.ErrHelp
 	}
-	aliases := map[string]string{"peers": "getpeers", "info": "getself", "firewall": "getfirewall", "commands": "list"}
+	aliases := map[string]string{"peers": "getpeers", "info": "getself", "firewall": "getfirewall", "invite": "createinvite", "commands": "list"}
 	if canonical, ok := aliases[strings.ToLower(positional[0])]; ok {
 		positional[0] = canonical
 	}
@@ -89,7 +89,7 @@ func (cmdLineEnv *cmdLineEnv) parseFlagsAndArgs(args []string, output io.Writer)
 	if (isDoctorCommand(name) || name == "version") && len(positional) != 1 {
 		return fmt.Errorf("%s takes no arguments", name)
 	}
-	if name != "test" {
+	if name != "test" && name != "join" {
 		seen := make(map[string]bool)
 		for i, arg := range positional[1:] {
 			key, _, ok := strings.Cut(arg, "=")
