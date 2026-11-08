@@ -180,6 +180,11 @@ func run() int {
 			},
 		})))
 	}
+	// Fit tables to the terminal so they stay readable on small screens,
+	// truncating long cells. Piped output is left untouched for scripts.
+	if width := terminalWidth(os.Stdout); width > 0 {
+		opts = append(opts, tableFit(width)...)
+	}
 	table := tablewriter.NewTable(os.Stdout, opts...)
 
 	switch strings.ToLower(send.Name) {

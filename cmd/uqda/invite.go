@@ -14,7 +14,7 @@ import (
 // inviteGrant builds what a redeemed invite shares: the group password, this
 // node's configured peers, and this node's own fixed-port listeners on the
 // address the joining device used to reach it.
-func inviteGrant(cfg *config.NodeConfig, publicKey ed25519.PublicKey) invite.GrantFunc {
+func inviteGrant(cfg *config.NodeConfig, groupPassword string, publicKey ed25519.PublicKey) invite.GrantFunc {
 	return func(local net.IP) invite.Grant {
 		peers := append([]string{}, cfg.Peers...)
 		if local != nil && !local.IsUnspecified() {
@@ -32,7 +32,7 @@ func inviteGrant(cfg *config.NodeConfig, publicKey ed25519.PublicKey) invite.Gra
 			}
 		}
 		return invite.Grant{
-			GroupPassword:  cfg.GroupPassword,
+			GroupPassword:  groupPassword,
 			Peers:          peers,
 			InviterKey:     hex.EncodeToString(publicKey),
 			InviterAddress: net.IP(address.AddrForKey(publicKey)[:]).String(),

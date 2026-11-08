@@ -80,11 +80,18 @@ func (m *Uqda) StartJSON(configjson []byte) error {
 				return !iprange.Contains(ip)
 			}),
 		}
-		if m.config.GroupPassword != "" {
-			options = append(options, core.GroupPassword(m.config.GroupPassword))
+		groupPassword, err := m.config.ResolveGroupPassword()
+		if err != nil {
+			return fmt.Errorf("group password: %w", err)
+		}
+		if groupPassword != "" {
+			options = append(options, core.GroupPassword(groupPassword))
 		}
 		if m.config.RequireFreshHandshake {
 			options = append(options, core.RequireFreshHandshake(true))
+		}
+		if m.config.MaxInboundPeers > 0 {
+			options = append(options, core.MaxInboundPeers(m.config.MaxInboundPeers))
 		}
 		for _, peer := range m.config.Peers {
 			options = append(options, core.Peer{URI: peer})
@@ -107,7 +114,6 @@ func (m *Uqda) StartJSON(configjson []byte) error {
 		for _, lAddr := range m.config.Listen {
 			options = append(options, core.ListenAddress(lAddr))
 		}
-		var err error
 		m.core, err = core.New(m.config.Certificate, logger, options...)
 		if err != nil {
 			return fmt.Errorf("start Uqda core: %w", err)

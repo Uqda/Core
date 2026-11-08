@@ -40,6 +40,7 @@ type Core struct {
 		_allowedPublicKeys map[[32]byte]struct{}      // configurable after startup
 		groupPassword      string                     // immutable after startup
 		requireFresh       bool                       // immutable after startup
+		maxInbound         int                        // immutable after startup
 	}
 	pathNotify func(ed25519.PublicKey)
 }

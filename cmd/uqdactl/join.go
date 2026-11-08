@@ -70,6 +70,13 @@ func executeJoin(ctx context.Context, args []string, inJSON bool, out, errOut io
 		fmt.Fprintln(errOut, "Uqda:", err)
 		return 1
 	}
+	if cfg.GroupPasswordFile != "" {
+		if current, err := cfg.ResolveGroupPassword(); err != nil || current != grant.GroupPassword {
+			fmt.Fprintf(errOut, "Uqda: this node reads its group password from %s. Put the inviter's group password in that file, or remove GroupPasswordFile, then run join again.\n", cfg.GroupPasswordFile)
+			return 1
+		}
+		grant.GroupPassword = "" // already set through the file
+	}
 	result := joinResult{Config: path, Created: existing == nil, InviterAddress: grant.InviterAddress, Name: grant.Name}
 	result.Changes = invite.Apply(cfg, grant)
 	if len(result.Changes) == 0 {
@@ -113,6 +120,11 @@ func loadOrCreateConfig(path string) (*config.NodeConfig, []byte, error) {
 	switch {
 	case errors.Is(err, os.ErrNotExist):
 		cfg := config.GenerateConfig()
+		// A stronger key makes the address and /64 subnet much harder to
+		// collide with, for a few milliseconds of work.
+		if err := cfg.NewPrivateKeyWithStrength(config.DefaultKeyStrength); err != nil {
+			return nil, nil, err
+		}
 		cfg.AdminListen = ""
 		cfg.Firewall = config.DefaultFirewall()
 		return cfg, nil, nil

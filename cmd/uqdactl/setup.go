@@ -109,6 +109,12 @@ func executeSetup(ctx context.Context, args []string, inJSON bool, out, errOut i
 		}
 	}
 	switch {
+	case cfg.GroupPasswordFile != "" && opts.mode == "public":
+		fmt.Fprintf(errOut, "Uqda: this node reads its group password from %s; remove GroupPasswordFile from the configuration to make it public.\n", cfg.GroupPasswordFile)
+		return 2
+	case cfg.GroupPasswordFile != "":
+		mode = "private"
+		result.Changes = append(result.Changes, "kept the group password from "+cfg.GroupPasswordFile)
 	case mode == "private" && cfg.GroupPassword == "":
 		pw, err := newGroupPassword()
 		if err != nil {

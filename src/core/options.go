@@ -38,6 +38,8 @@ func (c *Core) _applyOption(opt SetupOption) (err error) {
 		c.config.groupPassword = string(v)
 	case RequireFreshHandshake:
 		c.config.requireFresh = bool(v)
+	case MaxInboundPeers:
+		c.config.maxInbound = int(v)
 	}
 	return
 }
@@ -71,6 +73,11 @@ type PeerFilter func(net.IP) bool
 // GroupPassword separates encrypted session traffic into a private group.
 type GroupPassword string
 
+// MaxInboundPeers limits established inbound peerings from non-local
+// addresses. Zero means no limit. Outbound peers, multicast-discovered local
+// peers and keys in AllowedPublicKeys are never counted or refused.
+type MaxInboundPeers int
+
 // RequireFreshHandshake rejects peers that cannot prove possession of their
 // key for this specific connection (Yggdrasil nodes and older Uqda releases).
 type RequireFreshHandshake bool
@@ -83,3 +90,4 @@ func (a AllowedPublicKey) isSetupOption()      {}
 func (a PeerFilter) isSetupOption()            {}
 func (a GroupPassword) isSetupOption()         {}
 func (a RequireFreshHandshake) isSetupOption() {}
+func (a MaxInboundPeers) isSetupOption()       {}

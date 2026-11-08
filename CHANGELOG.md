@@ -2,6 +2,26 @@
 
 ## Unreleased (beta)
 
+Requested by Yggdrasil users; see [upstream issues](docs/upstream/issues.md).
+
+- Peer and listener passwords can be read from a file with
+  `?password_file=PATH`, and the group password with `GroupPasswordFile`, so
+  secrets stay out of `uqda.conf` (upstream #1083).
+- `MaxInboundPeers` limits inbound peerings on public nodes. Outbound, local
+  multicast and `AllowedPublicKeys` peers are never refused (upstream #172).
+- Repeated multicast errors such as `bind: address already in use` are logged
+  once as a warning, then at debug level for 10 minutes (upstream #1173, #1192).
+- `uqdactl` tables fit the terminal width, truncating long cells; piped output
+  is unchanged, and `COLUMNS` overrides the width (upstream #1357).
+- On Linux, `IfName: auto` now names the interface `uqda0` (then `uqda1`...)
+  instead of the kernel's `tun0`, avoiding clashes with other tunnels. Update
+  host firewall rules that referred to `tun0` (upstream #1354).
+- `uqda -genconf -strength=N` searches for a key with N leading zero bits,
+  making the address and subnet harder to collide with; `setup` and `join`
+  create strength-8 identities (upstream #885, #779).
+- Fixed: a listener whose URI had an invalid `priority` or password stayed
+  open after being rejected.
+
 - `uqda setup [mode=private|public] [country=NAME] [peers=0..5]` sets up a node
   in one step. On a new device it creates an identity, a private network with
   a random 192-bit group password, the inbound firewall, and the fastest

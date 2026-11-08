@@ -16,6 +16,7 @@ import (
 	"io"
 	"math/big"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/hjson/hjson-go/v4"
@@ -35,6 +36,7 @@ type NodeConfig struct {
 	AdminListen           string                     `json:",omitempty" comment:"Listen address for admin connections. Default is to listen for local\nconnections either on TCP/9001 or a UNIX socket depending on your\nplatform. Use this value for uqdactl -endpoint=X. To disable\nthe admin socket, use the value \"none\" instead."`
 	MulticastInterfaces   []MulticastInterfaceConfig `comment:"Configuration for which interfaces multicast peer discovery should be\nenabled on. Regex is a regular expression which is matched against an\ninterface name, and interfaces use the first configuration that they\nmatch against. Beacon controls whether or not your node advertises its\npresence to others, whereas Listen controls whether or not your node\nlistens out for and tries to connect to other advertising nodes. See\nhttps://yggdrasil-network.github.io/configurationref.html#multicastinterfaces\nfor more supported options."`
 	AllowedPublicKeys     []string                   `comment:"List of peer public keys to allow incoming peering connections\nfrom. If left empty/undefined then all connections will be allowed\nby default. This does not affect outgoing peerings, nor does it\naffect link-local peers discovered via multicast.\nWARNING: THIS IS NOT A FIREWALL and DOES NOT limit who can reach\nopen ports or services running on your machine; for that see the\nFirewall and GroupPassword options below."`
+	GroupPasswordFile     string                     `json:",omitempty" comment:"Read the group password from this file instead of GroupPassword,\nfor example a systemd credential. Trailing newlines are ignored. Set\neither this or GroupPassword, not both."`
 	GroupPassword         string                     `comment:"Traffic is only allowed to/from nodes with the same group password.\nIf you want to form a private sub-network or ensure that other public\nusers cannot connect to your machines, choose a strong group password\nand then configure the same password only with other group members.\nIf left empty or not specified, public connectivity will be permitted.\nIf specified, you WILL NOT be able to reach public services or hosts.\nThis option DOES NOT affect peering connections or traffic routing."`
 	IfName                string                     `comment:"Local network interface name for TUN adapter, or \"auto\" to select\nan interface automatically, or \"none\" to run without TUN."`
 	IfMTU                 uint64                     `comment:"Maximum Transmission Unit (MTU) size for your local TUN interface.\nDefault is the largest supported size for your platform. The lowest\npossible value is 1280."`
@@ -42,6 +44,7 @@ type NodeConfig struct {
 	NodeInfoPrivacy       bool                       `comment:"By default, nodeinfo contains some defaults including the platform,\narchitecture and Uqda build version. These can help when surveying\nthe network and diagnosing network routing problems. Enabling\nnodeinfo privacy prevents this, so that only items specified in\n\"NodeInfo\" are sent back if specified."`
 	NodeInfo              map[string]interface{}     `comment:"Optional nodeinfo. This must be a { \"key\": \"value\", ... } map\nor set as null. This is entirely optional but, if set, is visible\nto the whole network on request."`
 	InvitePort            uint16                     `json:",omitempty" comment:"TCP port for redeeming invites from 'uqda invite' while one is active.\n0 (the default) picks a random port each time; set a fixed port if a\nhost firewall must allow it. The port is closed when no invite is active."`
+	MaxInboundPeers       int                        `json:",omitempty" comment:"Maximum number of inbound peerings from the internet. 0 (the default)\nmeans no limit. Useful for public nodes that must not be overloaded.\nOutbound Peers, local multicast peers and AllowedPublicKeys are\nnever refused, so your own links keep working when the node is full."`
 	RequireFreshHandshake bool                       `json:",omitempty" comment:"Reject peers that cannot prove possession of their key for each new\nconnection. Uqda nodes always do this with each other; Yggdrasil nodes and\nolder Uqda releases cannot, so enable it only for all-Uqda networks. It\nprevents a recorded handshake from being replayed to impersonate a peer."`
 	Firewall              FirewallConfig             `comment:"Inbound firewall for traffic arriving over the Uqda network. When\nenabled, replies to connections this node opened are always allowed and\nany other inbound traffic is dropped unless a rule below allows it.\nWithout it, every service listening on your Uqda address is reachable\nby any node that can route to you. New configurations enable it."`
 }
@@ -59,6 +62,44 @@ type FirewallRule struct {
 	Protocol string
 	Ports    []string `json:",omitempty"`
 	Comment  string   `json:",omitempty"`
+}
+
+// ResolveGroupPassword returns the group password from GroupPassword or
+// GroupPasswordFile. The file is read each time, so the secret is never
+// copied into the configuration.
+func (cfg *NodeConfig) ResolveGroupPassword() (string, error) {
+	if cfg.GroupPasswordFile == "" {
+		return cfg.GroupPassword, nil
+	}
+	if cfg.GroupPassword != "" {
+		return "", fmt.Errorf("set GroupPassword or GroupPasswordFile, not both")
+	}
+	pw, err := ReadSecretFile(cfg.GroupPasswordFile)
+	if err != nil {
+		return "", fmt.Errorf("GroupPasswordFile: %w", err)
+	}
+	return pw, nil
+}
+
+// ReadSecretFile reads a short secret from path, ignoring trailing newlines.
+func ReadSecretFile(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	b, err := io.ReadAll(io.LimitReader(f, 4097))
+	if err != nil {
+		return "", err
+	}
+	if len(b) > 4096 {
+		return "", fmt.Errorf("%s is larger than 4 KiB", path)
+	}
+	s := strings.TrimRight(string(b), "\r\n")
+	if s == "" {
+		return "", fmt.Errorf("%s is empty", path)
+	}
+	return s, nil
 }
 
 // DefaultFirewall is the firewall written into newly generated configurations.

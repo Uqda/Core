@@ -18,7 +18,6 @@ import (
 
 	"github.com/Arceliar/phony"
 	"github.com/Uqda/Core/src/address"
-	"golang.org/x/crypto/blake2b"
 )
 
 type linkType int
@@ -47,6 +46,8 @@ type links struct {
 	_listeners map[*Listener]context.CancelFunc
 	// handshakes bounds inbound connections still in the metadata handshake.
 	handshakes *handshakeLimiter
+	// inbound counts established inbound peerings subject to MaxInboundPeers.
+	inbound atomic.Int64
 }
 
 type linkProtocol interface {
@@ -160,6 +161,7 @@ const (
 	ErrLinkPriorityInvalid    = linkError("priority value is invalid")
 	ErrLinkPinnedKeyInvalid   = linkError("pinned public key is invalid")
 	ErrLinkPasswordInvalid    = linkError("invalid password supplied")
+	ErrLinkInboundLimit       = linkError("refusing inbound peer: MaxInboundPeers reached")
 	ErrLinkUnrecognisedSchema = linkError("link schema unknown")
 	ErrLinkMaxBackoffInvalid  = linkError("max backoff duration invalid")
 	ErrLinkSNINotSupported    = linkError("SNI not supported on this link type")
@@ -228,12 +230,11 @@ func (l *links) add(u *url.URL, sintf string, linkType linkType) error {
 			}
 			options.priority = uint8(pi)
 		}
-		if p := u.Query().Get("password"); p != "" {
-			if len(p) > blake2b.Size {
-				retErr = ErrLinkPasswordInvalid
-				return
-			}
-			options.password = []byte(p)
+		if p, err := linkPassword(u.Query()); err != nil {
+			retErr = err
+			return
+		} else if p != nil {
+			options.password = p
 		}
 		if p := u.Query().Get("maxbackoff"); p != "" {
 			d, err := time.ParseDuration(p)
@@ -525,15 +526,16 @@ func (l *links) listen(u *url.URL, sintf string, local bool) (*Listener, error) 
 	if p := u.Query().Get("priority"); p != "" {
 		pi, err := strconv.ParseUint(p, 10, 8)
 		if err != nil {
+			cancel()
 			return nil, ErrLinkPriorityInvalid
 		}
 		options.priority = uint8(pi)
 	}
-	if p := u.Query().Get("password"); p != "" {
-		if len(p) > blake2b.Size {
-			return nil, ErrLinkPasswordInvalid
-		}
-		options.password = []byte(p)
+	if p, err := linkPassword(u.Query()); err != nil {
+		cancel()
+		return nil, err
+	} else if p != nil {
+		options.password = p
 	}
 
 	phony.Block(l, func() {
@@ -775,14 +777,24 @@ func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, s
 			allowed = l.core.config._allowedPublicKeys
 		})
 		isallowed := len(allowed) == 0
+		listed := false
 		for k := range allowed {
 			if bytes.Equal(k[:], meta.publicKey) {
-				isallowed = true
+				isallowed, listed = true, true
 				break
 			}
 		}
 		if linkType == linkTypeIncoming && !isallowed {
 			return fmt.Errorf("node public key %q is not in AllowedPublicKeys", hex.EncodeToString(meta.publicKey))
+		}
+		// Public nodes can cap how many strangers peer with them. Trusted
+		// keys bypass the cap, so a full node can still be reached by them.
+		if max := l.core.config.maxInbound; linkType == linkTypeIncoming && max > 0 && !listed {
+			if l.inbound.Add(1) > int64(max) {
+				l.inbound.Add(-1)
+				return ErrLinkInboundLimit
+			}
+			defer l.inbound.Add(-1)
 		}
 	}
 
