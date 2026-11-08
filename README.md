@@ -106,6 +106,7 @@ Report vulnerabilities privately using [SECURITY](SECURITY.md).
 - [Doctor health check](docs/doctor.md)
 - [Testing](docs/testing.md) and [contributing](CONTRIBUTING.md)
 - [Packaging](docs/packaging.md) and [release conventions](docs/releasing.md)
+- [Roadmap and gap analysis](docs/roadmap.md)
 
 ## License and attribution
 
