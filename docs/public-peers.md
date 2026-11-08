@@ -70,3 +70,35 @@ Exit codes: `0` for countries or at least one reachable suggestion, `1` for a
 source/probe failure or no reachable suggestions, `2` for invalid arguments.
 An empty successful catalog probe prints JSON with an empty `suggestions` array
 but returns `1`. No raw transport error or URI credential is printed.
+
+## Automatic peers
+
+`uqda find` suggests peers once. `AutoPeers` keeps doing it inside the daemon,
+so a node stays connected when public peers come and go:
+
+```hjson
+AutoPeers: {
+  Enabled: true
+  Country: germany   # a catalog country; run uqda find for the list
+  Count: 2           # wanted healthy outbound peers, 1 to 5
+  Interval: 30m      # how often to re-measure, 10m to 24h
+}
+```
+
+| Situation | What Uqda does |
+|---|---|
+| Fewer than `Count` outbound peers are up | Adds the fastest reachable public TLS peers in `Country` |
+| A peer it added has been down for five minutes | Removes it and adds the next best |
+| A free candidate is much faster (at least 1.5 times plus 30 ms) than its slowest peer | Swaps that one peer, at most one per check |
+| The catalog cannot be reached | Keeps the current peers and warns once |
+| A peer you listed in `Peers` | Never removes it; it counts towards `Count` while it is up |
+
+Inbound connections and local multicast peers do not count, because they are
+not a path to the rest of the network. `uqda setup country=NAME` writes two
+peers as a starting point and turns `AutoPeers` on. Check it with
+`uqdactl getAutoPeers -json` or `uqda status`.
+
+Privacy: the catalog operator sees your IP address each time it is fetched
+(at start and every `Interval`), and measured peers see TCP connection
+attempts. Choosing a public peer does not change who can reach you; the
+[firewall](firewall.md) and private groups still decide that.

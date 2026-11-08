@@ -2,6 +2,14 @@
 
 ## Unreleased (beta)
 
+- Automatic peer selection. `AutoPeers: { Enabled: true, Country: "germany",
+  Count: 2 }` keeps that many healthy outbound peers: Uqda adds the fastest
+  reachable public TLS peers, replaces one it added after five minutes down,
+  and swaps one for a much faster peer on each check (every 30 minutes by
+  default). Configured `Peers` are never removed. `uqda setup country=NAME`
+  turns it on; `uqdactl getAutoPeers` and `uqda status` report it. See
+  [public peers](docs/public-peers.md#automatic-peers).
+
 - The Debian package installs in containers and chroots: its scripts start
   or stop the service only when systemd is running, and otherwise print how
   to start Uqda instead of failing with a half-configured package.

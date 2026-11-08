@@ -60,7 +60,13 @@ gaps are mostly in *usability and control*, not in core encryption.
    "only these three keys may reach port 22". This is the most requested
    professional feature, and it is entirely local, so there is no wire change.
    *Medium.*
-7. **Names instead of addresses.** A local address book (the Umbrel dashboard
+7. **Names instead of addresses (`.uqda`).** Design agreed, deferred: a
+   decentralised `.uqda` namespace with no central registry. Name records are
+   signed by the owner's key and carry proof of work against squatting; they
+   are stored on many nodes and resolved by asking several and checking
+   signatures, with renewal and a warning when a name's key changes. A local
+   resolver answers only `.uqda`, alongside personal and group address books.
+   Earlier note: A local address book (the Umbrel dashboard
    already has one) served by a small DNS resolver for a reserved suffix such as
    `.uqda.internal`, mapping names to public keys and addresses. *Medium.* Local
    only; sharing name records between nodes is a later step.
