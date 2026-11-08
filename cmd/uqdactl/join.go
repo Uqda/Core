@@ -75,7 +75,7 @@ func executeJoin(ctx context.Context, args []string, inJSON bool, out, errOut io
 	if len(result.Changes) == 0 {
 		result.Changes = []string{"already up to date"}
 	}
-	if result.Backup, err = writeConfig(path, cfg, existing); err != nil {
+	if result.Backup, err = writeConfig(path, cfg, existing, ".before-join"); err != nil {
 		fmt.Fprintln(errOut, "Uqda:", err)
 		return 1
 	}
@@ -128,7 +128,7 @@ func loadOrCreateConfig(path string) (*config.NodeConfig, []byte, error) {
 
 // writeConfig saves cfg atomically with owner-only permissions, keeping a
 // copy of the previous file. It returns the backup path, if one was made.
-func writeConfig(path string, cfg *config.NodeConfig, existing []byte) (string, error) {
+func writeConfig(path string, cfg *config.NodeConfig, existing []byte, backupSuffix string) (string, error) {
 	if cfg.PrivateKeyPath != "" {
 		cfg.PrivateKey = nil // keep the key in its external file
 	}
@@ -142,7 +142,7 @@ func writeConfig(path string, cfg *config.NodeConfig, existing []byte) (string, 
 	}
 	backup := ""
 	if existing != nil {
-		backup = path + ".before-join"
+		backup = path + backupSuffix
 		if err := os.WriteFile(backup, existing, 0o600); err != nil {
 			return "", fmt.Errorf("save backup %s: %w", backup, err)
 		}
