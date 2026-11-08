@@ -163,6 +163,9 @@ func parseCatalog(body []byte) (Catalog, error) {
 	}
 }
 
+// ValidCountry reports whether s is a well-formed catalog country name.
+func ValidCountry(s string) bool { return validCountry(s) }
+
 func validCountry(s string) bool {
 	if s == "" || len(s) > 64 || s[0] < 'a' || s[0] > 'z' {
 		return false

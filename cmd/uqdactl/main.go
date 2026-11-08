@@ -17,6 +17,7 @@ import (
 
 	"suah.dev/protect"
 
+	"github.com/Uqda/Core/internal/autopeer"
 	"github.com/Uqda/Core/internal/cli"
 	"github.com/Uqda/Core/src/admin"
 	"github.com/Uqda/Core/src/core"
@@ -323,6 +324,36 @@ func run() int {
 		if resp.Warning != "" {
 			fmt.Println("Note: " + resp.Warning + ".")
 		}
+
+	case "getautopeers":
+		var resp autopeer.Status
+		if err := json.Unmarshal(recv.Response, &resp); err != nil {
+			return fail(logger, logbuffer, "decode getAutoPeers response: %v", err)
+		}
+		if !resp.Enabled {
+			_ = table.Append([]string{"Auto peers:", "OFF - set AutoPeers in uqda.conf or run uqda setup country=NAME"})
+			_ = table.Render()
+			break
+		}
+		_ = table.Append([]string{"Auto peers:", fmt.Sprintf("ON - %d of %d healthy outbound peer(s) in %s", resp.Healthy, resp.Count, resp.Country)})
+		if len(resp.Peers) == 0 {
+			_ = table.Append([]string{"Added:", "none (your configured peers are enough)"})
+		}
+		for i, p := range resp.Peers {
+			label := ""
+			if i == 0 {
+				label = "Added:"
+			}
+			state := map[bool]string{true: "up", false: "down"}[p.Up]
+			_ = table.Append([]string{label, fmt.Sprintf("%s (%s, %.0f ms)", p.URI, state, p.ConnectMS)})
+		}
+		if resp.LastCheck != "" {
+			_ = table.Append([]string{"Last check:", resp.LastCheck})
+		}
+		if resp.LastError != "" {
+			_ = table.Append([]string{"Last error:", resp.LastError})
+		}
+		_ = table.Render()
 
 	case "getfirewall":
 		var resp firewall.Status
