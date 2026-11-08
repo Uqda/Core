@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased (beta)
+
+- The Debian package installs in containers and chroots: its scripts start
+  or stop the service only when systemd is running, and otherwise print how
+  to start Uqda instead of failing with a half-configured package.
+- The configuration permission warning no longer fires for the packaged
+  `root:uqda 0640` layout. It warns when other users have any access or the
+  group can write or execute the file.
+
 ## Uqda 26.1 Beta 1
 
 Prerelease date: 2026-11-08. Machine version: `26.1-beta.1`; tag: `v26.1-beta.1`.
