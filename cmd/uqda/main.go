@@ -452,7 +452,7 @@ func warnIfConfigFilePermissionsAreUnsafe(path string, logger *log.Logger) {
 		return
 	}
 	if unsafe {
-		logger.Warnf("%s is readable or writable by other users on this system - it may contain your node's private key. Consider restricting it to your own user (e.g. chmod 600 %s).", path, path)
+		logger.Warnf("%s is accessible to other users or writable by its group - it may contain your node's private key. Restrict it, for example chmod 600 %s (or 640 with a dedicated service group).", path, path)
 	}
 }
 

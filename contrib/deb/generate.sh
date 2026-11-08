@@ -40,16 +40,25 @@ install -d -m 750 -o root -g uqda /etc/uqda
 UQDA_BIN=/usr/bin/uqda /usr/lib/uqda/install-config /etc/uqda/uqda.conf /etc/yggdrasil/yggdrasil.conf /etc/yggdrasil.conf
 chown root:uqda /etc/uqda/uqda.conf
 chmod 640 /etc/uqda/uqda.conf
-systemctl daemon-reload
-systemctl enable uqda
-systemctl restart uqda
+if [ -d /run/systemd/system ]; then
+  systemctl daemon-reload
+  systemctl enable uqda
+  systemctl restart uqda
+else
+  # Containers and chroots have no running systemd: enable the unit for the
+  # next boot where possible, and never fail the installation over it.
+  if command -v systemctl >/dev/null 2>&1; then systemctl enable uqda >/dev/null 2>&1 || true; fi
+  echo "uqda: systemd is not running, so the service was not started. Start it with your init system, or run: uqda -useconffile /etc/uqda/uqda.conf" >&2
+fi
 EOF
 cat > "$STAGE/DEBIAN/prerm" <<'EOF'
 #!/bin/sh
 set -eu
-if command -v systemctl >/dev/null; then
+if [ -d /run/systemd/system ]; then
   systemctl stop uqda || true
-  if [ "${1:-}" = remove ]; then systemctl disable uqda || true; fi
+fi
+if [ "${1:-}" = remove ] && command -v systemctl >/dev/null 2>&1; then
+  systemctl disable uqda >/dev/null 2>&1 || true
 fi
 # Configuration and external identity keys are operator-owned and retained.
 EOF
