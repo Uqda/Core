@@ -81,7 +81,7 @@ func (cmdLineEnv *cmdLineEnv) parseFlagsAndArgs(args []string, output io.Writer)
 		flags.Usage()
 		return flag.ErrHelp
 	}
-	aliases := map[string]string{"peers": "getpeers", "info": "getself", "firewall": "getfirewall", "invite": "createinvite", "commands": "list"}
+	aliases := map[string]string{"peers": "getpeers", "info": "getself", "firewall": "getfirewall", "autopeers": "getautopeers", "invite": "createinvite", "commands": "list"}
 	if canonical, ok := aliases[strings.ToLower(positional[0])]; ok {
 		positional[0] = canonical
 	}
