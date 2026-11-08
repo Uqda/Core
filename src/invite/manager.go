@@ -254,13 +254,15 @@ func (m *Manager) handle(conn *tls.Conn) {
 	source := sourceKey(conn.RemoteAddr())
 	reply := func(r redeemResponse) { _ = json.NewEncoder(conn).Encode(r) }
 
-	if m.limited(source) {
-		reply(redeemResponse{Error: "too many failed attempts; wait a minute"})
-		return
-	}
+	// Read the request before any reply. Closing a socket with unread data
+	// makes Windows reset the connection, and the client would lose the reply.
 	var req redeemRequest
 	if err := json.NewDecoder(io.LimitReader(conn, maxRequestBytes)).Decode(&req); err != nil {
 		m.fail(source)
+		return
+	}
+	if m.limited(source) {
+		reply(redeemResponse{Error: "too many failed attempts; wait a minute"})
 		return
 	}
 	secret, err := base64.RawURLEncoding.DecodeString(req.Secret)
