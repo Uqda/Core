@@ -44,6 +44,8 @@ type links struct {
 	// _links can only be modified safely from within the links actor
 	_links     map[linkInfo]*link // *link is nil if connection in progress
 	_listeners map[*Listener]context.CancelFunc
+	// handshakes bounds inbound connections still in the metadata handshake.
+	handshakes *handshakeLimiter
 }
 
 type linkProtocol interface {
@@ -101,6 +103,7 @@ func (l *links) init(c *Core) error {
 	l.wss = l.newLinkWSS()
 	l._links = make(map[linkInfo]*link)
 	l._listeners = make(map[*Listener]context.CancelFunc)
+	l.handshakes = newHandshakeLimiter(maxPendingHandshakes, maxPendingHandshakesPerSource)
 
 	l.Act(nil, l._updateAverages)
 	return nil
@@ -548,8 +551,18 @@ func (l *links) listen(u *url.URL, sintf string, local bool) (*Listener, error) 
 			if err != nil {
 				return
 			}
+			// Bound connections that have not finished the handshake, so that
+			// a connection flood cannot exhaust goroutines, memory or CPU.
+			release, ok := l.handshakes.acquire(handshakeSourceKey(conn.RemoteAddr()))
+			if !ok {
+				l.core.log.Debugf("Rejecting %s connection from %s: too many pending handshakes",
+					strings.ToUpper(u.Scheme), conn.RemoteAddr())
+				_ = conn.Close()
+				continue
+			}
 			go func(conn net.Conn) {
 				defer conn.Close()
+				defer release()
 
 				// In order to populate a somewhat sane looking connection
 				// URI in the admin socket, we need to replace the host in
@@ -611,7 +624,7 @@ func (l *links) listen(u *url.URL, sintf string, local bool) (*Listener, error) 
 
 				// Give the connection to the handler. The handler will block
 				// for the lifetime of the connection.
-				switch err = l.handler(linkTypeIncoming, options, lc, nil, local); {
+				switch err = l.handler(linkTypeIncoming, options, lc, release, local); {
 				case err == nil:
 				case errors.Is(err, io.EOF):
 				case errors.Is(err, net.ErrClosed):
