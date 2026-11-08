@@ -23,11 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Fetch and verify the pinned Core release
+        env:
+          # Authenticated download works whether the repository is public or private.
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p "$RUNNER_TEMP/uqda-release"
           cd "$RUNNER_TEMP/uqda-release"
-          curl -fL --retry 3 https://github.com/Uqda/Core/releases/download/v26.0.5/uqda-26.0.5-linux-amd64.tar.gz -o uqda-26.0.5-linux-amd64.tar.gz
-          curl -fL --retry 3 https://github.com/Uqda/Core/releases/download/v26.0.5/SHA256SUMS -o SHA256SUMS
+          gh release download v26.0.5 --repo "$GITHUB_REPOSITORY" --pattern uqda-26.0.5-linux-amd64.tar.gz --pattern SHA256SUMS
           awk '$2 == "uqda-26.0.5-linux-amd64.tar.gz" {print}' SHA256SUMS > selected.sha256
           test -s selected.sha256
           sha256sum -c selected.sha256
