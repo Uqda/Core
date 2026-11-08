@@ -9,7 +9,7 @@ No upstream endorsement or affiliation is implied.
 [LICENSE](LICENSE) contains the authoritative LGPLv3 terms and linking exception.
 Existing copyright notices, license texts and authorship remain applicable.
 Yggdrasil's inherited addressing, peering, administration and host networking
-capabilities are upstream work. [Upstream release history](docs/upstream-changelog.md)
+capabilities are upstream work. [Upstream release history](docs/upstream/changelog.md)
 preserves the inherited public release entries; [CHANGELOG](CHANGELOG.md) covers Uqda.
 
 ## Dependencies
@@ -28,5 +28,5 @@ include the applicable notices and meet the terms for their actual dependency
 set; this summary is not an exhaustive third-party license inventory.
 
 The standalone `contrib/uqda-brute-simple` tool has its own license.
-The upstream logo in `docs/upstream-assets/upstream-logo-neilalexander.svg` is retained
+The upstream logo in `docs/upstream/assets/upstream-logo-neilalexander.svg` is retained
 as source provenance and is not presented as Uqda branding.

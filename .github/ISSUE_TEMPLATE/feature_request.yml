@@ -1,0 +1,41 @@
+name: Feature request
+description: Suggest something Uqda should do
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [roadmap](https://github.com/Uqda/Core/blob/main/docs/roadmap.md) first; your idea may already be planned.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The situation and the outcome you want, in your own words.
+      placeholder: I want my phone to reach my home server's files when I am away, without opening ports.
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: What happens today?
+      description: What you tried, and where it falls short.
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea (optional)
+      description: How Uqda could solve it. Leave blank if unsure.
+  - type: dropdown
+    id: network
+    attributes:
+      label: Which network is this about?
+      options:
+        - Private group
+        - Public network
+        - Both or not sure
+  - type: checkboxes
+    id: compat
+    attributes:
+      label: Compatibility
+      options:
+        - label: I understand Uqda must stay compatible with the Yggdrasil network.
+          required: true

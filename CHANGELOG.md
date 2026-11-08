@@ -38,7 +38,7 @@
 ## Uqda 26.0.5
 
 Release date: 2026-10-03. Machine version: `26.0.5`; tag: `v26.0.5`.
-Full notes: [release-notes-v26.0.5](docs/release-notes-v26.0.5.md).
+Full notes: [release-notes-v26.0.5](docs/releases/v26.0.5.md).
 
 - Fix the mobile embedding SDK silently ignoring `GroupPassword`. Android and
   Apple bindings now enforce the configured private group; upgrade previously
@@ -57,7 +57,7 @@ Installers remain unsigned.
 ## Uqda 26.0.4
 
 Release date: 2026-10-02. Machine version: `26.0.4`; tag: `v26.0.4`.
-Full notes: [release-notes-v26.0.4](docs/release-notes-v26.0.4.md).
+Full notes: [release-notes-v26.0.4](docs/releases/v26.0.4.md).
 
 - `uqda find` lists read-only public TLS peer suggestions by country from the
   public peers catalog, without contacting peers or reading node configuration.
@@ -75,7 +75,7 @@ not a TLS handshake, key verification or overlay ping.
 ## Uqda 26.0.3
 
 Release date: 2026-10-02. Machine version: `26.0.3`; tag: `v26.0.3`.
-Full notes: [release-notes-v26.0.3](docs/release-notes-v26.0.3.md).
+Full notes: [release-notes-v26.0.3](docs/releases/v26.0.3.md).
 
 - `uqda help` documents every admin operation, alias, daemon flag, exit code and
   installation lifecycle; `uqda help COMMAND` and `uqdactl help COMMAND` work
@@ -196,4 +196,4 @@ Released 2026-09-27. Machine version: `26.0-beta.1`; tag: `v26.0-beta.1`.
 - No anonymity guarantee or independent external security audit is claimed.
 
 Inherited public upstream release notes are preserved in
-[upstream release history](docs/upstream-changelog.md).
+[upstream release history](docs/upstream/changelog.md).
