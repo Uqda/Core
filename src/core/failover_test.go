@@ -146,6 +146,12 @@ func runFailover(t *testing.T, closeIt bool, maxGap time.Duration, maxShare floa
 		}
 		return true
 	}) {
+		for name, n := range map[string]*Core{"A": a, "B": b, "C": c, "D": d} {
+			t.Logf("node %s: %d tree entries", name, len(n.GetTree()))
+			for _, p := range n.GetPeers() {
+				t.Logf("  peer %s up=%v inbound=%v err=%v", p.URI, p.Up, p.Inbound, p.LastError)
+			}
+		}
 		t.Fatal("the four nodes did not form one tree")
 	}
 	time.Sleep(3 * time.Second)
