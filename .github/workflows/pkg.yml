@@ -330,6 +330,9 @@ jobs:
           if (-not $rule) { throw 'Installer did not add the Uqda local-network firewall rule' }
           if (($rule | Get-NetFirewallAddressFilter).RemoteAddress -notcontains 'LocalSubnet') { throw 'Firewall rule is not limited to the local subnet' }
           if ($rule.Profile -ne 'Private') { throw "Firewall rule profile is $($rule.Profile), expected Private only" }
+          foreach ($f in 'LICENSE.txt','NOTICE.md','THIRD_PARTY_LICENSES.md','PRIVACY.md','wintun-LICENSE.txt') {
+            if (-not (Test-Path (Join-Path (Split-Path $uqda) $f))) { throw "Installer did not install $f" }
+          }
           $reportedVersion = & $uqda --version
           if ($LASTEXITCODE -ne 0) { throw "Version command failed: $reportedVersion" }
           $expectedVersion = go run ./cmd/uqda -version

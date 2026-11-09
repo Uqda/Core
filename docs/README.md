@@ -29,6 +29,7 @@
 ## Security and design
 
 - [Security model](security.md): what Uqda protects, and what it does not.
+- [Privacy](../PRIVACY.md): what a node shares and with whom; no telemetry.
 - [Architecture](architecture.md): how the pieces fit together.
 - [Compatibility](compatibility.md): working with the Yggdrasil network.
 
@@ -38,6 +39,7 @@
 - [Branching](branching.md): `main` (stable) and `beta` (new work).
 - [Releasing](releasing.md) and [packaging](packaging.md): how releases are built.
 - [Testing](testing.md): how to run the test suites.
+- [Legal notes](legal/README.md): licenses, attribution and open compliance items.
 - [Release notes](releases/): one page per release.
 - [Reviews](reviews/): recorded engineering reviews.
 - [Upstream](upstream/): inherited Yggdrasil history and assets.

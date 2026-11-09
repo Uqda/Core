@@ -13,6 +13,21 @@
   invites are not silently blocked. Removed on uninstall.
 - `uqda info` shows the release name ("Uqda Core 26.1") like the other
   commands.
+- Privacy: new configurations set `NodeInfoPrivacy: true`, so a node no
+  longer tells others its platform and Uqda version unless you choose to.
+  Existing configurations are unchanged. A new [privacy](PRIVACY.md) page
+  states what a node shares, with whom, and that Uqda contains no telemetry.
+- Licenses: [THIRD_PARTY_LICENSES](THIRD_PARTY_LICENSES.md) lists every
+  component in the release binaries, and CI fails when a new dependency is
+  missing from it or has a license outside the allowed set. The `.deb`, MSI
+  and Docker image now install `LICENSE`, `NOTICE.md`, the third-party list
+  and `PRIVACY.md`; the MSI also ships the Wintun driver license.
+- [SECURITY](SECURITY.md) adds an e-mail contact, response targets, a safe
+  harbour for good-faith research and an abuse section. NOTICE records the
+  fork point and Uqda's modifications. README states that Uqda is not
+  anonymous and not affiliated with the Yggdrasil project, in English and
+  Arabic. [Legal notes](docs/legal/README.md) list what is done and what
+  remains for the maintainers.
 
 ## Uqda 26.1
 

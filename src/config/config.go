@@ -39,8 +39,8 @@ type NodeConfig struct {
 	IfName                string                     `comment:"Local network interface name for TUN adapter, or \"auto\" to select\nan interface automatically, or \"none\" to run without TUN."`
 	IfMTU                 uint64                     `comment:"Maximum Transmission Unit (MTU) size for your local TUN interface.\nDefault is the largest supported size for your platform. The lowest\npossible value is 1280."`
 	LogLookups            bool                       `json:",omitempty"`
-	NodeInfoPrivacy       bool                       `comment:"By default, nodeinfo contains some defaults including the platform,\narchitecture and Uqda build version. These can help when surveying\nthe network and diagnosing network routing problems. Enabling\nnodeinfo privacy prevents this, so that only items specified in\n\"NodeInfo\" are sent back if specified."`
-	NodeInfo              map[string]interface{}     `comment:"Optional nodeinfo. This must be a { \"key\": \"value\", ... } map\nor set as null. This is entirely optional but, if set, is visible\nto the whole network on request."`
+	NodeInfoPrivacy       bool                       `comment:"When false, any node can ask yours for its platform, architecture and\nUqda build version, which helps surveys and debugging but also tells\nothers which version you run. New configurations set this to true, so\nonly the items in \"NodeInfo\" below are shared."`
+	NodeInfo              map[string]interface{}     `comment:"Optional nodeinfo, a { \"key\": \"value\", ... } map or null. Anything\nyou put here can be read by every node on the network. Do not add your\nname, location, contact details or other personal data."`
 	InvitePort            uint16                     `json:",omitempty" comment:"TCP port for redeeming invites from 'uqda invite' while one is active.\n0 (the default) picks a random port each time; set a fixed port if a\nhost firewall must allow it. The port is closed when no invite is active."`
 	RequireFreshHandshake bool                       `json:",omitempty" comment:"Reject peers that cannot prove possession of their key for each new\nconnection. Uqda nodes always do this with each other; Yggdrasil nodes and\nolder Uqda releases cannot, so enable it only for all-Uqda networks. It\nprevents a recorded handshake from being replayed to impersonate a peer."`
 	AutoPeers             AutoPeersConfig            `comment:"Keep this node connected to healthy public peers automatically. When\nfewer than Count outbound peers are up, Uqda adds the fastest reachable\npublic TLS peers in Country, replaces one it added if it stays down for\nfive minutes, and swaps one for a much faster peer on each check. Peers\nyou list in Peers are never removed. Uses the public peer catalog at\npublicpeers.neilalexander.dev, which sees your IP address when it is\nfetched, as do the peers being measured."`
@@ -99,7 +99,7 @@ func GenerateConfig() *NodeConfig {
 	cfg.MulticastInterfaces = defaults.DefaultMulticastInterfaces
 	cfg.IfName = defaults.DefaultIfName
 	cfg.IfMTU = defaults.DefaultIfMTU
-	cfg.NodeInfoPrivacy = false
+	cfg.NodeInfoPrivacy = true
 	if err := cfg.postprocessConfig(); err != nil {
 		panic(err)
 	}

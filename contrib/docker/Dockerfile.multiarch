@@ -15,13 +15,17 @@ RUN export GOARM="$(cat /tmp/goarm)"; apk add git && ./build && go build -o /src
 
 FROM docker.io/alpine
 
-LABEL org.opencontainers.image.title="Uqda Core"
+LABEL org.opencontainers.image.title="Uqda Core" \
+      org.opencontainers.image.source="https://github.com/Uqda/Core" \
+      org.opencontainers.image.licenses="LGPL-3.0-only WITH LGPL-3.0-linking-exception" \
+      org.opencontainers.image.description="Uqda Core, an experimental mesh network node compatible with Yggdrasil. Not affiliated with the Yggdrasil project."
 
 COPY --from=builder /src/uqda /usr/bin/uqda
 COPY --from=builder /src/uqdactl /usr/bin/uqdactl
 COPY --from=builder /src/genkeys /usr/bin/genkeys
 COPY contrib/docker/entrypoint.sh /usr/bin/entrypoint.sh
 COPY contrib/packaging/install-config.sh /usr/bin/uqda-install-config
+COPY LICENSE NOTICE.md THIRD_PARTY_LICENSES.md PRIVACY.md /usr/share/licenses/uqda/
 RUN chmod 755 /usr/bin/entrypoint.sh /usr/bin/uqda-install-config
 
 VOLUME [ "/etc/uqda" ]

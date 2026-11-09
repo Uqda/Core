@@ -35,6 +35,10 @@ GOOS=windows CGO_ENABLED=0 ./build
 # overwrites an existing Uqda config.
 cp contrib/msi/updateconfig.bat updateconfig.bat
 
+# License files installed next to the binaries. wintun.dll may only be
+# redistributed with its unmodified license notice.
+cp LICENSE LICENSE.txt
+
 # Work out metadata for the package info
 PKGNAME=$(sh contrib/semver/name.sh)
 PKGVERSION=$(sh contrib/semver/version.sh --bare)
@@ -190,6 +194,14 @@ cat > wix.xml << EOF
               KeyPath="yes" />
           </Component>
 
+          <Component Id="LicenseFiles" Guid="9b0f6d0e-4f3a-4f8e-9a57-2a3f1c7d5e61">
+            <File Id="LicenseTxt" Name="LICENSE.txt" DiskId="1" Source="LICENSE.txt" KeyPath="yes" />
+            <File Id="NoticeMd" Name="NOTICE.md" DiskId="1" Source="NOTICE.md" />
+            <File Id="ThirdPartyMd" Name="THIRD_PARTY_LICENSES.md" DiskId="1" Source="THIRD_PARTY_LICENSES.md" />
+            <File Id="PrivacyMd" Name="PRIVACY.md" DiskId="1" Source="PRIVACY.md" />
+            <File Id="WintunLicense" Name="wintun-LICENSE.txt" DiskId="1" Source="wintun/LICENSE.txt" />
+          </Component>
+
           <Component Id="ConfigScript" Guid="145c5c70-2cc5-45c5-adc3-0a9b4dc2cdf5">
             <File
               Id="Configbat"
@@ -207,6 +219,7 @@ cat > wix.xml << EOF
       <ComponentRef Id="CtrlExecutable" />
       <ComponentRef Id="ConfigScript" />
       <ComponentRef Id="PathEntry" />
+      <ComponentRef Id="LicenseFiles" />
     </Feature>
 
     <CustomAction
