@@ -19,12 +19,14 @@ type fakeNode struct {
 	mu      sync.Mutex
 	links   map[string]bool // uri -> up
 	inbound map[string]bool
+	dead    map[string]bool          // added peers that never come up
+	latency map[string]time.Duration // live round trip per uri
 	added   []string
 	removed []string
 }
 
 func newFakeNode(static ...string) *fakeNode {
-	n := &fakeNode{links: map[string]bool{}, inbound: map[string]bool{}}
+	n := &fakeNode{links: map[string]bool{}, inbound: map[string]bool{}, dead: map[string]bool{}, latency: map[string]time.Duration{}}
 	for _, s := range static {
 		n.links[s] = true
 	}
@@ -34,7 +36,7 @@ func newFakeNode(static ...string) *fakeNode {
 func (n *fakeNode) AddPeer(u *url.URL, _ string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
-	n.links[u.String()] = true // the fake connects at once
+	n.links[u.String()] = !n.dead[u.String()] // the fake connects at once unless dead
 	n.added = append(n.added, u.String())
 	return nil
 }
@@ -52,7 +54,7 @@ func (n *fakeNode) GetPeers() []core.PeerInfo {
 	defer n.mu.Unlock()
 	var out []core.PeerInfo
 	for uri, up := range n.links {
-		p := core.PeerInfo{URI: uri, Up: up, Inbound: n.inbound[uri]}
+		p := core.PeerInfo{URI: uri, Up: up, Inbound: n.inbound[uri], Latency: n.latency[uri]}
 		if up {
 			p.Key = make(ed25519.PublicKey, ed25519.PublicKeySize)
 		}
@@ -94,6 +96,18 @@ func (s *fixedSource) get(context.Context, string, int) ([]publicpeers.Suggestio
 	defer s.mu.Unlock()
 	s.calls++
 	return s.list, s.err
+}
+
+// cycle runs one refresh (when asked) and one check, fetching again when
+// the check needs candidates, as Run does without its timers.
+func (m *Manager) cycle(ctx context.Context, refresh bool) {
+	if refresh {
+		m.refresh(ctx)
+	}
+	if m.check() {
+		m.refresh(ctx)
+		m.check()
+	}
 }
 
 func newManager(node Node, src *fixedSource, count int) (*Manager, *time.Time) {
@@ -227,4 +241,110 @@ func TestNilManagerReportsDisabled(t *testing.T) {
 	if s := m.Status(); s.Enabled || s.Peers == nil {
 		t.Fatalf("unexpected status: %+v", s)
 	}
+}
+
+func TestLostPeerIsReplacedFromStandbyWithoutFetching(t *testing.T) {
+	node := newFakeNode()
+	src := &fixedSource{list: suggestions("tls://a.example:443", 10.0, "tls://b.example:443", 20.0, "tls://c.example:443", 30.0, "tls://d.example:443", 40.0)}
+	m, now := newManager(node, src, 2)
+	m.cycle(context.Background(), true)
+	if s := m.Status(); len(s.Standby) != 2 || s.Standby[0] != "tls://c.example:443" {
+		t.Fatalf("expected c and d on standby: %+v", s.Standby)
+	}
+	calls := src.calls
+
+	node.setUp("tls://a.example:443", false)
+	*now = now.Add(CheckEvery)
+	m.check()
+	if last := node.added[len(node.added)-1]; last != "tls://c.example:443" {
+		t.Fatalf("the fastest standby peer should replace the lost one at once: %v", node.added)
+	}
+	if src.calls != calls {
+		t.Fatal("replacing a lost peer must not wait for a catalog fetch")
+	}
+	if len(node.removed) != 0 {
+		t.Fatal("the lost peer is still retried until DownGrace")
+	}
+}
+
+func TestPeerThatNeverComesUpIsDroppedAndSkipped(t *testing.T) {
+	node := newFakeNode()
+	node.dead["tls://a.example:443"] = true
+	src := &fixedSource{list: suggestions("tls://a.example:443", 10.0, "tls://b.example:443", 20.0)}
+	m, now := newManager(node, src, 1)
+	m.cycle(context.Background(), true)
+	if len(node.added) != 1 || node.added[0] != "tls://a.example:443" {
+		t.Fatalf("first pick: %v", node.added)
+	}
+	// Still connecting: counted as pending, nothing else is added.
+	*now = now.Add(UpWait / 2)
+	m.check()
+	if len(node.added) != 1 {
+		t.Fatalf("a pending peer must not be doubled: %v", node.added)
+	}
+	*now = now.Add(UpWait)
+	m.check()
+	if len(node.removed) != 1 || node.removed[0] != "tls://a.example:443" {
+		t.Fatalf("a peer that never came up should be removed: %v", node.removed)
+	}
+	if node.added[len(node.added)-1] != "tls://b.example:443" {
+		t.Fatalf("the next candidate should be tried: %v", node.added)
+	}
+	// A later refresh must not offer the failed peer again.
+	m.refresh(context.Background())
+	for _, s := range m.Status().Standby {
+		if s == "tls://a.example:443" {
+			t.Fatal("failed peer offered again before FailedFor")
+		}
+	}
+}
+
+func TestSlowestExtraPeerIsTrimmedOnceStable(t *testing.T) {
+	node := newFakeNode()
+	src := &fixedSource{list: suggestions("tls://a.example:443", 10.0, "tls://b.example:443", 20.0)}
+	m, now := newManager(node, src, 1)
+	m.cycle(context.Background(), true)
+	node.setUp("tls://a.example:443", false)
+	*now = now.Add(CheckEvery)
+	m.check() // b replaces a
+	// a recovers: two peers up, one wanted. b turns out slower on the live link.
+	node.setUp("tls://a.example:443", true)
+	node.latency["tls://a.example:443"] = 15 * time.Millisecond
+	node.latency["tls://b.example:443"] = 90 * time.Millisecond
+	*now = now.Add(CheckEvery)
+	m.check()
+	if len(node.removed) != 0 {
+		t.Fatal("trimmed before the links were stable")
+	}
+	*now = now.Add(StableFor)
+	m.check()
+	if len(node.removed) != 1 || node.removed[0] != "tls://b.example:443" {
+		t.Fatalf("expected the slower live peer to be trimmed: %v", node.removed)
+	}
+}
+
+func TestHealthyNodeNeverFetchesBetweenRefreshes(t *testing.T) {
+	node := newFakeNode()
+	src := &fixedSource{list: suggestions("tls://a.example:443", 10.0)}
+	m, now := newManager(node, src, 1)
+	m.cycle(context.Background(), true)
+	calls := src.calls
+	for i := 0; i < 100; i++ {
+		*now = now.Add(CheckEvery)
+		if m.check() {
+			t.Fatal("a healthy node asked for a fetch")
+		}
+	}
+	if src.calls != calls {
+		t.Fatal("catalog fetched by local checks")
+	}
+}
+
+func TestKickNeverBlocks(t *testing.T) {
+	m := New(Config{Country: "germany"}, newFakeNode(), (&fixedSource{}).get, quietLog{})
+	for i := 0; i < 10; i++ {
+		m.Kick()
+	}
+	var nilManager *Manager
+	nilManager.Kick()
 }

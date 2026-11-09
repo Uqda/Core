@@ -2,6 +2,24 @@
 
 ## Unreleased (beta)
 
+- Faster recovery when a peer is lost. AutoPeers checks links every 2
+  seconds instead of every minute and replaces a lost peer at once from a
+  standby list measured in advance, without fetching the catalog. A new
+  peer that does not connect within 20 seconds is dropped and the next one
+  tried. Extra peers are trimmed by their measured round trip, not only by
+  catalog connect time. `uqda autopeers` shows round trips and the standby
+  list.
+- When the host's network changes (Wi-Fi reconnects, a cable is plugged in,
+  an address changes), Uqda redials all peers at once. Before, a peer could
+  wait out a reconnect backoff of up to an hour.
+- Traffic moves to another path within about 10 ms in most cases when a
+  relay's connection closes, instead of stalling for about 2.7 s: a broken
+  path is looked up again after 250 ms instead of 1 s. When the lost link
+  was the node's parent in the routing tree, or the link goes silent,
+  recovery still takes about 3 to 4 seconds, bounded by the routing
+  protocol.
+- CI measures failover on every change: four nodes, two paths, the path in
+  use cut by closing it and by silently dropping packets.
 - Windows: the installer puts the Uqda folder on the system `PATH`, so
   `uqda status`, `uqda join` and the other commands work in a new terminal.
   Uninstalling removes it again.

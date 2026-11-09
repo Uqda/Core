@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/url"
+	"time"
 
 	iwe "github.com/Arceliar/ironwood/encrypted"
 	iwn "github.com/Arceliar/ironwood/network"
@@ -104,6 +105,11 @@ func New(cert *tls.Certificate, logger Logger, opts ...SetupOption) (*Core, erro
 		iwn.WithBloomTransform(keyXform),
 		iwn.WithPeerMaxMessageSize(65535*2),
 		iwn.WithPathNotify(c.doPathNotify),
+		// After a path breaks, look the destination up again quickly. The
+		// 1s default left traffic stalled for about 2.7s after a relay went
+		// away (measured by TestFailoverAroundLostRelay); lookups are still
+		// limited per destination and only sent while the path is broken.
+		iwn.WithPathThrottle(pathRetryThrottle),
 	); err != nil {
 		return nil, fmt.Errorf("error creating encryption: %w", err)
 	}
@@ -137,6 +143,11 @@ func New(cert *tls.Certificate, logger Logger, opts ...SetupOption) (*Core, erro
 	}
 	return c, nil
 }
+
+// pathRetryThrottle is the shortest gap between two lookups for the same
+// destination. A lookup is sent only while traffic to that destination
+// meets a broken or unknown path.
+const pathRetryThrottle = 250 * time.Millisecond
 
 // RetryPeersNow interrupts configured-peer backoff timers.
 func (c *Core) RetryPeersNow() {
