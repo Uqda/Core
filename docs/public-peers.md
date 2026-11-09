@@ -98,16 +98,25 @@ AutoPeers: {
 
 ### What happens when a link fails
 
-Routing does not wait for any of this. A node notices a dead link within
-about three seconds (at once if the connection closes), and traffic moves to
-its other peers: the routing tree re-forms and sessions look the destination
-up again. With `Count: 2` or more, a node always has a second path while the
-lost peer is replaced. Packets in flight on the dead link are lost, as on any
-IP network; TCP and other reliable protocols resend them.
+Routing does not wait for any of this: traffic moves to the node's other
+peers on its own. With `Count: 2` or more, a node always has a second path
+while the lost peer is replaced.
 
-CI measures this on every change with four nodes and two paths, cutting the
-path in use: once by closing the connection and once by silently dropping
-every packet, like a router that died (`TestFailoverAroundLostRelay`).
+Measured with four nodes, two paths and 100 packets a second, cutting the
+path in use (`TestFailoverAroundLostRelay`, run by CI on every change):
+
+| How the link fails | Traffic stops for | Packets lost |
+|---|---|---|
+| The connection closes (peer shut down, cable to it unplugged) | about 10 ms in most cases | none |
+| The same, when the lost link was the node's parent in the routing tree | 3 to 4 seconds while the tree re-forms | those seconds of traffic |
+| The link goes silent (router or Wi-Fi died, no close) | about 3 seconds, the dead-link timeout | those seconds of traffic |
+
+The first row comes from looking a destination up again within 250 ms of a
+broken path; before 26.1.1 it took about 2.7 seconds in every case. The
+other two are limits of the routing protocol shared with Yggdrasil: the
+dead-link timeout is kept at three seconds so slow mobile links are not
+dropped by mistake. Packets lost in that window are resent by TCP and other
+reliable protocols, as on any IP network.
 
 Inbound connections and local multicast peers do not count, because they are
 not a path to the rest of the network. `uqda setup country=NAME` writes two

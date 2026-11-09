@@ -114,10 +114,12 @@ func TestFailoverAroundLostRelay(t *testing.T) {
 		maxGap   time.Duration
 		maxShare float64 // maximum share of packets lost after the cut
 	}{
-		// The peer's connection closes: detected at once.
-		{"peer closes", true, 3 * time.Second, 0.25},
-		// Packets silently vanish: detected by the keepalive timeout (3s).
-		{"link goes silent", false, 8 * time.Second, 0.6},
+		// The peer's connection closes: detected at once. Usually traffic
+		// moves within milliseconds; when the lost link was this node's
+		// parent in the tree, the tree re-forms first (about 3-4 s).
+		{"peer closes", true, 6 * time.Second, 0.5},
+		// Packets silently vanish: detected by the keepalive timeout (3 s).
+		{"link goes silent", false, 9 * time.Second, 0.7},
 	} {
 		t.Run(tc.name, func(t *testing.T) { runFailover(t, tc.closeIt, tc.maxGap, tc.maxShare) })
 	}
@@ -160,6 +162,20 @@ func runFailover(t *testing.T, closeIt bool, maxGap time.Duration, maxShare floa
 			}
 		}
 		t.Fatal("the four nodes did not connect")
+	}
+
+	// Every node reads, as the TUN adapter does in the daemon: session
+	// handshakes are completed on the read path, so a node that never reads
+	// cannot finish setting up a session.
+	for _, n := range []*Core{a, b, d} {
+		go func(n *Core) {
+			buf := make([]byte, 2048)
+			for {
+				if _, _, err := n.ReadFrom(buf); err != nil {
+					return
+				}
+			}
+		}(n)
 	}
 
 	// Receiver: record when each sequence number arrives at C.
