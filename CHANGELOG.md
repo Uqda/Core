@@ -5,7 +5,6 @@
 Release date: 2026-11-09. Machine version: `26.1.1`; tag: `v26.1.1`.
 Full notes: [Uqda 26.1.1](docs/releases/v26.1.1.md). Uqda is an experimental project.
 
-
 - Faster recovery when a peer is lost. AutoPeers checks links every 2
   seconds instead of every minute and replaces a lost peer at once from a
   standby list measured in advance, without fetching the catalog. A new
