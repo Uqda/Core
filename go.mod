@@ -8,17 +8,17 @@ replace github.com/Arceliar/ironwood => ./third_party/ironwood
 require (
 	github.com/Arceliar/ironwood v0.0.0-20260924233544-cc7fdd2b785f
 	github.com/Arceliar/phony v0.0.0-20220903101357-530938a4b13d
-	github.com/cheggaaa/pb/v3 v3.2.1
+	github.com/cheggaaa/pb/v3 v3.3.0
 	github.com/coder/websocket v1.8.15
 	github.com/gologme/log v1.3.0
 	github.com/hashicorp/go-syslog v1.0.1
 	github.com/hjson/hjson-go/v4 v4.7.1
 	github.com/kardianos/minwinsvc v1.0.2
-	github.com/quic-go/quic-go v0.63.0
+	github.com/quic-go/quic-go v0.65.0
 	github.com/vishvananda/netlink v1.3.1
 	github.com/wlynxg/anet v0.0.5
 	golang.org/x/crypto v0.58.0
-	golang.org/x/net v0.61.0
+	golang.org/x/net v0.62.0
 	golang.org/x/sys v0.49.0
 	golang.org/x/text v0.43.0
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2
@@ -33,7 +33,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clipperhouse/displaywidth v0.10.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
-	github.com/mattn/go-colorable v0.1.15 // indirect
+	github.com/mattn/go-colorable v0.1.16 // indirect
 	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect
 	github.com/olekukonko/errors v1.2.0 // indirect
 	github.com/olekukonko/ll v0.1.6 // indirect
@@ -43,7 +43,7 @@ require (
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
-	github.com/mattn/go-runewidth v0.0.27 // indirect
+	github.com/mattn/go-runewidth v0.0.31 // indirect
 	github.com/olekukonko/tablewriter v1.1.5
 	github.com/vishvananda/netns v0.0.5 // indirect
 	suah.dev/protect v1.2.4
