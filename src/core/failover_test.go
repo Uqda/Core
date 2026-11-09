@@ -101,12 +101,6 @@ func newQuietNode(t *testing.T) *Core {
 	return n
 }
 
-func listenTCP(t *testing.T, n *Core) string {
-	t.Helper()
-	l, err := n.Listen(&url.URL{Scheme: "tcp", Host: "127.0.0.1:0"}, "")
-	if err != nil {
-		t.Fatal(err)
-	}
 	return l.Addr().String()
 }
 
