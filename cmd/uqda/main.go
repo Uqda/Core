@@ -21,6 +21,7 @@ import (
 	"github.com/kardianos/minwinsvc"
 
 	"github.com/Uqda/Core/internal/autopeer"
+	"github.com/Uqda/Core/internal/netwatch"
 	"github.com/Uqda/Core/src/address"
 	"github.com/Uqda/Core/src/admin"
 	"github.com/Uqda/Core/src/config"
@@ -41,10 +42,14 @@ type node struct {
 	multicast *multicast.Multicast
 	admin     *admin.AdminSocket
 	autoPeers context.CancelFunc
+	netWatch  context.CancelFunc
 	invites   *invite.Manager
 }
 
 func (n *node) stop() {
+	if n.netWatch != nil {
+		n.netWatch()
+	}
 	if n.autoPeers != nil {
 		n.autoPeers()
 	}
@@ -371,6 +376,16 @@ func run() int {
 		if n.admin != nil {
 			autopeer.SetupAdminHandlers(n.admin, manager)
 		}
+
+		// Redial peers at once when the host's network changes, instead of
+		// waiting out a reconnect backoff that can reach an hour.
+		watchCtx, stopWatch := context.WithCancel(context.Background())
+		n.netWatch = stopWatch
+		go netwatch.New(func() {
+			logger.Infof("Network change detected: reconnecting peers now")
+			n.core.RetryPeersNow()
+			manager.Kick()
+		}).Run(watchCtx)
 	}
 
 	// Set up the TUN module.

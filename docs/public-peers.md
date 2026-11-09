@@ -88,10 +88,36 @@ AutoPeers: {
 | Situation | What Uqda does |
 |---|---|
 | Fewer than `Count` outbound peers are up | Adds the fastest reachable public TLS peers in `Country` |
-| A peer it added has been down for five minutes | Removes it and adds the next best |
-| A free candidate is much faster (at least 1.5 times plus 30 ms) than its slowest peer | Swaps that one peer, at most one per check |
-| The catalog cannot be reached | Keeps the current peers and warns once |
+| A peer goes down | Within 2 seconds, adds the next peer from a standby list measured in advance; no catalog fetch is needed. The lost peer is still retried and removed after five minutes down |
+| A new peer does not come up within 20 seconds | Removes it, tries the next candidate and skips the failed one for ten minutes |
+| More peers are up than `Count` (for example a lost peer came back) | After 30 seconds of stable links, removes the one with the slowest measured round trip |
+| A free candidate is much faster (at least 1.5 times plus 30 ms) than its slowest peer | Swaps that one peer, adding the new one before removing the old, at most one per check |
+| The host's network changes (Wi-Fi reconnects, cable, new address) | Redials every peer at once instead of waiting out its reconnect backoff, and re-measures candidates |
+| The catalog cannot be reached | Keeps the current peers and the standby list, and warns once |
 | A peer you listed in `Peers` | Never removes it; it counts towards `Count` while it is up |
+
+### What happens when a link fails
+
+Routing does not wait for any of this: traffic moves to the node's other
+peers on its own. With `Count: 2` or more, a node always has a second path
+while the lost peer is replaced.
+
+Measured with four nodes, two paths and 100 packets a second, cutting the
+path in use (`TestFailoverAroundLostRelay`, run by CI on every change in its own
+job; locally with `UQDA_TEST_FAILOVER=1 go test ./src/core -run Failover -v`):
+
+| How the link fails | Traffic stops for | Packets lost |
+|---|---|---|
+| The connection closes (peer shut down, cable to it unplugged) | about 10 ms in most cases | none |
+| The same, when the lost link was the node's parent in the routing tree | 3 to 4 seconds while the tree re-forms | those seconds of traffic |
+| The link goes silent (router or Wi-Fi died, no close) | about 3 seconds, the dead-link timeout | those seconds of traffic |
+
+The first row comes from looking a destination up again within 250 ms of a
+broken path; before 26.1.1 it took about 2.7 seconds in every case. The
+other two are limits of the routing protocol shared with Yggdrasil: the
+dead-link timeout is kept at three seconds so slow mobile links are not
+dropped by mistake. Packets lost in that window are resent by TCP and other
+reliable protocols, as on any IP network.
 
 Inbound connections and local multicast peers do not count, because they are
 not a path to the rest of the network. `uqda setup country=NAME` writes two
@@ -99,6 +125,7 @@ peers as a starting point and turns `AutoPeers` on. Check it with
 `uqdactl getAutoPeers -json` or `uqda status`.
 
 Privacy: the catalog operator sees your IP address each time it is fetched
-(at start and every `Interval`), and measured peers see TCP connection
+(at start, every `Interval`, after a network change, and to refill the standby
+list after a peer was replaced), and measured peers see TCP connection
 attempts. Choosing a public peer does not change who can reach you; the
 [firewall](firewall.md) and private groups still decide that.
