@@ -34,9 +34,10 @@ Full notes: [Uqda 26.1.1](docs/releases/v26.1.1.md). Uqda is an experimental pro
   remains for the maintainers.
 - Dependencies: quic-go 0.65.0, golang.org/x/net 0.62.0, cheggaaa/pb 3.3.0,
   go-colorable 0.1.16, go-runewidth 0.0.31.
-- Documentation: one poster that explains the whole network from top to
-  bottom (nodes, identity, peers, routing, encryption, groups, firewall,
-  joining, building on it), in English and Arabic ([docs/assets](docs/assets/)).
+- Documentation: a technical overview of the whole network on one page, in
+  English and Arabic: topology, addressing, protocol stack, link handshake,
+  routing, lookups, a packet's path, who sees what, groups, firewall and
+  invites ([docs/assets](docs/assets/)).
 
 ## Uqda 26.1
 

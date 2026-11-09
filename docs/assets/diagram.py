@@ -1,844 +1,890 @@
 #!/usr/bin/env python3
-"""Generates the poster docs/assets/how-uqda-works.{en,ar}.svg.
+"""Generates the technical poster docs/assets/how-uqda-works.{en,ar}.svg.
 
-One tall image that explains the whole Uqda network from top to bottom.
+One tall page of engineering figures that explains the Uqda network from top
+to bottom: topology, addressing, protocol stack, link handshake, routing,
+lookups, a packet's path, visibility, groups, firewall and invites.
+
 Run from the repository root: python3 docs/assets/diagram.py
-The Arabic poster mirrors the layout for right-to-left reading.
+The Arabic page mirrors the layout, except for bit layouts, packet formats and
+configuration, which stay left to right as they are read in code.
 """
-import math
-import random
 from xml.sax.saxutils import escape
 
 W = 1200
-FONT = '"Segoe UI",system-ui,-apple-system,"Noto Sans Arabic","Noto Sans",Tahoma,sans-serif'
-MONO = 'ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace'
+L, R = 60, 1140  # content edges
+SANS = '"Segoe UI","Helvetica Neue",Arial,"Noto Sans Arabic","Noto Sans",Tahoma,sans-serif'
+MONO = 'Consolas,"SFMono-Regular","Liberation Mono",Menlo,monospace'
 
-# Palette (fixed dark poster, readable on light and dark pages)
-BG1, BG2 = "#0a0f1f", "#101a35"
-CARD, CARDLINE = "#121b34", "#243259"
-INK, MUTED, DIM = "#eef2fb", "#a3aecb", "#6b7799"
-TEAL, AMBER, VIOLET, ROSE, GREEN = "#2dd4bf", "#f5b041", "#8b7cf6", "#f87171", "#34d399"
+PAPER = "#ffffff"
+INK = "#111827"
+TEXT = "#374151"
+GRAY = "#6b7280"
+LINE = "#4b5563"
+RULE = "#d1d5db"
+FILL = "#f3f4f6"
+BLUE = "#1d4ed8"      # data path, sessions
+BLUE_BG = "#eff4ff"
+ORANGE = "#c2410c"    # keys, cryptography
+ORANGE_BG = "#fff4ec"
+GREEN = "#15803d"
+GREEN_BG = "#effaf3"
+RED = "#b91c1c"
+RED_BG = "#fdf0f0"
+CODE_BG = "#0f172a"
 
-DIGITS_AR = "٠١٢٣٤٥٦٧٨٩"
+AR_DIGITS = "٠١٢٣٤٥٦٧٨٩"
 
 
-class Poster:
+class Page:
     def __init__(self, lang):
         self.lang = lang
         self.rtl = lang == "ar"
+        self.ltr = False  # temporarily disable mirroring
         self.o = []
 
-    # -- coordinates
+    @property
+    def mirrored(self):
+        return self.rtl and not self.ltr
+
     def X(self, x, w=0):
-        return round(W - x - w, 1) if self.rtl else x
+        return round(W - x - w, 1) if self.mirrored else x
 
-    def num(self, n):
-        s = str(n)
-        return "".join(DIGITS_AR[int(c)] for c in s) if self.rtl else s
+    def n(self, v):
+        s = str(v)
+        return "".join(AR_DIGITS[int(c)] if c.isdigit() else c for c in s) if self.rtl else s
 
-    # -- primitives
-    def raw(self, s):
-        self.o.append(s)
-
-    def rect(self, x, y, w, h, fill, stroke=None, r=12, sw=1, op=1, dash=None):
+    def rect(self, x, y, w, h, fill="none", stroke=LINE, sw=1.2, r=2, dash=None):
+        d = f' stroke-dasharray="{dash}"' if dash else ""
         st = f' stroke="{stroke}" stroke-width="{sw}"' if stroke else ""
+        self.o.append(f'<rect x="{self.X(x, w)}" y="{y}" width="{w}" height="{h}" rx="{r}" fill="{fill}"{st}{d}/>')
+
+    def line(self, x1, y1, x2, y2, stroke=LINE, sw=1.2, dash=None):
         d = f' stroke-dasharray="{dash}"' if dash else ""
-        o = f' opacity="{op}"' if op != 1 else ""
-        self.o.append(f'<rect x="{self.X(x, w)}" y="{y}" width="{w}" height="{h}" rx="{r}" fill="{fill}"{st}{d}{o}/>')
+        self.o.append(f'<line x1="{self.X(x1)}" y1="{y1}" x2="{self.X(x2)}" y2="{y2}" stroke="{stroke}" stroke-width="{sw}"{d}/>')
 
-    def circle(self, x, y, r, fill="none", stroke=None, sw=2, op=1, filt=None, dash=None):
-        st = f' stroke="{stroke}" stroke-width="{sw}"' if stroke else ""
-        f = f' filter="url(#{filt})"' if filt else ""
+    def path(self, pts, stroke=LINE, sw=1.2, dash=None):
         d = f' stroke-dasharray="{dash}"' if dash else ""
-        o = f' opacity="{op}"' if op != 1 else ""
-        self.o.append(f'<circle cx="{self.X(x)}" cy="{y}" r="{r}" fill="{fill}"{st}{f}{d}{o}/>')
-
-    def ellipse(self, x, y, rx, ry, stroke, sw=2):
-        self.o.append(f'<ellipse cx="{self.X(x)}" cy="{y}" rx="{rx}" ry="{ry}" fill="none" stroke="{stroke}" stroke-width="{sw}"/>')
-
-    def line(self, x1, y1, x2, y2, stroke, sw=2, dash=None, op=1, cap="round"):
-        d = f' stroke-dasharray="{dash}"' if dash else ""
-        o = f' opacity="{op}"' if op != 1 else ""
-        self.o.append(f'<line x1="{self.X(x1)}" y1="{y1}" x2="{self.X(x2)}" y2="{y2}" stroke="{stroke}" stroke-width="{sw}" stroke-linecap="{cap}"{d}{o}/>')
-
-    def poly(self, pts, fill="none", stroke=None, sw=2, closed=True, op=1, dash=None):
         p = " ".join(f"{self.X(a)},{b}" for a, b in pts)
-        st = f' stroke="{stroke}" stroke-width="{sw}" stroke-linejoin="round" stroke-linecap="round"' if stroke else ""
-        d = f' stroke-dasharray="{dash}"' if dash else ""
-        o = f' opacity="{op}"' if op != 1 else ""
-        tag = "polygon" if closed else "polyline"
-        self.o.append(f'<{tag} points="{p}" fill="{fill}"{st}{d}{o}/>')
+        self.o.append(f'<polyline points="{p}" fill="none" stroke="{stroke}" stroke-width="{sw}" stroke-linejoin="round"{d}/>')
 
-    def arrow(self, x1, y1, x2, y2, color=MUTED, sw=2.5, dash=None):
-        self.line(x1, y1, x2, y2, color, sw, dash)
-        X1, X2 = self.X(x1), self.X(x2)
-        a = math.atan2(y2 - y1, X2 - X1)
-        h = 11
-        pts = [(X2, y2), (X2 - h * math.cos(a - .42), y2 - h * math.sin(a - .42)),
-               (X2 - h * math.cos(a + .42), y2 - h * math.sin(a + .42))]
-        self.o.append('<polygon points="' + " ".join(f"{p:.1f},{q:.1f}" for p, q in pts) + f'" fill="{color}"/>')
+    def circle(self, x, y, r, fill=PAPER, stroke=LINE, sw=1.4):
+        self.o.append(f'<circle cx="{self.X(x)}" cy="{y}" r="{r}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}"/>')
 
-    def text(self, x, y, s, size=16, fill=INK, weight=400, anchor="start", mono=False, ls=None):
-        xx = self.X(x)
+    def head(self, x, y, d, color):
+        """Arrow head at (x, y). d: 1 right, -1 left, 0 down, 2 up (page coordinates before mirroring)."""
+        X = self.X(x)
+        if d in (1, -1):
+            s = -d if self.mirrored else d
+            pts = [(X, y), (X - 9 * s, y - 4.5), (X - 9 * s, y + 4.5)]
+        elif d == 0:
+            pts = [(X, y), (X - 4.5, y - 9), (X + 4.5, y - 9)]
+        else:
+            pts = [(X, y), (X - 4.5, y + 9), (X + 4.5, y + 9)]
+        self.o.append('<polygon points="' + " ".join(f"{a},{b}" for a, b in pts) + f'" fill="{color}"/>')
+
+    def harrow(self, x1, x2, y, color=LINE, sw=1.4, dash=None, both=False):
+        self.line(x1, y, x2, y, color, sw, dash)
+        self.head(x2, y, 1 if x2 > x1 else -1, color)
+        if both:
+            self.head(x1, y, -1 if x2 > x1 else 1, color)
+
+    def text(self, x, y, s, size=15, fill=TEXT, weight=400, anchor="start", mono=False, italic=False):
         a = anchor
         attrs = ""
-        if self.rtl:
+        if self.mirrored:
             if mono:
                 a = {"start": "end", "end": "start"}.get(anchor, anchor)
             else:
                 attrs = ' direction="rtl"'
-        fam = f' font-family=\'{MONO}\'' if mono else ""
-        l = f' letter-spacing="{ls}"' if ls else ""
-        self.o.append(f'<text x="{xx}" y="{y}" font-size="{size}" font-weight="{weight}" fill="{fill}" text-anchor="{a}"{attrs}{fam}{l}>{escape(s)}</text>')
+        fam = f" font-family='{MONO}'" if mono else ""
+        it = ' font-style="italic"' if italic else ""
+        sp = ' xml:space="preserve"' if mono else ""
+        self.o.append(f'<text x="{self.X(x)}" y="{y}" font-size="{size}" font-weight="{weight}" fill="{fill}" text-anchor="{a}"{attrs}{fam}{it}{sp}>{escape(s)}</text>')
 
-    def para(self, x, y, lines, size=16, fill=MUTED, lh=None, weight=400, mono=False):
-        lh = lh or round(size * 1.45)
-        for i, l in enumerate(lines):
-            if l:
-                self.text(x, y + i * lh, l, size, fill, weight, mono=mono)
-        return y + len(lines) * lh
+    def code(self, x, y, s, size=13, fill=INK, anchor="start", weight=400):
+        """Monospace text that is never mirrored in its alignment (addresses, fields)."""
+        self.o.append(f'<text x="{self.X(x)}" y="{y}" font-size="{size}" font-weight="{weight}" fill="{fill}" text-anchor="{anchor}" font-family=\'{MONO}\' xml:space="preserve">{escape(s)}</text>')
 
-    # -- composites
-    def node(self, x, y, r=12, color=TEAL, ring=None, glow=True):
-        if glow:
-            self.circle(x, y, r * 2.2, fill=color, op=.18, filt="blur")
-        self.circle(x, y, r, fill="url(#nodeFill)", stroke=color, sw=2.5)
-        self.circle(x, y, r * .38, fill=color)
-        if ring:
-            self.circle(x, y, r + 6, stroke=ring, sw=2.5)
+    def lines(self, x, y, items, size=15, fill=TEXT, lh=None, mono=False, weight=400):
+        lh = lh or round(size * 1.5)
+        for i, s in enumerate(items):
+            if s:
+                self.text(x, y + i * lh, s, size, fill, weight, mono=mono)
+        return y + lh * len(items)
 
-    def badge(self, x, y, n, color=TEAL, r=24):
-        self.circle(x, y, r + 8, fill=color, op=.15)
-        self.circle(x, y, r, fill=color)
-        self.text(x, y + 9, self.num(n), 24, BG1, 800, anchor="middle")
+    def figure(self, y, num, title, caption):
+        self.line(L, y, R, y, RULE, 1)
+        label = f"FIGURE {num}" if not self.rtl else f"الشكل {self.n(num)}"
+        self.text(L, y + 34, label, 13, GRAY, 700)
+        self.text(L, y + 66, title, 26, INK, 700)
+        self.lines(L, y + 98, caption, 16, GRAY, 24)
+        return y + 98 + 24 * len(caption) + 14
 
-    def chip(self, x, y, label, color=TEAL, mono=False, size=15, pad=16, w=None):
-        w = w or int(len(label) * size * (.62 if mono else .56) + 2 * pad)
-        self.rect(x, y, w, 36, color, r=18, op=.14)
-        self.rect(x, y, w, 36, "none", stroke=color, r=18, sw=1.2, op=.6)
-        self.text(x + w / 2, y + 24, label, size, color, 600, anchor="middle", mono=mono)
-        return w
+    def node_box(self, x, y, w, name, addr, accent=None, h=46):
+        self.rect(x, y, w, h, PAPER, accent or LINE, 2 if accent else 1.4)
+        self.text(x + w / 2, y + 19, name, 14, INK, 600, anchor="middle")
+        if addr:
+            self.code(x + w / 2, y + 36, addr, 12, GRAY, anchor="middle")
 
-    def card(self, x, y, w, h, stroke=CARDLINE, fill="url(#cardFill)", r=18):
-        self.rect(x, y, w, h, fill, stroke=stroke, r=r, sw=1.2)
+    def lifeline(self, x, y1, y2, label, sub=None):
+        h = 46 if sub else 34
+        self.rect(x - 75, y1, 150, h, FILL, LINE, 1.2)
+        self.text(x, y1 + 22, label, 14, INK, 700, anchor="middle")
+        if sub:
+            self.code(x, y1 + 39, sub, 11.5, GRAY, anchor="middle")
+        self.line(x, y1 + h, x, y2, GRAY, 1, dash="4 4")
 
-    def section(self, y, h, n, title, sub):
-        self.rect(40, y, 1120, h, "url(#sectionFill)", stroke=CARDLINE, r=28, sw=1.2)
-        self.rect(40, y, 6, h, TEAL, r=3, op=.0)
-        self.badge(100, y + 62, n)
-        self.text(146, y + 72, title, 32, INK, 700)
-        self.para(146, y + 106, sub, 18, MUTED, 26)
+    def msg(self, x1, x2, y, label, color=LINE, dash=None, num=None, both=False, mono=False):
+        self.harrow(x1, x2, y, color, 1.5, dash, both)
+        lab = (self.n(num) + ". " if num else "") + label
+        fill = INK if color == LINE else color
+        w = len(lab) * (7.6 if mono else 7.0) + 16
+        self.rect((x1 + x2) / 2 - w / 2, y - 25, w, 21, PAPER, None, r=0)
+        if mono:
+            self.code((x1 + x2) / 2, y - 9, lab, 13, fill, anchor="middle")
+        else:
+            self.text((x1 + x2) / 2, y - 9, lab, 13.5, fill, 500, anchor="middle")
 
-    # -- icons (all drawn from mirrored primitives)
-    def icon_phone(self, x, y, c):
-        self.rect(x - 18, y - 32, 36, 64, "none", stroke=c, r=7, sw=2.5)
-        self.line(x - 6, y + 23, x + 6, y + 23, c, 2.5)
-
-    def icon_laptop(self, x, y, c):
-        self.rect(x - 32, y - 28, 64, 42, "none", stroke=c, r=5, sw=2.5)
-        self.poly([(x - 42, y + 24), (x + 42, y + 24), (x + 34, y + 14), (x - 34, y + 14)], stroke=c, sw=2.5)
-
-    def icon_desktop(self, x, y, c):
-        self.rect(x - 34, y - 32, 68, 46, "none", stroke=c, r=5, sw=2.5)
-        self.line(x, y + 14, x, y + 26, c, 2.5)
-        self.line(x - 16, y + 28, x + 16, y + 28, c, 2.5)
-
-    def icon_server(self, x, y, c):
-        for i in range(3):
-            yy = y - 30 + i * 21
-            self.rect(x - 30, yy, 60, 17, "none", stroke=c, r=4, sw=2.5)
-            self.circle(x + 20, yy + 8.5, 2.5, fill=c)
-
-    def icon_box(self, x, y, c):
-        self.rect(x - 32, y - 12, 64, 36, "none", stroke=c, r=8, sw=2.5)
-        self.line(x - 18, y - 12, x - 26, y - 32, c, 2.5)
-        self.line(x + 18, y - 12, x + 26, y - 32, c, 2.5)
-        for i in range(3):
-            self.circle(x - 14 + i * 14, y + 6, 3, fill=c)
-
-    def icon_lock(self, x, y, c):
-        self.rect(x - 16, y - 4, 32, 26, c, r=5, op=.9)
-        self.rect(x - 10, y - 22, 20, 26, "none", stroke=c, r=10, sw=3.5)
-        self.circle(x, y + 8, 3.5, fill=BG1)
-
-    def icon_key(self, x, y, c):
-        self.circle(x - 12, y, 10, stroke=c, sw=3)
-        self.line(x - 2, y, x + 22, y, c, 3)
-        self.line(x + 14, y, x + 14, y + 8, c, 3)
-        self.line(x + 21, y, x + 21, y + 7, c, 3)
-
-    def icon_globe(self, x, y, c):
-        self.circle(x, y, 22, stroke=c, sw=2.5)
-        self.ellipse(x, y, 10, 22, c, 2)
-        self.line(x - 22, y, x + 22, y, c, 2)
-
-    def icon_chat(self, x, y, c):
-        self.rect(x - 24, y - 18, 48, 32, "none", stroke=c, r=8, sw=2.5)
-        self.poly([(x - 10, y + 14), (x - 16, y + 24), (x + 2, y + 14)], stroke=c, sw=2.5)
-
-    def icon_folder(self, x, y, c):
-        self.poly([(x - 24, y - 16), (x - 8, y - 16), (x - 2, y - 10), (x + 24, y - 10), (x + 24, y + 18), (x - 24, y + 18)], stroke=c, sw=2.5)
-
-    def icon_house(self, x, y, c):
-        self.poly([(x - 24, y - 2), (x, y - 24), (x + 24, y - 2)], stroke=c, sw=2.5, closed=False)
-        self.rect(x - 18, y - 4, 36, 26, "none", stroke=c, r=3, sw=2.5)
-        self.rect(x - 5, y + 8, 10, 14, c, r=2)
-
-    def icon_game(self, x, y, c):
-        self.rect(x - 28, y - 14, 56, 30, "none", stroke=c, r=14, sw=2.5)
-        self.line(x - 16, y + 1, x - 6, y + 1, c, 2.5)
-        self.line(x - 11, y - 4, x - 11, y + 6, c, 2.5)
-        self.circle(x + 10, y - 2, 3, fill=c)
-        self.circle(x + 17, y + 5, 3, fill=c)
-
-    def icon_envelope(self, x, y, c, w=46, h=32):
-        self.rect(x - w / 2, y - h / 2, w, h, c, r=4, op=.95)
-        self.poly([(x - w / 2, y - h / 2), (x, y + 2), (x + w / 2, y - h / 2)], stroke=BG1, sw=2.5, closed=False)
+    def note(self, x, y, w, lines, color=ORANGE, bg=ORANGE_BG, size=13):
+        h = 14 + len(lines) * 19
+        self.rect(x, y, w, h, bg, color, 1.2)
+        for i, s in enumerate(lines):
+            self.text(x + 12, y + 22 + i * 19, s, size, INK)
+        return y + h
 
 
-def defs():
-    return f"""<defs>
-<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{BG1}"/><stop offset=".5" stop-color="{BG2}"/><stop offset="1" stop-color="{BG1}"/></linearGradient>
-<linearGradient id="sectionFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#141e3b"/><stop offset="1" stop-color="#0f1730"/></linearGradient>
-<linearGradient id="cardFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a2547"/><stop offset="1" stop-color="#151f3c"/></linearGradient>
-<linearGradient id="tealFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#134e4a"/><stop offset="1" stop-color="#0f2f3a"/></linearGradient>
-<linearGradient id="amberFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a3312"/><stop offset="1" stop-color="#2b2214"/></linearGradient>
-<linearGradient id="violetFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2e2860"/><stop offset="1" stop-color="#1c1b40"/></linearGradient>
-<linearGradient id="roseFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a1d24"/><stop offset="1" stop-color="#2a1720"/></linearGradient>
-<linearGradient id="titleGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="{TEAL}"/><stop offset="1" stop-color="{VIOLET}"/></linearGradient>
-<radialGradient id="nodeFill"><stop offset="0" stop-color="#1f2c52"/><stop offset="1" stop-color="#0f1730"/></radialGradient>
-<radialGradient id="heroGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="{TEAL}" stop-opacity=".22"/><stop offset="1" stop-color="{TEAL}" stop-opacity="0"/></radialGradient>
-<filter id="blur" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="6"/></filter>
-</defs>"""
+# ---------------------------------------------------------------------------
+# Text
 
-
-# --------------------------------------------------------------------------
-# Content
-
-C = {
+T = {
 "en": {
- "kicker": "UQDA  ·  عُقدة  ·  A NETWORK MADE OF NODES",
+ "meta": "UQDA CORE 26.1  ·  TECHNICAL OVERVIEW",
  "title": "How the Uqda network works",
- "sub": ["Every device that installs Uqda becomes a node. The nodes connect to each",
-         "other and carry each other's traffic, encrypted. Together, they are the network."],
- "chips": ["No company", "No account", "No central server", "Free software"],
+ "sub": ["Uqda is an encrypted IPv6 overlay network built only from its users' devices. Each device runs a",
+         "node; nodes link to nearby nodes and route each other's traffic. There is no central server."],
+ "specs": [("Addresses", "200::/7, derived from Ed25519 public keys"), ("Routing", "Ironwood: spanning tree, greedy forwarding"),
+           ("Sessions", "X25519 + XSalsa20-Poly1305, ratcheted keys"), ("Network", "compatible with Yggdrasil")],
 
- "s1": ("Every device becomes a node", ["Uqda means node. Install it on anything, and that device joins the network as an equal."]),
- "devices": ["Phone", "Laptop", "Desktop", "Server", "Home server"],
- "roles": [("Gets an identity", ["A key pair made on the device.", "Nobody issues it, nobody can", "take it away."]),
-           ("Connects to peers", ["A few nearby nodes: on your", "local network or across", "the internet."]),
-           ("Becomes a router", ["It forwards encrypted traffic", "for others when it lies on the", "best path between them."])],
+ "f1": ("Topology: nodes, peer links and sessions", ["Every box is a device running Uqda. Peer links use whatever network exists;",
+        "an encrypted session runs end to end across any number of them."]),
+ "home": "Home network 192.168.1.0/24", "inet": "Internet", "remote": "Friend's network",
+ "n_phone": "Phone", "n_laptop": "Laptop", "n_srv": "Home server", "n_pa": "Public peer A", "n_pb": "Public peer B", "n_friend": "Friend's PC",
+ "multicast": "LAN peers found by multicast; works without internet",
+ "session": "end-to-end session: Laptop ↔ Friend's PC",
+ "lg": ["peer link (TCP, TLS, QUIC, WebSocket)", "encrypted session", "physical network"],
 
- "s2": ("An identity nobody can take", ["Your address is calculated from your key. Without the key, nobody can use it."]),
- "id_priv": ("Private key", ["Ed25519, stays on", "the device"]),
- "id_pub": ("Public key", ["shared with", "other nodes"]),
- "id_hash": "hash",
- "id_addr": ("Your address", "200:1a2b:3c4d::7"),
- "id_sub": ("Your subnet", "300:1a2b:3c4d::/64"),
- "id_sub_note": "for devices behind the node",
- "id_note": ["A connection that arrives from 200:1a2b:3c4d::7 really comes from the holder of that key.",
-             "Programs can use the address as a login, with no passwords."],
+ "f2": ("Addressing: the address is computed from the key", ["The public key is inverted bit by bit; its leading 1-bits are counted and dropped. Nobody can",
+        "use an address without its private key, so the source address of a packet identifies the sender."]),
+ "priv": ["Private key", "Ed25519, 32 bytes", "never leaves the device"],
+ "pub": ["Public key", "32 bytes", "sent to peers"],
+ "derive": ["invert bits,", "count leading 1s"],
+ "example": "Example",
+ "ex_a": "200:1a2b:3c4d::7", "ex_s": "300:1a2b:3c4d::/64",
+ "addr_row": "Node address, 128 bits", "sub_row": "Routed /64 subnet for devices behind the node",
+ "fields_a": [("0x02", "prefix 200::/7", "bits 0-7"), ("N", "count of leading 1s", "bits 8-15"), ("key bits after the first 0", "", "bits 16-127")],
+ "fields_s": [("0x03", "prefix 300::/8", "bits 0-7"), ("N", "count of leading 1s", "bits 8-15"), ("key bits", "", "bits 16-63"), ("your devices", "", "bits 64-127")],
 
- "s3": ("Inside one node", ["Your programs see ordinary IPv6. Uqda does the rest, layer by layer."]),
- "layers": [("Your apps", "Browser, SSH, games, chat, your own service"),
-            ("uqda0 interface", "Plain IPv6: 200::/7 addresses, nothing to learn"),
-            ("Inbound firewall", "Replies pass; new connections only if a rule allows them"),
-            ("Encrypted sessions", "End to end, forward secrecy, optional group secret"),
-            ("Routing (Ironwood)", "Spanning tree, greedy forwarding, bloom-filter lookups"),
-            ("Peer links", "TCP, TLS, QUIC, WebSocket; every link proves its key")],
- "send": "send", "recv": "receive",
- "side": [("Identity", AMBER, ["Ed25519 key pair", "Address = hash of the", "public key"]),
-          ("Admin API", VIOLET, ["Local socket only", "uqda status · uqda peers", "uqdactl …"]),
-          ("No telemetry", GREEN, ["Nothing phones home.", "Logs stay on the device."])],
+ "f3": ("Protocol stack and encapsulation", ["Programs see an ordinary IPv6 interface. Below it, Uqda filters, encrypts and routes,",
+        "then hands frames to a normal network connection."]),
+ "stack": [("Application", "HTTP, SSH, games, chat", 0), ("Transport", "TCP, UDP, ICMPv6", 0),
+           ("IPv6 on uqda0", "200::/7, 300::/8", 1), ("Inbound firewall", "stateful, allow rules", 1),
+           ("Session", "end-to-end encryption", 1), ("Routing (Ironwood)", "coordinates, lookups", 1),
+           ("Link", "TCP, TLS, QUIC, WS, SOCKS", 1), ("Network", "Ethernet, Wi-Fi, mobile", 0)],
+ "brace": "Uqda",
+ "enc_title": "One outgoing packet",
+ "enc": [("from the app", [("IPv6 header", 1.2, FILL), ("TCP", .8, FILL), ("data", 2.2, PAPER)]),
+         ("encrypt", [("nonce", .8, ORANGE_BG), ("ciphertext: the whole IPv6 packet", 3.0, ORANGE_BG), ("tag", .6, ORANGE_BG)]),
+         ("route", [("routing header", 1.4, BLUE_BG), ("encrypted session payload", 3.0, ORANGE_BG)]),
+         ("send", [("link framing / TLS", 1.4, FILL), ("Ironwood frame", 3.0, BLUE_BG)])],
 
- "s4": ("Peers: how nodes find each other", ["A peer is a direct link between two nodes. A node needs only a few."]),
- "peers": [("Local network", ["Found automatically by", "multicast. Works even", "without internet."], TEAL),
-           ("Peers you choose", ["Your own server, a", "friend's node, any", "address you trust."], VIOLET),
-           ("Public peers", ["uqda find and AutoPeers", "pick the fastest and", "replace failed ones."], AMBER),
-           ("Invites", ["uqda invite and uqda join", "add your group's devices", "safely."], GREEN)],
- "you": "your node",
- "transports": ["TCP", "TLS", "QUIC", "WebSocket", "SOCKS", "Unix socket"],
- "handshake": ["Every link starts with a handshake. Each side proves it holds its key over a fresh random",
-               "value, so a recorded handshake cannot be replayed to impersonate a node."],
+ "f4": ("Peering: the link handshake", ["Two nodes open a connection and prove their keys. Between Uqda nodes the proof covers fresh",
+        "random values, so a recorded handshake cannot be replayed to impersonate a node."]),
+ "hs": [("connect over TCP, TLS, QUIC or WebSocket", "both", LINE),
+        ("metadata: version, public key, nonce (field 0x7571), signature", "both", LINE),
+        ("Ed25519 signature over (B's nonce, A's nonce, both keys)", "ab", ORANGE),
+        ("Ed25519 signature over (A's nonce, B's nonce, both keys)", "ba", ORANGE)],
+ "hs_note": "Both signatures verify: the link is up. A replayed handshake fails, because the nonce is new on every connection.",
+ "hs_after": "tree announcements and bloom filters (gossip)",
+ "hs_foot": "Yggdrasil nodes and older Uqda releases skip steps 3 and 4; RequireFreshHandshake: true rejects them.",
 
- "s5": ("A network that builds itself", ["Nobody plans the map. The nodes agree on one by talking to their neighbours."]),
+ "f5": ("Routing: coordinates on a spanning tree", ["Nodes agree on a tree by gossip. A node's coordinates are its path from the root. Each hop goes",
+        "to the peer with the smallest tree distance to the destination, so extra links become shortcuts."]),
  "root": "root",
- "tree_note": "Coordinates = the path from the root. No node knows the whole network.",
- "tree_cards": [("Gossip builds a tree", ["Nodes exchange small signed", "messages and agree on one", "tree that spans everyone."]),
-                ("Coordinates", ["Each node's position is its", "path from the root, like", "[1, 2] or [2, 1, 1]."]),
-                ("Tiny memory", ["A node keeps a few records", "about itself and its peers,", "not the whole network."]),
-                ("Grows and heals", ["New nodes add roads. When", "a link breaks, the tree", "re-forms around it."])],
+ "dist": "distance(a, b) = depth(a) + depth(b) - 2 x common_prefix(a, b)",
+ "tbl_h": ["hop", "at node", "next hop", "distance"],
+ "tbl": [("1", "[1,2,1]", "[1,2]", "5"), ("2", "[1,2]", "[2,1]", "1"), ("3", "[2,1]", "[2,1,1]", "0")],
+ "shortcut": "shortcut",
+ "tbl_note": ["Along the tree: 6 hops.", "Greedy, using the shortcut: 3 hops.", "No node stores a routing table", "for the whole network."],
+ "src": "source", "dst": "destination",
 
- "s6": ("How a packet finds its way", ["Three simple rules, applied by every node, route traffic across the world."]),
- "route": [("Find the key", ["A small lookup travels along", "the tree. Each link carries a", "bloom filter of the keys behind", "it, so lookups go the right way."]),
-           ("Hop to the closest", ["Each node hands the packet to", "the peer whose coordinates", "are closest to the target.", "Shortcuts are used when they exist."]),
-           ("Repair", ["When a link breaks, the sender", "is told, looks the target up", "again, and traffic takes a", "new path."])],
- "target": "target",
+ "f6": ("Finding a node: lookups and repair", ["The destination address holds only part of the key. A lookup travels towards nodes whose",
+        "bloom filters may contain it; the answer carries the full key and current coordinates."]),
+ "lk_life": ["Node A", "Relay", "Relay", "Node B"],
+ "lk1": "lookup(partial key of 200:f3…)",
+ "lk_bloom": "forwarded only on links whose bloom filter matches",
+ "lk2": "response: full key and coordinates",
+ "lk3": "traffic, by greedy routing",
+ "lk4": "link fails: \"path broken\" back to the sender",
+ "lk5": "A looks B up again; traffic takes the new path.",
 
- "s7": ("What anyone in the middle sees", ["Traffic is encrypted end to end. Nodes in the middle carry it but cannot open it."]),
- "sender": "You", "receiver": "Friend", "relay": "relay",
- "sees": "Relays see", "sees_l": ["that traffic passes,", "its size and timing"],
- "cannot": "Relays cannot", "cannot_l": ["read it, change it,", "or replay it"],
- "crypto": ["X25519 key agreement", "XSalsa20-Poly1305", "Ephemeral keys + ratchet", "Replay protection"],
- "crypto_note": ["Forward secrecy: old traffic stays protected even if a key leaks later. TLS or QUIC on a link",
-                 "also hides the protocol from your internet provider."],
+ "f7": ("One packet, end to end", ["SSH from the laptop to the friend's PC. Relays carry ciphertext they cannot read or change."]),
+ "j_life": [("Laptop", "ssh"), ("Laptop", "uqda"), ("Relay", "uqda"), ("Relay", "uqda"), ("Friend's PC", "uqda"), ("Friend's PC", "sshd")],
+ "j1": "IPv6 to 200:f3…:22",
+ "j2": ["encrypt: X25519 session keys,", "XSalsa20-Poly1305; group secret", "mixed in for private groups"],
+ "j3": "ciphertext", "j4": "to the closest peer", "j5": "to the closest peer",
+ "j6": ["decrypt; drop replays", "and non-members"],
+ "j7": ["firewall: allow tcp/22", "from 200:a2… (laptop)"],
+ "j8": "from 200:a2…",
+ "j9": "reply on the same flow, allowed back automatically",
+ "relay_sees": ["Relays see the keys in the routing header, size and timing.", "They cannot read, modify or replay the content."],
 
- "s8": ("Public network or private group", ["Everyone shares the same roads. One setting decides who may talk to you."]),
- "pub": ("Public", ["Any node can open an encrypted", "session with yours.", "", "The firewall keeps your services", "private: open only what you share.", "", "For public services and the wider", "Yggdrasil community."]),
- "priv": ("Private group", ["Members share a secret, stretched", "with Argon2id and mixed into", "session encryption.", "Outsiders cannot open a session", "with you at all, even with the", "firewall off. Public nodes can still", "relay your encrypted traffic.", "For your devices, family or team."]),
- "outsider": "outsider",
- "setup_pub": "sudo uqda setup mode=public", "setup_priv": "sudo uqda setup",
+ "f8": ("Who can see what", ["Uqda encrypts content end to end. It does not hide that you use it, or whom you talk to."]),
+ "vh": ["", "your IP address", "your Uqda address", "content", "size, timing"],
+ "vr": [("Your internet provider", "y", "n1", "n", "y"),
+        ("Your direct peers", "y", "y", "n", "y"),
+        ("Relay nodes on the path", "n", "y", "n", "y"),
+        ("The node you talk to", "n2", "y", "y", "y"),
+        ("Devices on your LAN (multicast on)", "y", "y", "n", "n"),
+        ("The Uqda developers", "n", "n", "n", "n")],
+ "yes": "yes", "no": "no",
+ "vfoot": ["¹  Only on plain TCP links. TLS and QUIC links hide it from your provider.",
+           "²  Unless that node is also one of your direct peers. Uqda has no telemetry: nothing is sent to its developers."],
 
- "s9": ("A packet's journey, step by step", ["From one app on your laptop to an app on your friend's computer."]),
- "journey": [("Your app sends", "A program sends to your friend's 200:… address, like any IPv6 address.", "ssh user@[200:…]"),
-             ("uqda0 takes it", "The operating system routes all of 200::/7 to the uqda0 interface.", "200::/7 → uqda0"),
-             ("Find the key", "The address points to a key; a lookup follows bloom filters to it.", "lookup"),
-             ("Encrypt", "Session keys from X25519, ratcheted; the group secret is mixed in.", "XSalsa20-Poly1305"),
-             ("Hop by hop", "Each node forwards it to the peer closest to the target.", "greedy routing"),
-             ("Decrypt and check", "Only your friend's node can open it. Replays and outsiders are dropped.", "verify"),
-             ("Firewall, then the app", "Rules decide. The app sees a normal connection from your address.", "allow tcp/22")],
+ "f9": ("Public network and private groups", ["Both use the same overlay and the same relays. A group secret limits who can open a session."]),
+ "g_pub": ("GroupPassword empty: public", ["Any node can open a session with yours.", "The firewall decides what it may reach."]),
+ "g_priv": ("GroupPassword set: private group", ["Only members can open sessions. Other nodes", "still relay the members' ciphertext."]),
+ "member": "member", "outsider": "other node", "relays": "relays only", "no_session": "no session",
 
- "s10": ("The firewall decides what comes in", ["On by default for new nodes. Rules match a key, address, subnet, protocol and port."]),
- "fw": [(True, "Reply to a connection you opened", "allowed, always"),
-        (True, "Laptop 200:aa…  →  tcp/22", "allowed by rule \"laptop SSH\""),
-        (True, "Any node  →  ping", "allowed by AllowPing"),
-        (False, "Unknown node 200:ff…  →  tcp/8080", "dropped, no rule"),
-        (False, "Unknown node 200:ff…  →  udp/53", "dropped, no rule")],
+ "f10": ("Inbound firewall", ["Applied to traffic that arrives over Uqda, before it reaches your programs. On for new nodes."]),
+ "fw_h": ["#", "source", "protocol", "ports", "comment", "action"],
+ "fw": [("-", "reply to a flow this node opened", "any", "any", "stateful", "allow"),
+        ("1", "200:a2… (laptop)", "tcp", "22", "laptop SSH", "allow"),
+        ("2", "*", "icmp", "-", "AllowPing", "allow"),
+        ("-", "anything else", "", "", "counted", "drop")],
+ "fw_cfg_t": "uqda.conf",
+ "fw_cfg": ["Firewall: {", "  Enabled: true", "  AllowPing: true", "  Rules: [", "    { Sources: [\"200:a2…\"],", "      Protocol: \"tcp\", Ports: [\"22\"],", "      Comment: \"laptop SSH\" }", "  ]", "}"],
+ "fw_eval_t": "Order of evaluation",
+ "fw_eval": ["1. part of a flow this node opened: allow", "2. first matching rule: allow", "3. anything else: drop and count"],
 
- "s11": ("Join in three commands", ["From nothing to a private network of your own devices."]),
- "join": [("sudo uqda setup country=germany", ["Keeps or creates the identity", "Private group, 192-bit secret", "Firewall on", "Fastest healthy public peers,", "   kept healthy by AutoPeers"]),
-          ("sudo uqda invite", ["A one-time code, also as a QR", "Expires after 15 minutes", "Contains no password", "Redeemed on the local network"]),
-          ("sudo uqda join <invite>", ["Checks the inviter over TLS 1.3", "   against its key", "Proves it holds the secret", "Receives the group secret", "   and peers"])],
- "term": ["$ sudo uqda setup country=germany", "$ sudo uqda invite                 # first device", "$ sudo uqda join uqda-invite-1:…   # new device", "$ uqda status                      # all checks pass"],
+ "f11": ("Joining a private group with an invite", ["The invite is a one-time code without a password. The group secret is sent only to a device",
+        "that reaches the inviter over TLS 1.3 pinned to the inviter's key and presents the code's secret."]),
+ "inv_life": [("New device", "uqda join"), ("Inviter", "uqda invite")],
+ "inv_pre": ["uqda setup: key pair, group secret", "(192 bits), firewall, peers"],
+ "inv_tok": ["token: inviter key, up to 4 addresses,", "one-time secret, expiry (15 minutes)"],
+ "inv_oob": "token shown as text and QR code; the user copies it",
+ "inv_tls": "TLS 1.3 to an address in the token; certificate key must equal token key",
+ "inv_sec": "one-time secret",
+ "inv_chk": ["secret valid, not expired,", "not used before: mark used"],
+ "inv_grant": "grant: group secret and peers",
+ "inv_done": ["writes uqda.conf (backup kept);", "after a restart it is a member"],
 
- "s12": ("Build anything on it", ["Anything that listens on IPv6 already works. The sender's address is a login you can trust."]),
- "build": [("Websites", ["Host at home,", "no domain needed"]), ("Chat and voice", ["Matrix, XMPP,", "Mumble"]),
-           ("Files", ["Syncthing, rsync,", "Nextcloud"]), ("Smart home", ["Reach home without", "a vendor cloud"]),
-           ("Games", ["Friends join by", "address"]), ("Apps", ["Android and Apple", "SDKs"])],
+ "f12": ("Building on Uqda", ["Anything that listens on IPv6 works unchanged. The source address of a connection is authenticated."]),
+ "b_left": ["Host a site or service at home, without port forwarding.", "Use the client's 200:… address as its login.",
+            "Read node state through the local admin API (JSON).", "Embed a node in apps with the Android and Apple SDKs."],
+ "b_code": ["$ python3 -m http.server 8080 --bind ::", "", "# uqda.conf", "Rules: [ { Sources: [\"*\"], Protocol: \"tcp\",", "          Ports: [\"8080\"] } ]", "", "# any Uqda user can now open", "http://[200:1a2b:3c4d::7]:8080/"],
 
- "foot_title": "Good to know",
- "foot": [("Not anonymous", ["Your peers see your IP address.", "Uqda hides content, not who", "talks to whom."], ROSE),
-          ("Experimental", ["Tested extensively, but no", "independent security audit", "yet."], AMBER),
-          ("No telemetry", ["The developers run no servers", "that see your traffic and", "receive no data from you."], GREEN)],
- "brand": "Uqda Core 26.1 · compatible with the Yggdrasil network · free software, LGPLv3 · github.com/Uqda/Core",
+ "limits_t": "Limits",
+ "limits": ["Not an anonymity network: peers see your IP address, relays see who talks to whom.",
+            "Experimental: tested extensively, but no independent security audit yet.",
+            "Paths can be longer than a direct connection, so some routes are slower.",
+            "No telemetry, no accounts, no central servers."],
+ "foot": "Uqda Core 26.1  ·  free software, LGPLv3  ·  compatible with the Yggdrasil network  ·  github.com/Uqda/Core",
 },
 "ar": {
- "kicker": "عُقدة  ·  UQDA  ·  شبكة مكوّنة من العُقد",
+ "meta": "Uqda Core 26.1  ·  نظرة تقنية",
  "title": "كيف تعمل شبكة عُقدة",
- "sub": ["كل جهاز يثبّت عُقدة يصبح عُقدة في الشبكة. تتصل العُقد ببعضها",
-         "وتحمل اتصالات بعضها مشفّرة. ومعًا، هي الشبكة نفسها."],
- "chips": ["لا شركة", "لا حساب", "لا خادم مركزي", "برنامج حر"],
+ "sub": ["عُقدة شبكة IPv6 مشفّرة فوق الإنترنت، مكوّنة فقط من أجهزة مستخدميها. كل جهاز يشغّل عُقدة،",
+         "والعُقد تتصل بالعُقد القريبة منها وتوجّه اتصالات بعضها. لا يوجد خادم مركزي."],
+ "specs": [("العناوين", "200::/7، محسوبة من مفاتيح Ed25519 العامة"), ("التوجيه", "Ironwood: شجرة ممتدة وتمرير جشِع"),
+           ("الجلسات", "X25519 + XSalsa20-Poly1305 مع تجديد المفاتيح"), ("الشبكة", "متوافقة مع Yggdrasil")],
 
- "s1": ("كل جهاز يصبح عُقدة", ["ثبّت عُقدة على أي جهاز، فينضم إلى الشبكة عضوًا مساويًا لغيره."]),
- "devices": ["هاتف", "حاسوب محمول", "حاسوب مكتبي", "خادم", "خادم منزلي"],
- "roles": [("يحصل على هوية", ["زوج مفاتيح يُنشأ على الجهاز.", "لا تصدره جهة، ولا يستطيع", "أحد انتزاعه."]),
-           ("يتصل بجيرانه", ["بضع عُقد قريبة: على شبكتك", "المحلية أو عبر الإنترنت."]),
-           ("يصبح موجّهًا", ["يمرّر الاتصالات المشفّرة", "للآخرين حين يقع على أفضل", "طريق بينهم."])],
+ "f1": ("البنية: العُقد وروابط الجيران والجلسات", ["كل مربع جهاز يشغّل عُقدة. روابط الجيران تستخدم أي شبكة متاحة،",
+        "والجلسة المشفّرة تمتد من الطرف إلى الطرف عبر أي عدد منها."]),
+ "home": "شبكة المنزل 192.168.1.0/24", "inet": "الإنترنت", "remote": "شبكة الصديق",
+ "n_phone": "هاتف", "n_laptop": "حاسوب محمول", "n_srv": "خادم المنزل", "n_pa": "عُقدة عامة A", "n_pb": "عُقدة عامة B", "n_friend": "حاسوب الصديق",
+ "multicast": "جيران الشبكة المحلية يُكتشفون تلقائيًا، دون حاجة للإنترنت",
+ "session": "جلسة من الطرف إلى الطرف: الحاسوب المحمول ↔ حاسوب الصديق",
+ "lg": ["رابط جيران (TCP وTLS وQUIC وWebSocket)", "جلسة مشفّرة", "شبكة فعلية"],
 
- "s2": ("هوية لا يستطيع أحد انتزاعها", ["عنوانك محسوب من مفتاحك. دون المفتاح لا يستطيع أحد استخدامه."]),
- "id_priv": ("المفتاح الخاص", ["Ed25519، يبقى", "على الجهاز"]),
- "id_pub": ("المفتاح العام", ["يُشارك مع", "العُقد الأخرى"]),
- "id_hash": "بصمة",
- "id_addr": ("عنوانك", "200:1a2b:3c4d::7"),
- "id_sub": ("شبكتك الفرعية", "300:1a2b:3c4d::/64"),
- "id_sub_note": "للأجهزة خلف العُقدة",
- "id_note": ["الاتصال القادم من 200:1a2b:3c4d::7 يأتي فعلًا من صاحب ذلك المفتاح.",
-             "تستطيع البرامج استخدام العنوان لتسجيل الدخول، دون كلمات مرور."],
+ "f2": ("العنونة: العنوان محسوب من المفتاح", ["تُعكس بتات المفتاح العام، وتُعدّ بتات 1 في بدايته وتُحذف. لا يستطيع أحد استخدام",
+        "عنوان دون مفتاحه الخاص، لذلك يدل عنوان المصدر في الرسالة على مرسلها."]),
+ "priv": ["المفتاح الخاص", "Ed25519، بطول 32 بايت", "لا يغادر الجهاز"],
+ "pub": ["المفتاح العام", "32 بايت", "يُرسل إلى الجيران"],
+ "derive": ["عكس البتات،", "وعدّ بتات 1 الأولى"],
+ "example": "مثال",
+ "ex_a": "200:1a2b:3c4d::7", "ex_s": "300:1a2b:3c4d::/64",
+ "addr_row": "Node address, 128 bits  ·  عنوان العُقدة", "sub_row": "Routed /64 subnet  ·  شبكة فرعية للأجهزة خلف العُقدة",
+ "fields_a": [("0x02", "prefix 200::/7", "bits 0-7"), ("N", "leading 1s", "bits 8-15"), ("key bits after the first 0", "", "bits 16-127")],
+ "fields_s": [("0x03", "prefix 300::/8", "bits 0-7"), ("N", "leading 1s", "bits 8-15"), ("key bits", "", "bits 16-63"), ("your devices", "", "bits 64-127")],
 
- "s3": ("داخل العُقدة الواحدة", ["ترى برامجك IPv6 عاديًا، وتتولى عُقدة الباقي طبقةً بعد طبقة."]),
- "layers": [("تطبيقاتك", "المتصفح وSSH والألعاب والمحادثة وخدمتك الخاصة"),
-            ("واجهة uqda0", "IPv6 عادي: عناوين 200::/7، لا شيء جديد لتتعلمه"),
-            ("الجدار الناري للوارد", "الردود تمرّ؛ الاتصالات الجديدة فقط إن سمحت بها قاعدة"),
-            ("جلسات مشفّرة", "من الطرف إلى الطرف، سرّية أمامية، سرّ مجموعة اختياري"),
-            ("التوجيه (Ironwood)", "شجرة ممتدة، تمرير جشِع، بحث بمرشّحات بلوم"),
-            ("روابط الجيران", "TCP وTLS وQUIC وWebSocket؛ كل رابط يُثبت مفتاحه")],
- "send": "إرسال", "recv": "استقبال",
- "side": [("الهوية", AMBER, ["زوج مفاتيح Ed25519", "العنوان = بصمة", "المفتاح العام"]),
-          ("واجهة الإدارة", VIOLET, ["مقبس محلي فقط", "uqda status · uqda peers", "uqdactl …"]),
-          ("لا تتبّع", GREEN, ["لا شيء يتصل بالمطوّرين.", "السجلات تبقى على الجهاز."])],
+ "f3": ("طبقات البروتوكول والتغليف", ["ترى البرامج واجهة IPv6 عادية. تحتها تفلتر عُقدة الاتصال وتشفّره وتوجّهه،",
+        "ثم تسلّمه إلى اتصال شبكة عادي."]),
+ "stack": [("التطبيق", "HTTP وSSH والألعاب", 0), ("النقل", "TCP وUDP وICMPv6", 0),
+           ("IPv6 على uqda0", "200::/7 و300::/8", 1), ("الجدار الناري للوارد", "يتتبّع الحالة، قواعد سماح", 1),
+           ("الجلسة", "تشفير من الطرف إلى الطرف", 1), ("التوجيه (Ironwood)", "إحداثيات وبحث", 1),
+           ("الرابط", "TCP وTLS وQUIC وWS", 1), ("الشبكة", "Ethernet وWi-Fi والجوال", 0)],
+ "brace": "عُقدة",
+ "enc_title": "One outgoing packet  ·  رسالة صادرة واحدة",
+ "enc": [("from the app", [("IPv6 header", 1.2, FILL), ("TCP", .8, FILL), ("data", 2.2, PAPER)]),
+         ("encrypt", [("nonce", .8, ORANGE_BG), ("ciphertext: the whole IPv6 packet", 3.0, ORANGE_BG), ("tag", .6, ORANGE_BG)]),
+         ("route", [("routing header", 1.4, BLUE_BG), ("encrypted session payload", 3.0, ORANGE_BG)]),
+         ("send", [("link framing / TLS", 1.4, FILL), ("Ironwood frame", 3.0, BLUE_BG)])],
 
- "s4": ("الجيران: كيف تجد العُقد بعضها", ["الجار رابط مباشر بين عُقدتين، وتكفي العُقدةَ بضعةُ جيران."]),
- "peers": [("الشبكة المحلية", ["تُكتشف تلقائيًا، وتعمل", "حتى دون إنترنت."], TEAL),
-           ("جيران تختارهم", ["خادمك، أو عُقدة صديق،", "أو أي عنوان تثق به."], VIOLET),
-           ("عُقد عامة", ["uqda find وAutoPeers", "تختار الأسرع وتستبدل", "المتعطّل."], AMBER),
-           ("الدعوات", ["uqda invite وuqda join", "تضيف أجهزة مجموعتك", "بأمان."], GREEN)],
- "you": "عُقدتك",
- "transports": ["TCP", "TLS", "QUIC", "WebSocket", "SOCKS", "Unix socket"],
- "handshake": ["يبدأ كل رابط بمصافحة يُثبت فيها كل طرف امتلاكه مفتاحه على قيمة عشوائية جديدة،",
-               "فلا يمكن إعادة مصافحة مسجّلة لانتحال عُقدة."],
+ "f4": ("الاتصال بالجيران: مصافحة الرابط", ["تفتح عُقدتان اتصالًا وتُثبت كل منهما مفتاحها. بين عُقد Uqda يشمل الإثبات قيمًا",
+        "عشوائية جديدة، فلا يمكن إعادة مصافحة مسجّلة لانتحال عُقدة."]),
+ "hs": [("اتصال عبر TCP أو TLS أو QUIC أو WebSocket", "both", LINE),
+        ("بيانات: الإصدار والمفتاح العام وnonce (الحقل 0x7571) وتوقيع", "both", LINE),
+        ("توقيع Ed25519 على (nonce الطرف B، وnonce الطرف A، والمفتاحين)", "ab", ORANGE),
+        ("توقيع Ed25519 على (nonce الطرف A، وnonce الطرف B، والمفتاحين)", "ba", ORANGE)],
+ "hs_note": "يتحقق الطرفان من التوقيعين فيعمل الرابط. المصافحة المُعادة تفشل لأن الـ nonce جديد في كل اتصال.",
+ "hs_after": "إعلانات الشجرة ومرشّحات بلوم (تناقل)",
+ "hs_foot": "عُقد Yggdrasil وإصدارات Uqda القديمة تتخطى الخطوتين ٣ و٤، والخيار RequireFreshHandshake: true يرفضها.",
 
- "s5": ("شبكة تبني نفسها", ["لا أحد يرسم الخريطة. تتفق العُقد عليها بالتحدث مع جيرانها."]),
+ "f5": ("التوجيه: إحداثيات على شجرة ممتدة", ["تتفق العُقد على شجرة بالتناقل، وإحداثيات العُقدة هي طريقها من الجذر. كل قفزة تذهب",
+        "إلى الجار الأقل مسافة على الشجرة نحو الهدف، فتصبح الروابط الإضافية طرقًا مختصرة."]),
  "root": "الجذر",
- "tree_note": "الإحداثيات = الطريق من الجذر. لا توجد عُقدة تعرف الشبكة كلها.",
- "tree_cards": [("الشجرة تُبنى بالتناقل", ["تتبادل العُقد رسائل صغيرة", "موقّعة وتتفق على شجرة", "واحدة تشمل الجميع."]),
-                ("الإحداثيات", ["موقع كل عُقدة هو طريقها", "من الجذر، مثل [1, 2]", "أو [2, 1, 1]."]),
-                ("ذاكرة صغيرة", ["تحتفظ العُقدة بسجلات قليلة", "عن نفسها وجيرانها، لا عن", "الشبكة كلها."]),
-                ("تنمو وتُصلح نفسها", ["العُقد الجديدة تضيف طرقًا،", "وحين ينقطع رابط تُعاد", "الشجرة حوله."])],
+ "dist": "distance(a, b) = depth(a) + depth(b) - 2 x common_prefix(a, b)",
+ "tbl_h": ["القفزة", "عند العُقدة", "القفزة التالية", "المسافة"],
+ "tbl": [("1", "[1,2,1]", "[1,2]", "5"), ("2", "[1,2]", "[2,1]", "1"), ("3", "[2,1]", "[2,1,1]", "0")],
+ "shortcut": "طريق مختصر",
+ "tbl_note": ["على الشجرة: ٦ قفزات.", "التمرير الجشِع مع المختصر: ٣ قفزات.", "لا تحتفظ أي عُقدة بجدول توجيه", "للشبكة كلها."],
+ "src": "المصدر", "dst": "الهدف",
 
- "s6": ("كيف تجد الرسالة طريقها", ["ثلاث قواعد بسيطة تطبّقها كل عُقدة، فتوجّه الاتصالات عبر العالم."]),
- "route": [("إيجاد المفتاح", ["بحث صغير يسير على الشجرة.", "يحمل كل رابط مرشّح بلوم", "بالمفاتيح التي خلفه، فيسير", "البحث في الاتجاه الصحيح."]),
-           ("القفز إلى الأقرب", ["تسلّم كل عُقدة الرسالة للجار", "الذي إحداثياته أقرب إلى الهدف،", "وتُستخدم الطرق المختصرة", "حين توجد."]),
-           ("الإصلاح", ["حين ينقطع رابط يُبلَّغ المرسل،", "فيبحث عن الهدف مجددًا،", "ويسلك الاتصال طريقًا", "جديدًا."])],
- "target": "الهدف",
+ "f6": ("إيجاد عُقدة: البحث والإصلاح", ["عنوان الهدف يحمل جزءًا من المفتاح فقط. يسير البحث نحو العُقد التي قد تحتويه",
+        "مرشّحات بلوم لديها، ويحمل الرد المفتاح الكامل والإحداثيات الحالية."]),
+ "lk_life": ["العُقدة A", "وسيط", "وسيط", "العُقدة B"],
+ "lk1": "lookup(partial key of 200:f3…)",
+ "lk_bloom": "يُمرَّر فقط على الروابط التي يطابقها مرشّح بلوم",
+ "lk2": "الرد: المفتاح الكامل والإحداثيات",
+ "lk3": "الاتصال، بالتمرير الجشِع",
+ "lk4": "تعطّل رابط: إشعار \"path broken\" إلى المرسل",
+ "lk5": "تبحث A عن B مجددًا، ويسلك الاتصال الطريق الجديد.",
 
- "s7": ("ماذا يرى من في المنتصف", ["الاتصال مشفّر من الطرف إلى الطرف. العُقد الوسيطة تحمله ولا تستطيع فتحه."]),
- "sender": "أنت", "receiver": "صديقك", "relay": "وسيط",
- "sees": "يرى الوسطاء", "sees_l": ["أن هناك اتصالًا يمرّ،", "وحجمه وتوقيته"],
- "cannot": "لا يستطيع الوسطاء", "cannot_l": ["قراءته أو تغييره", "أو إعادة إرساله"],
- "crypto": ["X25519 لتبادل المفاتيح", "XSalsa20-Poly1305", "مفاتيح مؤقتة تتجدّد", "حماية من الإعادة"],
- "crypto_note": ["السرّية الأمامية: يبقى الاتصال القديم محميًا حتى لو تسرّب مفتاح لاحقًا. واستخدام TLS أو QUIC",
-                 "على الرابط يخفي البروتوكول أيضًا عن مزوّد الإنترنت."],
+ "f7": ("رسالة واحدة من الطرف إلى الطرف", ["SSH من الحاسوب المحمول إلى حاسوب الصديق. الوسطاء يحملون نصًا مشفّرًا لا يستطيعون قراءته أو تغييره."]),
+ "j_life": [("الحاسوب", "ssh"), ("الحاسوب", "uqda"), ("وسيط", "uqda"), ("وسيط", "uqda"), ("حاسوب الصديق", "uqda"), ("حاسوب الصديق", "sshd")],
+ "j1": "IPv6 to 200:f3…:22",
+ "j2": ["تشفير: مفاتيح جلسة X25519،", "XSalsa20-Poly1305، ويُمزج سرّ", "المجموعة في الشبكات الخاصة"],
+ "j3": "نص مشفّر", "j4": "إلى الجار الأقرب", "j5": "إلى الجار الأقرب",
+ "j6": ["فكّ التشفير، ورفض المُعاد", "وغير الأعضاء"],
+ "j7": ["الجدار: السماح بـ tcp/22", "من 200:a2… (الحاسوب)"],
+ "j8": "from 200:a2…",
+ "j9": "الرد على الاتصال نفسه، يُسمح به تلقائيًا",
+ "relay_sees": ["يرى الوسطاء المفاتيح في ترويسة التوجيه، والحجم، والتوقيت.", "ولا يستطيعون قراءة المحتوى أو تغييره أو إعادة إرساله."],
 
- "s8": ("شبكة عامة أو مجموعة خاصة", ["الجميع يتشاركون الطرق نفسها، وإعداد واحد يقرّر من يستطيع محادثتك."]),
- "pub": ("عامة", ["أي عُقدة تستطيع فتح جلسة", "مشفّرة مع عُقدتك.", "", "الجدار الناري يُبقي خدماتك", "خاصة: افتح فقط ما تشاركه.", "", "للخدمات العامة ومجتمع", "Yggdrasil الأوسع."]),
- "priv": ("مجموعة خاصة", ["يتشارك الأعضاء سرًّا يُقوّى", "بـ Argon2id ويُمزج في", "تشفير الجلسات.", "لا يستطيع الغرباء فتح جلسة", "معك أبدًا، حتى مع إيقاف", "الجدار. وتستطيع العُقد العامة", "تمرير اتصالك المشفّر.", "لأجهزتك أو عائلتك أو فريقك."]),
- "outsider": "غريب",
- "setup_pub": "sudo uqda setup mode=public", "setup_priv": "sudo uqda setup",
+ "f8": ("من يرى ماذا", ["تشفّر عُقدة المحتوى من الطرف إلى الطرف، لكنها لا تُخفي أنك تستخدمها، ولا مع من تتحدث."]),
+ "vh": ["", "عنوان IP", "عنوانك في عُقدة", "المحتوى", "الحجم والتوقيت"],
+ "vr": [("مزوّد الإنترنت", "y", "n1", "n", "y"),
+        ("جيرانك المباشرون", "y", "y", "n", "y"),
+        ("العُقد الوسيطة على الطريق", "n", "y", "n", "y"),
+        ("العُقدة التي تحادثها", "n2", "y", "y", "y"),
+        ("أجهزة شبكتك المحلية (مع الاكتشاف)", "y", "y", "n", "n"),
+        ("مطوّرو عُقدة", "n", "n", "n", "n")],
+ "yes": "نعم", "no": "لا",
+ "vfoot": ["¹  فقط على روابط TCP العادية؛ روابط TLS وQUIC تخفيه عن المزوّد.",
+           "²  إلا إن كانت تلك العُقدة أيضًا من جيرانك المباشرين. لا يوجد تتبّع: لا يُرسل شيء إلى المطوّرين."],
 
- "s9": ("رحلة الرسالة خطوة بخطوة", ["من تطبيق على حاسوبك إلى تطبيق على حاسوب صديقك."]),
- "journey": [("تطبيقك يرسل", "يرسل برنامج إلى عنوان صديقك 200:… كأي عنوان IPv6.", "ssh user@[200:…]"),
-             ("uqda0 تستلمها", "يوجّه نظام التشغيل كل عناوين 200::/7 إلى واجهة uqda0.", "200::/7 → uqda0"),
-             ("إيجاد المفتاح", "العنوان يدل على مفتاح، والبحث يتبع مرشّحات بلوم إليه.", "lookup"),
-             ("التشفير", "مفاتيح جلسة X25519 متجدّدة، ويُمزج سرّ المجموعة.", "XSalsa20-Poly1305"),
-             ("قفزة بعد قفزة", "تمرّرها كل عُقدة إلى الجار الأقرب إلى الهدف.", "greedy routing"),
-             ("فكّ التشفير والتحقق", "عُقدة صديقك وحدها تفتحها، وتُرفض المُعادة والغريبة.", "verify"),
-             ("الجدار ثم التطبيق", "القواعد تقرّر، ويرى التطبيق اتصالًا عاديًا من عنوانك.", "allow tcp/22")],
+ "f9": ("الشبكة العامة والمجموعات الخاصة", ["كلاهما يستخدم الشبكة نفسها والوسطاء أنفسهم، وسرّ المجموعة يحدّد من يستطيع فتح جلسة."]),
+ "g_pub": ("GroupPassword فارغ: شبكة عامة", ["أي عُقدة تستطيع فتح جلسة مع عُقدتك،", "والجدار الناري يقرّر ما تصل إليه."]),
+ "g_priv": ("GroupPassword محدّد: مجموعة خاصة", ["الأعضاء وحدهم يفتحون الجلسات، وتبقى العُقد", "الأخرى تمرّر نصّهم المشفّر."]),
+ "member": "عضو", "outsider": "عُقدة أخرى", "relays": "تمرير فقط", "no_session": "لا جلسة",
 
- "s10": ("الجدار الناري يقرّر ما يدخل", ["مفعّل افتراضيًا للعُقد الجديدة. القواعد تطابق المفتاح والعنوان والشبكة والبروتوكول والمنفذ."]),
- "fw": [(True, "ردّ على اتصال فتحته أنت", "مسموح دائمًا"),
-        (True, "الحاسوب 200:aa…  ←  tcp/22", "مسموح بقاعدة \"laptop SSH\""),
-        (True, "أي عُقدة  ←  ping", "مسموح بـ AllowPing"),
-        (False, "عُقدة غريبة 200:ff…  ←  tcp/8080", "مرفوض، لا قاعدة"),
-        (False, "عُقدة غريبة 200:ff…  ←  udp/53", "مرفوض، لا قاعدة")],
+ "f10": ("الجدار الناري للوارد", ["يُطبَّق على الاتصال القادم عبر عُقدة قبل أن يصل إلى برامجك. مفعّل للعُقد الجديدة."]),
+ "fw_h": ["#", "المصدر", "البروتوكول", "المنافذ", "ملاحظة", "الإجراء"],
+ "fw": [("-", "ردّ على اتصال فتحته العُقدة", "any", "any", "تتبّع الحالة", "سماح"),
+        ("1", "200:a2… (الحاسوب)", "tcp", "22", "laptop SSH", "سماح"),
+        ("2", "*", "icmp", "-", "AllowPing", "سماح"),
+        ("-", "كل ما عدا ذلك", "", "", "يُحتسب", "رفض")],
+ "fw_cfg_t": "uqda.conf",
+ "fw_cfg": ["Firewall: {", "  Enabled: true", "  AllowPing: true", "  Rules: [", "    { Sources: [\"200:a2…\"],", "      Protocol: \"tcp\", Ports: [\"22\"],", "      Comment: \"laptop SSH\" }", "  ]", "}"],
+ "fw_eval_t": "ترتيب التقييم",
+ "fw_eval": ["١. جزء من اتصال فتحته العُقدة: سماح", "٢. أول قاعدة مطابقة: سماح", "٣. كل ما عدا ذلك: رفض واحتساب"],
 
- "s11": ("انضم بثلاثة أوامر", ["من لا شيء إلى شبكة خاصة تجمع أجهزتك."]),
- "join": [("sudo uqda setup country=germany", ["يحتفظ بالهوية أو ينشئها", "مجموعة خاصة بسرّ 192 بت", "تفعيل الجدار الناري", "أسرع العُقد العامة السليمة،", "   ويحافظ عليها AutoPeers"]),
-          ("sudo uqda invite", ["رمز لمرة واحدة، ورمز QR", "ينتهي بعد 15 دقيقة", "لا يحتوي على كلمة مرور", "يُستخدم على الشبكة المحلية"]),
-          ("sudo uqda join <invite>", ["يتحقق من الداعي عبر TLS 1.3", "   مقابل مفتاحه", "يُثبت امتلاكه السرّ", "يستلم سرّ المجموعة", "   والجيران"])],
- "term": ["$ sudo uqda setup country=germany", "$ sudo uqda invite                 # first device", "$ sudo uqda join uqda-invite-1:…   # new device", "$ uqda status                      # all checks pass"],
+ "f11": ("الانضمام إلى مجموعة خاصة بدعوة", ["الدعوة رمز لمرة واحدة دون كلمة مرور. لا يُرسل سرّ المجموعة إلا لجهاز يصل إلى",
+        "الداعي عبر TLS 1.3 مثبّت على مفتاح الداعي، ويقدّم سرّ الرمز."]),
+ "inv_life": [("الجهاز الجديد", "uqda join"), ("الداعي", "uqda invite")],
+ "inv_pre": ["uqda setup: زوج مفاتيح، سرّ مجموعة", "(192 بت)، جدار ناري، جيران"],
+ "inv_tok": ["الرمز: مفتاح الداعي، حتى ٤ عناوين،", "سرّ لمرة واحدة، انتهاء بعد ١٥ دقيقة"],
+ "inv_oob": "يظهر الرمز نصًا ورمز QR، وينسخه المستخدم",
+ "inv_tls": "TLS 1.3 إلى عنوان من الرمز؛ يجب أن يطابق مفتاح الشهادة مفتاح الرمز",
+ "inv_sec": "السرّ لمرة واحدة",
+ "inv_chk": ["السرّ صحيح وغير منتهٍ ولم", "يُستخدم من قبل: يُعلَّم مستخدمًا"],
+ "inv_grant": "المنحة: سرّ المجموعة والجيران",
+ "inv_done": ["يكتب uqda.conf (مع نسخة احتياطية)،", "وبعد إعادة التشغيل يصبح عضوًا"],
 
- "s12": ("ابنِ عليها ما تشاء", ["كل ما يستمع على IPv6 يعمل مباشرة، وعنوان المرسل تسجيل دخول تستطيع الوثوق به."]),
- "build": [("مواقع", ["استضافة من المنزل،", "دون نطاق"]), ("محادثة وصوت", ["Matrix وXMPP", "وMumble"]),
-           ("ملفات", ["Syncthing وrsync", "وNextcloud"]), ("منزل ذكي", ["الوصول للمنزل دون", "سحابة شركة"]),
-           ("ألعاب", ["الأصدقاء ينضمون", "بالعنوان"]), ("تطبيقات", ["حزم Android", "وApple"])],
+ "f12": ("البناء على عُقدة", ["كل ما يستمع على IPv6 يعمل دون تغيير، وعنوان المصدر في كل اتصال موثَّق."]),
+ "b_left": ["استضف موقعًا أو خدمة من المنزل، دون إعادة توجيه منافذ.", "استخدم عنوان العميل 200:… لتسجيل دخوله.",
+            "اقرأ حالة العُقدة عبر واجهة الإدارة المحلية (JSON).", "ضمّن عُقدة في التطبيقات بحزم Android وApple."],
+ "b_code": ["$ python3 -m http.server 8080 --bind ::", "", "# uqda.conf", "Rules: [ { Sources: [\"*\"], Protocol: \"tcp\",", "          Ports: [\"8080\"] } ]", "", "# any Uqda user can now open", "http://[200:1a2b:3c4d::7]:8080/"],
 
- "foot_title": "من المهم أن تعرف",
- "foot": [("ليست أداة إخفاء هوية", ["جيرانك يرون عنوان IP الخاص بك.", "عُقدة تخفي المحتوى، لا من", "يتحدث مع من."], ROSE),
-          ("مشروع تجريبي", ["مُختبر على نطاق واسع، لكن", "دون تدقيق أمني مستقل", "بعد."], AMBER),
-          ("لا تتبّع", ["لا يشغّل المطوّرون خوادم ترى", "اتصالك، ولا تصلهم أي", "بيانات منك."], GREEN)],
- "brand": "Uqda Core 26.1 · متوافقة مع شبكة Yggdrasil · برنامج حر، LGPLv3 · github.com/Uqda/Core",
+ "limits_t": "الحدود",
+ "limits": ["ليست شبكة إخفاء هوية: جيرانك يرون عنوان IP، والوسطاء يرون من يتحدث مع من.",
+            "مشروع تجريبي: مُختبر على نطاق واسع، لكن دون تدقيق أمني مستقل بعد.",
+            "قد تكون الطرق أطول من الاتصال المباشر، فبعضها أبطأ.",
+            "لا تتبّع، ولا حسابات، ولا خوادم مركزية."],
+ "foot": "Uqda Core 26.1  ·  برنامج حر، LGPLv3  ·  متوافقة مع شبكة Yggdrasil  ·  github.com/Uqda/Core",
 },
 }
 
 
-# --------------------------------------------------------------------------
-# Sections. Each takes the poster, the content and a top y, and returns the
-# bottom y.
+# ---------------------------------------------------------------------------
+# Figures
 
-def hero(p, t, y):
-    p.rect(0, y, W, 600, "url(#heroGlow)", r=0)
-    p.text(W / 2, y + 86, t["kicker"], 15, TEAL, 700, anchor="middle", ls=3)
-    p.raw(f'<text x="{W/2}" y="{y+160}" font-size="60" font-weight="800" fill="url(#titleGrad)" text-anchor="middle"{" direction=\"rtl\"" if p.rtl else ""}>{escape(t["title"])}</text>')
-    for i, l in enumerate(t["sub"]):
-        p.text(W / 2, y + 214 + i * 32, l, 21, MUTED, 400, anchor="middle")
-    # mesh of glowing nodes
-    rnd = random.Random(11)
-    pts = []
-    while len(pts) < 46:
-        x, yy = rnd.uniform(70, 1130), rnd.uniform(y + 300, y + 500)
-        if all((x - a) ** 2 + (yy - b) ** 2 > 62 ** 2 for a, b in pts):
-            pts.append((x, yy))
-    edges = set()
-    for i, (x, yy) in enumerate(pts):
-        near = sorted(range(len(pts)), key=lambda j: (pts[j][0] - x) ** 2 + (pts[j][1] - yy) ** 2)[1:4]
-        for j in near:
-            edges.add(tuple(sorted((i, j))))
-    for i, j in edges:
-        p.line(*pts[i], *pts[j], "#2a3a6a", 1.6)
-    hl = [5, 12, 20, 27, 33]
-    order = sorted(range(len(pts)), key=lambda k: pts[k][0])
-    path = [order[k] for k in (2, 9, 17, 26, 34, 43)]
-    for a, b in zip(path, path[1:]):
-        p.line(*pts[a], *pts[b], TEAL, 3.5, op=.9)
-    for k, (x, yy) in enumerate(pts):
-        c = TEAL if k in path else (VIOLET if k in hl else "#5c6fa8")
-        p.node(x, yy, 7 if k not in path else 9, c, glow=k in path or k in hl)
-    # chips
-    widths = [int(len(c) * 15 * .6 + 40) for c in t["chips"]]
-    total = sum(widths) + 14 * (len(widths) - 1)
-    x = (W - total) / 2
-    for c, w in zip(t["chips"], widths):
-        p.chip(x, y + 535, c, TEAL, w=w)
-        x += w + 14
-    return y + 610
+def header(p, t):
+    p.text(L, 64, t["meta"], 13, GRAY, 700)
+    p.text(L, 120, t["title"], 44, INK, 800)
+    p.lines(L, 164, t["sub"], 18, TEXT, 28)
+    y = 236
+    p.rect(L, y, R - L, 96, FILL, None, r=0)
+    for i, (k, v) in enumerate(t["specs"]):
+        col, row = i % 2, i // 2
+        x = L + 24 + col * 540
+        p.text(x, y + 38 + row * 32, k, 14, INK, 700)
+        p.text(x + 110, y + 38 + row * 32, v, 14, TEXT)
+    return y + 96 + 44
 
 
-def s_devices(p, t, y):
-    h = 470
-    p.section(y, h, 1, *t["s1"])
-    xs = [190, 395, 600, 805, 1010]
-    icons = [p.icon_phone, p.icon_laptop, p.icon_desktop, p.icon_server, p.icon_box]
-    for i, (x, f) in enumerate(zip(xs, icons)):
-        p.circle(x, y + 205, 56, fill="url(#cardFill)", stroke=CARDLINE, sw=1.2)
-        f(x, y + 205, INK)
-        p.node(x + 40, y + 165, 9, TEAL)
-        p.text(x, y + 290, t["devices"][i], 17, INK, 600, anchor="middle")
-    for a, b in zip(xs, xs[1:]):
-        p.line(a + 60, y + 205, b - 60, y + 205, TEAL, 2, dash="2 8", op=.7)
-    cols = [TEAL, VIOLET, AMBER]
-    for i, (title, lines) in enumerate(t["roles"]):
-        x = 70 + i * 360
-        p.card(x, y + 322, 340, 122)
-        p.circle(x + 30, y + 352, 14, fill=cols[i])
-        p.text(x + 30, y + 358, p.num(i + 1), 15, BG1, 800, anchor="middle")
-        p.text(x + 54, y + 358, title, 19, INK, 700)
-        p.para(x + 22, y + 388, lines, 15, MUTED, 21)
-    return y + h
+def fig_topology(p, t, y):
+    y = p.figure(y, 1, *t["f1"])
+    top = y + 34
+    p.rect(L, top + 50, 340, 250, "none", GRAY, 1.2, dash="6 5")
+    p.text(L + 14, top + 74, t["home"], 13, GRAY, 600)
+    p.rect(440, top + 30, 320, 300, "none", GRAY, 1.2, r=36, dash="6 5")
+    p.text(600, top + 60, t["inet"], 13, GRAY, 600, anchor="middle")
+    p.rect(840, top + 50, 300, 250, "none", GRAY, 1.2, dash="6 5")
+    p.text(854, top + 74, t["remote"], 13, GRAY, 600)
+    nodes = {
+        "phone": (L + 18, top + 100, 145, t["n_phone"], "200:a1…"),
+        "laptop": (L + 178, top + 100, 145, t["n_laptop"], "200:a2…"),
+        "srv": (L + 98, top + 186, 145, t["n_srv"], "200:a3…"),
+        "pa": (470, top + 110, 150, t["n_pa"], "tls://…:443"),
+        "pb": (580, top + 220, 150, t["n_pb"], "quic://…:443"),
+        "friend": (920, top + 165, 150, t["n_friend"], "200:f3…"),
+    }
+
+    def c(k, side):
+        x, yy, w, *_ = nodes[k]
+        return {"top": (x + w / 2, yy), "bot": (x + w / 2, yy + 46), "l": (x, yy + 23), "r": (x + w, yy + 23)}[side]
+    bus = top + 262
+    p.line(L + 30, bus, L + 310, bus, LINE, 3)
+    for k in ("phone", "laptop", "srv"):
+        bx, by = c(k, "bot")
+        p.line(bx, by, bx, bus, LINE, 1.2)
+    p.text(L + 170, bus + 24, t["multicast"], 12, GRAY, anchor="middle", italic=True)
+    links = [(c("srv", "r"), c("pa", "l"), "TLS"), (c("pa", "bot"), c("pb", "top"), "TCP"), (c("pb", "r"), c("friend", "l"), "QUIC")]
+    for (x1, y1), (x2, y2), lab in links:
+        p.line(x1, y1, x2, y2, LINE, 2)
+        lx2, ly2 = x1 + (x2 - x1) * .5, y1 + (y2 - y1) * .5
+        p.rect(lx2 - 20, ly2 - 9, 40, 18, PAPER, None, r=0)
+        p.code(lx2, ly2 + 4, lab, 12, GRAY, anchor="middle", weight=700)
+    lx, ly = c("laptop", "top")
+    fx, fy = c("friend", "top")
+    p.path([(lx, ly), (lx, top + 8), (fx, top + 8), (fx, fy)], BLUE, 2.2, dash="7 5")
+    p.head(fx, fy, 0, BLUE)
+    p.text((lx + fx) / 2, top, t["session"], 13.5, BLUE, 600, anchor="middle")
+    for k, (x, yy, w, name, addr) in nodes.items():
+        p.node_box(x, yy, w, name, addr, accent=BLUE if k in ("laptop", "friend") else None)
+    ly2 = top + 360
+    p.line(L, ly2, L + 40, ly2, LINE, 2)
+    p.text(L + 52, ly2 + 5, t["lg"][0], 13, TEXT)
+    p.line(L + 400, ly2, L + 440, ly2, BLUE, 2.2, dash="7 5")
+    p.text(L + 452, ly2 + 5, t["lg"][1], 13, TEXT)
+    p.rect(L + 640, ly2 - 9, 40, 18, "none", GRAY, 1.2, dash="6 5")
+    p.text(L + 692, ly2 + 5, t["lg"][2], 13, TEXT)
+    return ly2 + 30
 
 
-def s_identity(p, t, y):
-    h = 430
-    p.section(y, h, 2, *t["s2"])
-    yy = y + 165
-    # private key
-    p.rect(70, yy, 230, 130, "url(#amberFill)", stroke=AMBER, r=18, sw=1.5)
-    p.icon_lock(115, yy + 58, AMBER)
-    p.text(150, yy + 48, t["id_priv"][0], 19, AMBER, 700)
-    p.para(150, yy + 76, t["id_priv"][1], 14, MUTED, 19)
-    p.arrow(305, yy + 65, 355, yy + 65, AMBER)
-    # public key
-    p.rect(360, yy, 210, 130, "url(#cardFill)", stroke=CARDLINE, r=18, sw=1.5)
-    p.icon_key(405, yy + 58, INK)
-    p.text(440, yy + 48, t["id_pub"][0], 19, INK, 700)
-    p.para(440, yy + 76, t["id_pub"][1], 14, MUTED, 19)
-    p.arrow(575, yy + 65, 640, yy + 65, TEAL)
-    p.text(607, yy + 52, t["id_hash"], 13, TEAL, 700, anchor="middle")
-    # address and subnet
-    p.rect(645, yy, 485, 60, "url(#tealFill)", stroke=TEAL, r=14, sw=1.5)
-    p.text(665, yy + 38, t["id_addr"][0], 16, TEAL, 700)
-    p.text(1110, yy + 39, t["id_addr"][1], 20, INK, 700, anchor="end", mono=True)
-    p.rect(645, yy + 70, 485, 60, "url(#violetFill)", stroke=VIOLET, r=14, sw=1.5)
-    p.text(665, yy + 98, t["id_sub"][0], 16, VIOLET, 700)
-    p.text(665, yy + 118, t["id_sub_note"], 12, MUTED)
-    p.text(1110, yy + 109, t["id_sub"][1], 18, INK, 700, anchor="end", mono=True)
-    p.card(70, yy + 158, 1060, 82, stroke=CARDLINE)
-    p.para(95, yy + 192, t["id_note"], 16, INK, 26)
-    return y + h
+def fig_address(p, t, y):
+    y = p.figure(y, 2, *t["f2"])
+    top = y + 10
+    p.rect(L, top, 250, 92, ORANGE_BG, ORANGE, 1.4)
+    p.text(L + 16, top + 30, t["priv"][0], 15, ORANGE, 700)
+    p.lines(L + 16, top + 54, t["priv"][1:], 13.5, INK, 21)
+    p.harrow(L + 250, L + 320, top + 46, ORANGE, 1.6)
+    p.rect(L + 320, top, 220, 92, PAPER, LINE, 1.4)
+    p.text(L + 336, top + 30, t["pub"][0], 15, INK, 700)
+    p.lines(L + 336, top + 54, t["pub"][1:], 13.5, TEXT, 21)
+    p.harrow(L + 540, L + 700, top + 46, LINE, 1.6)
+    p.text(L + 620, top + 30, t["derive"][0], 12.5, GRAY, anchor="middle")
+    p.text(L + 620, top + 72, t["derive"][1], 12.5, GRAY, anchor="middle")
+    p.rect(L + 700, top, R - L - 700, 92, BLUE_BG, BLUE, 1.4)
+    p.text(L + 716, top + 30, t["example"], 12.5, GRAY, 600)
+    ax = L + 716  # addresses aligned to the box's reading start
+    if p.mirrored:
+        p.code(ax, top + 58, t["ex_a"], 19, BLUE, anchor="end", weight=700)
+        p.code(ax, top + 80, t["ex_s"], 14, INK, anchor="end", weight=600)
+    else:
+        p.code(ax, top + 58, t["ex_a"], 19, BLUE, weight=700)
+        p.code(ax, top + 80, t["ex_s"], 14, INK, weight=600)
+
+    p.ltr = True  # bit layouts always read left to right
+
+    def layout(yy, title, fields, widths, colors):
+        p.o.append(f'<text x="{L}" y="{yy}" font-size="14" font-weight="700" fill="{INK}">{escape(title)}</text>')
+        x = L
+        for (a, b, bits), w, col in zip(fields, widths, colors):
+            p.rect(x, yy + 12, w, 54, col, LINE, 1.2, r=0)
+            fam = f" font-family='{MONO}'" if a.startswith("0x") or a == "N" else ""
+            p.o.append(f'<text x="{x + w / 2}" y="{yy + (36 if b else 44)}" font-size="14" font-weight="700" fill="{INK}" text-anchor="middle"{fam}>{escape(a)}</text>')
+            if b:
+                p.o.append(f'<text x="{x + w / 2}" y="{yy + 56}" font-size="12" fill="{GRAY}" text-anchor="middle">{escape(b)}</text>')
+            p.o.append(f'<text x="{x + 4}" y="{yy + 82}" font-size="11" fill="{GRAY}" font-family=\'{MONO}\'>{escape(bits)}</text>')
+            x += w
+    layout(top + 136, t["addr_row"], t["fields_a"], [170, 170, 740], [ORANGE_BG, FILL, PAPER])
+    layout(top + 246, t["sub_row"], t["fields_s"], [170, 170, 370, 370], [ORANGE_BG, FILL, PAPER, BLUE_BG])
+    p.ltr = False
+    return top + 336
 
 
-def s_inside(p, t, y):
-    lh, gap = 62, 12
-    h = 160 + 6 * (lh + gap) + 40
-    p.section(y, h, 3, *t["s3"])
-    lx, lw, ly = 125, 610, y + 160
-    fills = ["url(#cardFill)", "url(#cardFill)", "url(#tealFill)", "url(#tealFill)", "url(#violetFill)", "url(#cardFill)"]
-    strokes = [CARDLINE, CARDLINE, TEAL, TEAL, VIOLET, CARDLINE]
-    for i, (title, body) in enumerate(t["layers"]):
-        yy = ly + i * (lh + gap)
-        p.rect(lx, yy, lw, lh, fills[i], stroke=strokes[i], r=12, sw=1.4)
-        p.text(lx + 20, yy + 27, title, 18, INK, 700)
-        p.text(lx + 20, yy + 49, body, 14, MUTED)
-    top, bot = ly + 6, ly + 6 * (lh + gap) - gap - 6
-    p.arrow(88, top, 88, bot, TEAL, 3)
-    p.arrow(104, bot, 104, top, VIOLET, 3)
-    p.text(80, bot + 28, "↓ " + t["send"], 13, TEAL, 600)
-    p.text(80, bot + 46, "↑ " + t["recv"], 13, VIOLET, 600)
-    sy = ly
-    for title, col, lines in t["side"]:
-        hh = 30 + 26 + len(lines) * 21 + 14
-        p.rect(770, sy, 360, hh, "url(#cardFill)", stroke=col, r=14, sw=1.4)
-        p.circle(796, sy + 30, 7, fill=col)
-        p.text(814, sy + 36, title, 18, col, 700)
-        p.para(796, sy + 66, lines, 14, MUTED, 21)
-        sy += hh + 16
-    p.arrow(768, ly + 52, 740, ly + (lh + gap) + 31, AMBER, 2)
-    return y + h
+def fig_stack(p, t, y):
+    y = p.figure(y, 3, *t["f3"])
+    top = y + 10
+    sx, lw, lh = L + 44, 440, 46
+    for i, (name, desc, uq) in enumerate(t["stack"]):
+        yy = top + i * lh
+        p.rect(sx, yy, lw, lh, BLUE_BG if uq else FILL, LINE, 1.1, r=0)
+        p.text(sx + 16, yy + 29, name, 15, INK, 700)
+        p.text(sx + lw - 14, yy + 29, desc, 13, GRAY, anchor="end")
+    b1, b2 = top + 2 * lh, top + 7 * lh
+    p.path([(sx - 8, b1 + 3), (sx - 20, b1 + 3), (sx - 20, b2 - 3), (sx - 8, b2 - 3)], BLUE, 2)
+    cx, cy = p.X(sx - 32), (b1 + b2) / 2
+    p.o.append(f'<text x="{cx}" y="{cy}" font-size="13" font-weight="700" fill="{BLUE}" text-anchor="middle" transform="rotate(-90 {cx} {cy})">{escape(t["brace"])}</text>')
+
+    p.ltr = True  # packet formats always read left to right
+    ex = 600 if not p.rtl else L
+    total = 540
+    p.o.append(f'<text x="{ex}" y="{top + 14}" font-size="15" font-weight="700" fill="{INK}">{escape(t["enc_title"])}</text>')
+    yy = top + 32
+    for k, (label, parts) in enumerate(t["enc"]):
+        unit = total / sum(w for _, w, _ in parts)
+        x = ex
+        for name, w, col in parts:
+            ww = w * unit
+            p.rect(x, yy, ww, 40, col, LINE, 1.1, r=0)
+            p.o.append(f'<text x="{x + ww / 2}" y="{yy + 25}" font-size="12.5" fill="{INK}" text-anchor="middle" font-family=\'{MONO}\'>{escape(name)}</text>')
+            x += ww
+        if k < len(t["enc"]) - 1:
+            p.line(ex + 26, yy + 40, ex + 26, yy + 70, GRAY, 1.2)
+            p.head(ex + 26, yy + 70, 0, GRAY)
+            p.o.append(f'<text x="{ex + 40}" y="{yy + 60}" font-size="12.5" fill="{GRAY}" font-family=\'{MONO}\'>{escape(t["enc"][k + 1][0])}</text>')
+        yy += 76
+    p.ltr = False
+    return top + 8 * lh + 20
 
 
-def s_peers(p, t, y):
-    h = 640
-    p.section(y, h, 4, *t["s4"])
-    cx, cy = 600, y + 320
-    boxes = [(70, y + 160), (790, y + 160), (70, y + 380), (790, y + 380)]
-    anchors = [(410, y + 215), (790, y + 215), (410, y + 435), (790, y + 435)]
-    for (bx, by), (ax, ay), (title, lines, col) in zip(boxes, anchors, t["peers"]):
-        p.line(cx, cy, ax, ay, col, 2.5, dash="6 6", op=.8)
-        p.rect(bx, by, 340, 120, "url(#cardFill)", stroke=col, r=16, sw=1.4)
-        p.node(bx + 34, by + 36, 9, col, glow=False)
-        p.text(bx + 58, by + 42, title, 19, col, 700)
-        p.para(bx + 24, by + 72, lines, 14, MUTED, 20)
-    p.circle(cx, cy, 80, fill=TEAL, op=.08)
-    p.circle(cx, cy, 58, fill="url(#tealFill)", stroke=TEAL, sw=2.5)
-    p.node(cx, cy - 8, 12, TEAL)
-    p.text(cx, cy + 30, t["you"], 15, INK, 700, anchor="middle")
-    widths = [int(len(c) * 15 * .62 + 34) for c in t["transports"]]
-    total = sum(widths) + 12 * (len(widths) - 1)
-    x = (W - total) / 2
-    for c, w in zip(t["transports"], widths):
-        p.chip(x, y + 520, c, VIOLET, mono=True, w=w)
-        x += w + 12
-    for k, l in enumerate(t["handshake"]):
-        p.text(W / 2, y + 590 + k * 22, l, 15, MUTED, anchor="middle")
-    return y + h
+def fig_handshake(p, t, y):
+    y = p.figure(y, 4, *t["f4"])
+    top = y + 10
+    ax, bx = 250, 950
+    end = top + 380
+    p.lifeline(ax, top, end, t["lk_life"][0])
+    p.lifeline(bx, top, end, t["lk_life"][3])
+    yy = top + 84
+    for i, (lab, d, col) in enumerate(t["hs"]):
+        if d == "both":
+            p.msg(ax, bx, yy, lab, col, num=i + 1, both=True)
+        elif d == "ab":
+            p.msg(ax, bx, yy, lab, col, num=i + 1)
+        else:
+            p.msg(bx, ax, yy, lab, col, num=i + 1)
+        yy += 54
+    p.rect(ax - 40, yy - 24, bx - ax + 80, 36, GREEN_BG, GREEN, 1.2)
+    p.text(ax - 26, yy - 1, t["hs_note"], 13, INK)
+    yy += 64
+    p.msg(ax, bx, yy, t["hs_after"], GRAY, dash="5 4", both=True, num=5)
+    p.text(L, end + 34, t["hs_foot"], 13, GRAY, italic=True)
+    return end + 46
 
 
-def s_tree(p, t, y):
-    h = 600
-    p.section(y, h, 5, *t["s5"])
-    p.card(70, y + 150, 680, 410)
-    N = {"r": (410, y + 205, "[ ]"),
-         "a": (250, y + 290, "[1]"), "b": (570, y + 290, "[2]"),
-         "c": (160, y + 380, "[1,1]"), "d": (330, y + 380, "[1,2]"), "e": (490, y + 380, "[2,1]"), "f": (660, y + 380, "[2,2]"),
-         "g": (115, y + 470, "[1,1,1]"), "h2": (215, y + 470, "[1,1,2]"), "i": (420, y + 470, "[2,1,1]"), "j": (560, y + 470, "[2,1,2]"), "k": (690, y + 470, "[2,2,1]")}
-    tree = [("r", "a"), ("r", "b"), ("a", "c"), ("a", "d"), ("b", "e"), ("b", "f"), ("c", "g"), ("c", "h2"), ("e", "i"), ("e", "j"), ("f", "k")]
-    mesh = [("d", "e"), ("h2", "i"), ("d", "i")]
-    for a, b in mesh:
-        p.line(N[a][0], N[a][1], N[b][0], N[b][1], "#4a5a8a", 2, dash="5 6")
+def fig_tree(p, t, y):
+    y = p.figure(y, 5, *t["f5"])
+    top = y + 24
+    N = {"r": (330, top + 20, "[ ]"), "1": (190, top + 110, "[1]"), "2": (470, top + 110, "[2]"),
+         "11": (120, top + 200, "[1,1]"), "12": (260, top + 200, "[1,2]"), "21": (400, top + 200, "[2,1]"), "22": (540, top + 200, "[2,2]"),
+         "111": (120, top + 290, "[1,1,1]"), "121": (260, top + 290, "[1,2,1]"), "211": (400, top + 290, "[2,1,1]"), "221": (540, top + 290, "[2,2,1]")}
+    tree = [("r", "1"), ("r", "2"), ("1", "11"), ("1", "12"), ("2", "21"), ("2", "22"), ("11", "111"), ("12", "121"), ("21", "211"), ("22", "221")]
     for a, b in tree:
-        p.line(N[a][0], N[a][1], N[b][0], N[b][1], "#6b7cb0", 2.5)
-    for k, (x, yy, c) in N.items():
-        p.node(x, yy, 15 if k == "r" else 11, AMBER if k == "r" else TEAL, glow=k == "r")
-        p.text(x, yy + 32, c, 13, MUTED, 600, anchor="middle", mono=True)
-    p.text(410, y + 168, t["root"], 14, AMBER, 700, anchor="middle")
-    p.text(410, y + 540, t["tree_note"], 14, INK, 600, anchor="middle")
-    cy = y + 150
-    cols = [TEAL, AMBER, VIOLET, GREEN]
-    for (title, lines), col in zip(t["tree_cards"], cols):
-        p.rect(775, cy, 355, 94, "url(#cardFill)", stroke=CARDLINE, r=14, sw=1.2)
-        p.rect(775, cy + 14, 4, 66, col, r=2)
-        p.text(797, cy + 30, title, 17, col, 700)
-        p.para(797, cy + 52, lines, 13, MUTED, 18)
-        cy += 105
-    return y + h
+        p.line(N[a][0], N[a][1] + 15, N[b][0], N[b][1] - 15, LINE, 1.3)
+    # the extra peer link between [1,2] and [2,1], drawn as the greedy hop
+    x1, y1 = N["12"][0] + 40, N["12"][1]
+    x2 = N["21"][0] - 40
+    p.harrow(x1, x2, y1, BLUE, 2.4)
+    p.text((x1 + x2) / 2, y1 - 9, t["shortcut"], 11.5, BLUE, 600, anchor="middle")
+    # greedy hops up and down
+    p.line(N["121"][0] + 18, N["121"][1] - 15, N["12"][0] + 18, N["12"][1] + 15, BLUE, 2.4)
+    p.head(N["12"][0] + 18, N["12"][1] + 15, 2, BLUE)
+    p.line(N["21"][0] + 18, N["21"][1] + 15, N["211"][0] + 18, N["211"][1] - 15, BLUE, 2.4)
+    p.head(N["211"][0] + 18, N["211"][1] - 15, 0, BLUE)
+    for k, (x, yy, lab) in N.items():
+        on = k in ("121", "12", "21", "211")
+        fill = ORANGE_BG if k == "r" else (BLUE_BG if k in ("121", "211") else PAPER)
+        stroke = ORANGE if k == "r" else (BLUE if on else LINE)
+        p.rect(x - 40, yy - 15, 80, 30, fill, stroke, 1.6 if on or k == "r" else 1.2, r=3)
+        p.code(x, yy + 5, lab, 13, INK, anchor="middle", weight=600)
+    p.text(N["r"][0] + 52, N["r"][1] + 5, t["root"], 13, ORANGE, 700)
+    p.text(N["121"][0], N["121"][1] + 36, t["src"], 12.5, BLUE, 700, anchor="middle")
+    p.text(N["211"][0], N["211"][1] + 36, t["dst"], 12.5, BLUE, 700, anchor="middle")
+    p.code(L, top + 372, t["dist"], 13, TEXT, anchor="end" if p.mirrored else "start")
+    tx, tw = 680, R - 680
+    cols = [70, 120, 150, 120]
+    p.rect(tx, top - 10, tw, 38, FILL, None, r=0)
+    x = tx
+    for h, w in zip(t["tbl_h"], cols):
+        p.text(x + 12, top + 15, h, 13, INK, 700)
+        x += w
+    for i, row in enumerate(t["tbl"]):
+        yy = top + 28 + i * 42
+        p.line(tx, yy, tx + tw, yy, RULE, 1)
+        x = tx
+        for j, (v, w) in enumerate(zip(row, cols)):
+            if j in (1, 2):
+                p.code(x + 12, yy + 27, v, 13.5, BLUE if j == 2 else INK, anchor="end" if p.mirrored else "start", weight=600 if j == 2 else 400)
+            else:
+                p.text(x + 12, yy + 27, p.n(v), 13.5, INK)
+            x += w
+    p.line(tx, top + 154, tx + tw, top + 154, LINE, 1.2)
+    p.lines(tx, top + 196, t["tbl_note"], 14, TEXT, 22)
+    return top + 392
 
 
-def s_route(p, t, y):
-    h = 560
-    p.section(y, h, 6, *t["s6"])
-    cols = [TEAL, VIOLET, AMBER]
-    for i, ((title, lines), col) in enumerate(zip(t["route"], cols)):
-        x = 70 + i * 360
-        p.card(x, y + 150, 340, 380)
-        p.rect(x + 20, y + 170, 300, 170, "#0f1730", stroke=CARDLINE, r=12)
-        ox, oy = x + 20, y + 170
-        if i == 0:
-            pts = [(150, 30), (80, 85), (220, 85), (45, 140), (115, 140), (185, 140), (255, 140)]
-            for a, b in [(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6)]:
-                p.line(ox + pts[a][0], oy + pts[a][1], ox + pts[b][0], oy + pts[b][1], "#4a5a8a", 2)
-            for a, b in [(3, 1), (1, 0), (0, 2), (2, 6)]:
-                p.line(ox + pts[a][0], oy + pts[a][1], ox + pts[b][0], oy + pts[b][1], col, 4)
-            for k, (a, b) in enumerate(pts):
-                p.node(ox + a, oy + b, 8, AMBER if k == 6 else (col if k in (3, 1, 0, 2) else "#5c6fa8"), glow=False)
-            for (a, b) in [(115, 58), (185, 58), (62, 112), (237, 112)]:
-                p.rect(ox + a - 11, oy + b - 8, 22, 16, VIOLET, r=3, op=.8)
-                for q in range(3):
-                    p.line(ox + a - 7 + q * 7, oy + b - 4, ox + a - 7 + q * 7, oy + b + 4, BG1, 1.5)
-            p.text(ox + 255, oy + 165, t["target"], 12, AMBER, 700, anchor="middle")
-        elif i == 1:
-            xs = [35, 100, 165, 230, 275]
-            ys = [120, 70, 110, 60, 110]
-            for k in range(4):
-                p.arrow(ox + xs[k] + 10, oy + ys[k], ox + xs[k + 1] - 12, oy + ys[k + 1], col, 3)
-            for k, (a, b) in enumerate(zip(xs, ys)):
-                p.node(ox + a, oy + b, 9, AMBER if k == 4 else col, glow=False)
-                p.text(ox + a, oy + b + 28, p.num(4 - k), 13, MUTED, 700, anchor="middle")
-            p.text(ox + 275, oy + 40, t["target"], 12, AMBER, 700, anchor="middle")
-        else:
-            a, b, c2, d = (40, 85), (130, 50), (210, 85), (130, 130)
-            p.line(ox + a[0], oy + a[1], ox + b[0], oy + b[1], "#4a5a8a", 2)
-            p.line(ox + b[0], oy + b[1], ox + c2[0], oy + c2[1], ROSE, 3, dash="4 5")
-            p.line(ox + 162, oy + 58, ox + 178, oy + 76, ROSE, 3.5)
-            p.line(ox + 178, oy + 58, ox + 162, oy + 76, ROSE, 3.5)
-            p.line(ox + a[0], oy + a[1], ox + d[0], oy + d[1], col, 4)
-            p.line(ox + d[0], oy + d[1], ox + c2[0], oy + c2[1], col, 4)
-            p.line(ox + c2[0], oy + c2[1], ox + 275, oy + 85, col, 4)
-            for q in (a, b, c2, d):
-                p.node(ox + q[0], oy + q[1], 9, col if q != b else "#5c6fa8", glow=False)
-            p.node(ox + 275, oy + 85, 9, AMBER, glow=False)
-            p.text(ox + 275, oy + 112, t["target"], 12, AMBER, 700, anchor="middle")
-        p.circle(x + 36, y + 380, 15, fill=col)
-        p.text(x + 36, y + 386, p.num(i + 1), 16, BG1, 800, anchor="middle")
-        p.text(x + 62, y + 387, title, 19, INK, 700)
-        p.para(x + 24, y + 420, lines, 14, MUTED, 21)
-    return y + h
+def fig_lookup(p, t, y):
+    y = p.figure(y, 6, *t["f6"])
+    top = y + 10
+    xs = [190, 460, 730, 1000]
+    end = top + 380
+    for x, lab in zip(xs, t["lk_life"]):
+        p.lifeline(x, top, end, lab)
+    yy = top + 92
+    for a, b in zip(xs, xs[1:]):
+        p.harrow(a, b, yy, BLUE, 1.6)
+    p.code((xs[0] + xs[1]) / 2, yy - 9, p.n(1) + ". " + t["lk1"], 12.5, BLUE, anchor="middle")
+    p.text((xs[1] + xs[3]) / 2, yy + 22, t["lk_bloom"], 12, GRAY, anchor="middle", italic=True)
+    yy += 72
+    for a, b in zip(xs[::-1], xs[::-1][1:]):
+        p.harrow(a, b, yy, BLUE, 1.6, dash="6 4")
+    p.text((xs[2] + xs[3]) / 2, yy - 9, p.n(2) + ". " + t["lk2"], 13, BLUE, 500, anchor="middle")
+    yy += 64
+    for a, b in zip(xs, xs[1:]):
+        p.harrow(a, b, yy, INK, 1.6)
+    p.text((xs[0] + xs[1]) / 2, yy - 9, p.n(3) + ". " + t["lk3"], 13, INK, 500, anchor="middle")
+    yy += 64
+    mid = (xs[2] + xs[3]) / 2
+    p.line(xs[2], yy, mid - 14, yy, GRAY, 1.6)
+    p.line(mid - 10, yy - 10, mid + 10, yy + 10, RED, 2.4)
+    p.line(mid + 10, yy - 10, mid - 10, yy + 10, RED, 2.4)
+    yy += 44
+    p.harrow(xs[2], xs[0], yy, RED, 1.6, dash="6 4")
+    p.text((xs[0] + xs[2]) / 2, yy - 9, p.n(4) + ". " + t["lk4"], 13, RED, 500, anchor="middle")
+    yy += 28
+    p.rect(xs[0] - 75, yy, 520, 34, BLUE_BG, BLUE, 1.2)
+    p.text(xs[0] - 61, yy + 22, p.n(5) + ". " + t["lk5"], 13, INK)
+    return end + 20
 
 
-def s_crypto(p, t, y):
-    h = 560
-    p.section(y, h, 7, *t["s7"])
-    ly = y + 260
-    p.rect(70, ly - 60, 200, 120, "url(#tealFill)", stroke=TEAL, r=18, sw=1.5)
-    p.icon_laptop(170, ly - 10, INK)
-    p.text(170, ly + 42, t["sender"], 17, TEAL, 700, anchor="middle")
-    p.rect(930, ly - 60, 200, 120, "url(#tealFill)", stroke=TEAL, r=18, sw=1.5)
-    p.icon_desktop(1030, ly - 10, INK)
-    p.text(1030, ly + 42, t["receiver"], 17, TEAL, 700, anchor="middle")
-    p.line(275, ly, 925, ly, TEAL, 3, dash="2 10")
-    for x in (480, 720):
-        p.node(x, ly, 16, VIOLET)
-        p.text(x, ly + 44, t["relay"], 14, VIOLET, 700, anchor="middle")
-    for x in (370, 600, 830):
-        p.icon_envelope(x, ly, AMBER, 40, 28)
-        p.circle(x + 18, ly - 14, 9, fill=TEAL)
-    p.rect(330, y + 150, 260, 66, "url(#cardFill)", stroke=MUTED, r=12, sw=1)
-    p.text(350, y + 175, t["sees"], 15, INK, 700)
-    p.para(350, y + 197, [" ".join(t["sees_l"])], 13, MUTED, 18)
-    p.rect(610, y + 150, 260, 66, "url(#roseFill)", stroke=ROSE, r=12, sw=1)
-    p.text(630, y + 175, t["cannot"], 15, ROSE, 700)
-    p.para(630, y + 197, [" ".join(t["cannot_l"])], 13, MUTED, 18)
-    widths = [int(len(c) * 15 * .58 + 40) for c in t["crypto"]]
-    total = sum(widths) + 14 * (len(widths) - 1)
-    x = (W - total) / 2
-    for c, w in zip(t["crypto"], widths):
-        p.chip(x, y + 375, c, GREEN, w=w)
-        x += w + 14
-    p.card(70, y + 440, 1060, 90)
-    p.para(95, y + 477, t["crypto_note"], 15, INK, 25)
-    return y + h
+def fig_journey(p, t, y):
+    y = p.figure(y, 7, *t["f7"])
+    top = y + 10
+    xs = [140, 324, 508, 692, 876, 1060]
+    end = top + 640
+    for x, (lab, sub) in zip(xs, t["j_life"]):
+        p.lifeline(x, top, end, lab, sub)
+    p.rect(xs[2] - 75, top + 66, 350, 56, FILL, RULE, 1)
+    p.lines(xs[2] - 63, top + 88, t["relay_sees"], 12, TEXT, 19)
+    yy = top + 160
+    p.msg(xs[0], xs[1], yy, t["j1"], INK, num=1, mono=True)
+    yy += 20
+    p.note(xs[1] - 75, yy, 300, [p.n(2) + ". " + t["j2"][0]] + t["j2"][1:], ORANGE, ORANGE_BG)
+    yy += 112
+    p.msg(xs[1], xs[2], yy, t["j3"], ORANGE, num=3)
+    yy += 48
+    p.msg(xs[2], xs[3], yy, t["j4"], ORANGE, num=4)
+    yy += 48
+    p.msg(xs[3], xs[4], yy, t["j5"], ORANGE, num=5)
+    yy += 20
+    p.note(xs[4] - 125, yy, 250, [p.n(6) + ". " + t["j6"][0]] + t["j6"][1:], ORANGE, ORANGE_BG)
+    yy += 66
+    p.note(xs[4] - 125, yy, 250, [p.n(7) + ". " + t["j7"][0]] + t["j7"][1:], GREEN, GREEN_BG)
+    yy += 92
+    p.msg(xs[4], xs[5], yy, t["j8"], INK, num=8, mono=True)
+    yy += 52
+    p.msg(xs[5], xs[0], yy, t["j9"], GRAY, dash="6 4", num=9)
+    return end + 20
 
 
-def s_groups(p, t, y):
-    h = 640
-    p.section(y, h, 8, *t["s8"])
+def fig_visibility(p, t, y):
+    y = p.figure(y, 8, *t["f8"])
+    top = y + 10
+    cols = [380, 175, 175, 175, 175]
+    p.rect(L, top, R - L, 44, FILL, None, r=0)
+    x = L
+    for i, (h, w) in enumerate(zip(t["vh"], cols)):
+        if i:
+            p.text(x + w / 2, top + 28, h, 14, INK, 700, anchor="middle")
+        x += w
+    for i, row in enumerate(t["vr"]):
+        yy = top + 44 + i * 46
+        p.line(L, yy, R, yy, RULE, 1)
+        p.text(L + 16, yy + 29, row[0], 14.5, INK, 500)
+        x = L + cols[0]
+        for v, w in zip(row[1:], cols[1:]):
+            yes = v.startswith("y")
+            sup = "¹" if v.endswith("1") else ("²" if v.endswith("2") else "")
+            p.text(x + w / 2, yy + 29, (t["yes"] if yes else t["no"]) + sup, 14, RED if yes else GREEN, 700 if yes else 500, anchor="middle")
+            x += w
+    yy = top + 44 + len(t["vr"]) * 46
+    p.line(L, yy, R, yy, LINE, 1.2)
+    p.lines(L, yy + 30, t["vfoot"], 13, GRAY, 21)
+    return yy + 66
+
+
+def fig_groups(p, t, y):
+    y = p.figure(y, 9, *t["f9"])
+    top = y + 10
+    pts = [(70, 60), (190, 30), (300, 80), (420, 40), (130, 150), (260, 170), (390, 150)]
+    links = [(0, 1), (1, 2), (2, 3), (0, 4), (4, 5), (5, 6), (6, 3), (2, 5)]
     for side in (0, 1):
-        x = 70 + side * 540
-        col = TEAL if side == 0 else AMBER
-        fill = "url(#tealFill)" if side == 0 else "url(#amberFill)"
-        title, lines = t["pub"] if side == 0 else t["priv"]
-        p.rect(x, y + 150, 520, 460, fill, stroke=col, r=20, sw=1.5)
-        p.text(x + 30, y + 196, title, 24, col, 800)
-        ox, oy = x + 30, y + 220
-        p.rect(ox, oy, 460, 150, "#0c1328", stroke=CARDLINE, r=14, op=.9)
-        pts = [(60, 40), (150, 95), (240, 40), (330, 100), (410, 45), (110, 125), (280, 125), (380, 135)]
-        for a, b in [(0, 1), (1, 2), (2, 3), (3, 4), (1, 5), (3, 6), (6, 7), (2, 6)]:
-            p.line(ox + pts[a][0], oy + pts[a][1], ox + pts[b][0], oy + pts[b][1], "#3a4a7a", 2)
-        members = {0, 1, 5, 6} if side else set()
-        for k, (a, b) in enumerate(pts):
-            p.node(ox + a, oy + b, 9, AMBER if k in members else TEAL, ring=AMBER if k in members else None, glow=False)
-        if side == 1:
-            q = pts[4]
-            p.line(ox + q[0] - 9, oy + q[1] - 30, ox + q[0] + 9, oy + q[1] - 14, ROSE, 3.5)
-            p.line(ox + q[0] + 9, oy + q[1] - 30, ox + q[0] - 9, oy + q[1] - 14, ROSE, 3.5)
-            p.text(ox + q[0], oy + q[1] + 30, t["outsider"], 12, ROSE, 700, anchor="middle")
-        p.para(x + 30, y + 405, lines, 15, INK, 21)
-        p.text(x + 30, y + 590, t["setup_pub"] if side == 0 else t["setup_priv"], 15, col, 700, mono=True)
-    return y + h
-
-
-def s_journey(p, t, y):
-    step = 104
-    h = 170 + len(t["journey"]) * step + 20
-    p.section(y, h, 9, *t["s9"])
-    x0 = 120
-    top = y + 175
-    p.line(x0, top, x0, top + (len(t["journey"]) - 1) * step, "#2f3f70", 4)
-    cols = [TEAL, TEAL, VIOLET, GREEN, VIOLET, GREEN, TEAL]
-    for i, (title, body, code) in enumerate(t["journey"]):
-        yy = top + i * step
-        p.circle(x0, yy, 26, fill=cols[i], op=.16)
-        p.circle(x0, yy, 19, fill=cols[i])
-        p.text(x0, yy + 6, p.num(i + 1), 17, BG1, 800, anchor="middle")
-        p.rect(165, yy - 36, 965, 78, "url(#cardFill)", stroke=CARDLINE, r=14, sw=1.2)
-        p.text(190, yy - 6, title, 19, INK, 700)
-        p.text(190, yy + 22, body, 15, MUTED)
-        w = int(len(code) * 14 * .62 + 32)
-        p.chip(1110 - w, yy - 24, code, cols[i], mono=True, size=14, w=w)
-    return y + h
-
-
-def s_firewall(p, t, y):
-    rows = t["fw"]
-    h = 170 + len(rows) * 74 + 20
-    p.section(y, h, 10, *t["s10"])
-    for i, (ok, what, why) in enumerate(rows):
-        yy = y + 160 + i * 74
-        col = GREEN if ok else ROSE
-        p.rect(70, yy, 1060, 60, "url(#cardFill)" if ok else "url(#roseFill)", stroke=col if not ok else CARDLINE, r=12, sw=1.2)
-        p.circle(108, yy + 30, 17, fill=col, op=.2)
-        if ok:
-            p.poly([(99, yy + 31), (106, yy + 38), (118, yy + 23)], stroke=col, sw=3.5, closed=False)
+        ox = L + side * 560
+        title, lines = t["g_pub"] if side == 0 else t["g_priv"]
+        p.rect(ox, top, 520, 290, "none", RULE, 1.2, r=0)
+        p.text(ox + 20, top + 32, title, 15, INK, 700)
+        gy = top + 56
+        for a, b in links:
+            p.line(ox + pts[a][0], gy + pts[a][1], ox + pts[b][0], gy + pts[b][1], LINE, 1.3)
+        members = {0, 3, 4, 5} if side else set()
+        if side == 0:
+            p.path([(ox + pts[0][0], gy + pts[0][1] - 16), (ox + pts[1][0], gy + pts[1][1] - 16), (ox + pts[2][0], gy + pts[2][1] - 16), (ox + pts[3][0], gy + pts[3][1] - 16)], BLUE, 2, dash="6 4")
+            p.path([(ox + pts[4][0], gy + pts[4][1] + 16), (ox + pts[5][0], gy + pts[5][1] + 16), (ox + pts[6][0], gy + pts[6][1] + 16)], BLUE, 2, dash="6 4")
         else:
-            p.line(101, yy + 23, 115, yy + 37, col, 3.5)
-            p.line(115, yy + 23, 101, yy + 37, col, 3.5)
-        p.text(145, yy + 37, what, 17, INK, 600)
-        p.text(1105, yy + 37, why, 15, col, 700, anchor="end")
-    return y + h
+            p.path([(ox + pts[0][0], gy + pts[0][1] - 16), (ox + pts[1][0], gy + pts[1][1] - 16), (ox + pts[2][0], gy + pts[2][1] - 16), (ox + pts[3][0], gy + pts[3][1] - 16)], BLUE, 2, dash="6 4")
+            p.text(ox + pts[1][0], gy + pts[1][1] + 30, t["relays"], 11.5, GRAY, 600, anchor="middle", italic=True)
+            sx, sy = ox + pts[6][0], gy + pts[6][1]
+            tx, ty = ox + pts[5][0], gy + pts[5][1]
+            p.line(sx - 14, sy + 20, tx + 14, ty + 20, RED, 2, dash="4 3")
+            mx = (sx + tx) / 2
+            p.line(mx - 7, sy + 13, mx + 7, sy + 27, RED, 2.2)
+            p.line(mx + 7, sy + 13, mx - 7, sy + 27, RED, 2.2)
+            p.text(mx, sy + 46, t["no_session"], 11.5, RED, 600, anchor="middle")
+        for k, (a, b) in enumerate(pts):
+            m = k in members
+            p.circle(ox + a, gy + b, 11, ORANGE_BG if m else PAPER, ORANGE if m else LINE, 2 if m else 1.3)
+        if side == 1:
+            p.circle(ox + 30, top + 266, 7, ORANGE_BG, ORANGE, 2)
+            p.text(ox + 44, top + 271, t["member"], 12, TEXT)
+            p.circle(ox + 140, top + 266, 7, PAPER, LINE, 1.3)
+            p.text(ox + 154, top + 271, t["outsider"], 12, TEXT)
+        p.lines(ox + 20, top + 326, lines, 14, TEXT, 22)
+    return top + 380
 
 
-def s_join(p, t, y):
-    h = 690
-    p.section(y, h, 11, *t["s11"])
-    cols = [TEAL, VIOLET, AMBER]
-    for i, ((cmd, lines), col) in enumerate(zip(t["join"], cols)):
-        x = 70 + i * 360
-        p.rect(x, y + 150, 340, 270, "url(#cardFill)", stroke=col, r=18, sw=1.4)
-        p.circle(x + 36, y + 190, 17, fill=col)
-        p.text(x + 36, y + 197, p.num(i + 1), 17, BG1, 800, anchor="middle")
-        p.rect(x + 64, y + 172, 256, 36, "#0b1226", r=8)
-        p.text(x + 74, y + 196, cmd, 12.5, col, 700, mono=True)
-        for j, l in enumerate(lines):
-            cont = l.startswith(" ")
-            p.text(x + (43 if cont else 28), y + 246 + j * 30, l.strip() if cont else "• " + l, 15, INK)
-        if i < 2:
-            p.arrow(x + 344, y + 285, x + 356, y + 285, MUTED, 2.5)
-    # terminal
-    tx, ty = 70, y + 450
-    p.rect(tx, ty, 1060, 205, "#070b17", stroke=CARDLINE, r=16, sw=1.2)
-    for k, c in enumerate([ROSE, AMBER, GREEN]):
-        p.circle(tx + 26 + k * 20, ty + 22, 6, fill=c)
-    term = t["term"]
-    # Terminal output is always left-to-right.
-    for k, l in enumerate(term):
-        yy = ty + 70 + k * 34
-        xx = tx + 30
-        p.o.append(f'<text x="{xx if not p.rtl else W - tx - 1060 + 30}" y="{yy}" font-size="17" fill="{GREEN if k == 3 else INK}" font-family=\'{MONO}\' xml:space="preserve">{escape(l)}</text>')
-    return y + h
+def fig_firewall(p, t, y):
+    y = p.figure(y, 10, *t["f10"])
+    top = y + 10
+    cols = [44, 270, 96, 70, 130, 80]
+    tw = sum(cols)
+    p.rect(L, top, tw, 40, FILL, None, r=0)
+    x = L
+    for h, w in zip(t["fw_h"], cols):
+        p.text(x + 12, top + 26, h, 13, INK, 700)
+        x += w
+    for i, row in enumerate(t["fw"]):
+        yy = top + 40 + i * 44
+        drop = i == len(t["fw"]) - 1
+        if drop:
+            p.rect(L, yy, tw, 44, RED_BG, None, r=0)
+        p.line(L, yy, L + tw, yy, RULE, 1)
+        x = L
+        for j, (v, w) in enumerate(zip(row, cols)):
+            if j == 5:
+                p.text(x + 12, yy + 28, v, 13.5, RED if drop else GREEN, 700)
+            elif j in (2, 3) or (j == 1 and v[:1] in "2*"):
+                p.code(x + 12, yy + 28, v, 13, INK, anchor="end" if p.mirrored else "start")
+            else:
+                p.text(x + 12, yy + 28, p.n(v) if j == 0 else v, 13.5, INK)
+            x += w
+    yy = top + 40 + len(t["fw"]) * 44
+    p.line(L, yy, L + tw, yy, LINE, 1.2)
+    p.text(L, yy + 36, t["fw_eval_t"], 14, INK, 700)
+    p.lines(L, yy + 62, t["fw_eval"], 14, TEXT, 22)
+    cw = R - L - tw - 30
+    p.ltr = True
+    bx = R - cw if not p.rtl else L
+    p.rect(bx, top, cw, 262, CODE_BG, None, r=4)
+    p.o.append(f'<text x="{bx + 16}" y="{top + 26}" font-size="12" fill="#94a3b8" font-family=\'{MONO}\'>{escape(t["fw_cfg_t"])}</text>')
+    for k, s in enumerate(t["fw_cfg"]):
+        p.o.append(f'<text x="{bx + 16}" y="{top + 56 + k * 22}" font-size="13" fill="#e2e8f0" font-family=\'{MONO}\' xml:space="preserve">{escape(s)}</text>')
+    p.ltr = False
+    return max(yy + 140, top + 290)
 
 
-def s_build(p, t, y):
-    h = 400
-    p.section(y, h, 12, *t["s12"])
-    icons = [p.icon_globe, p.icon_chat, p.icon_folder, p.icon_house, p.icon_game, p.icon_phone]
-    cols = [TEAL, VIOLET, AMBER, GREEN, ROSE, TEAL]
-    for i, ((title, lines), f, col) in enumerate(zip(t["build"], icons, cols)):
-        x = 70 + i * 180
-        p.card(x, y + 150, 165, 215)
-        p.circle(x + 82.5, y + 212, 40, fill=col, op=.13)
-        f(x + 82.5, y + 212, col)
-        p.text(x + 82.5, y + 288, title, 17, INK, 700, anchor="middle")
-        for j, l in enumerate(lines):
-            p.text(x + 82.5, y + 314 + j * 20, l, 13, MUTED, anchor="middle")
-    return y + h
+def fig_invite(p, t, y):
+    y = p.figure(y, 11, *t["f11"])
+    top = y + 10
+    nx, ix = 240, 900
+    end = top + 560
+    p.lifeline(nx, top, end, *t["inv_life"][0])
+    p.lifeline(ix, top, end, *t["inv_life"][1])
+    yy = top + 70
+    p.note(ix - 150, yy, 300, t["inv_pre"], LINE, FILL)
+    yy += 62
+    p.note(ix - 150, yy, 300, t["inv_tok"], ORANGE, ORANGE_BG)
+    yy += 100
+    p.msg(ix, nx, yy, t["inv_oob"], GRAY, dash="3 4", num=1)
+    yy += 54
+    p.msg(nx, ix, yy, t["inv_tls"], INK, num=2)
+    yy += 52
+    p.msg(nx, ix, yy, t["inv_sec"], ORANGE, num=3)
+    yy += 20
+    p.note(ix - 150, yy, 300, t["inv_chk"], GREEN, GREEN_BG)
+    yy += 88
+    p.msg(ix, nx, yy, t["inv_grant"], GREEN, num=4)
+    yy += 20
+    p.note(nx - 150, yy, 300, t["inv_done"], BLUE, BLUE_BG)
+    return end + 20
+
+
+def fig_build(p, t, y):
+    y = p.figure(y, 12, *t["f12"])
+    top = y + 10
+    for i, s in enumerate(t["b_left"]):
+        yy = top + 26 + i * 34
+        p.rect(L, yy - 10, 6, 6, INK, None, r=0)
+        p.text(L + 18, yy, s, 15, TEXT)
+    p.ltr = True
+    bx = 640 if not p.rtl else L
+    p.rect(bx, top, 500, 218, CODE_BG, None, r=4)
+    for k, s in enumerate(t["b_code"]):
+        col = "#94a3b8" if s.startswith("#") else ("#93c5fd" if s.startswith("http") else "#e2e8f0")
+        p.o.append(f'<text x="{bx + 18}" y="{top + 32 + k * 24}" font-size="13" fill="{col}" font-family=\'{MONO}\' xml:space="preserve">{escape(s)}</text>')
+    p.ltr = False
+    return top + 240
 
 
 def footer(p, t, y):
-    p.text(W / 2, y + 60, t["foot_title"], 28, INK, 700, anchor="middle")
-    for i, (title, lines, col) in enumerate(t["foot"]):
-        x = 70 + i * 360
-        p.rect(x, y + 95, 340, 170, "url(#cardFill)", stroke=col, r=18, sw=1.5)
-        p.circle(x + 34, y + 133, 9, fill=col)
-        p.text(x + 54, y + 140, title, 20, col, 700)
-        p.para(x + 26, y + 178, lines, 15, MUTED, 22)
-    p.line(70, y + 310, 1130, y + 310, CARDLINE, 1.2)
-    p.node(W / 2, y + 355, 10, TEAL)
-    p.text(W / 2, y + 400, t["brand"], 14, DIM, 600, anchor="middle")
-    return y + 440
+    p.line(L, y, R, y, RULE, 1)
+    p.text(L, y + 42, t["limits_t"], 20, INK, 700)
+    yy = y + 76
+    for i, s in enumerate(t["limits"]):
+        p.rect(L, yy + i * 28 - 10, 6, 6, INK, None, r=0)
+        p.text(L + 18, yy + i * 28, s, 15, TEXT)
+    yy += len(t["limits"]) * 28
+    p.line(L, yy + 6, R, yy + 6, RULE, 1)
+    p.text(W / 2, yy + 40, t["foot"], 13, GRAY, anchor="middle")
+    return yy + 70
 
 
 def build(lang):
-    t = C[lang]
-    p = Poster(lang)
-    body = []
-    y = 0
-    y = hero(p, t, y)
-    for f in (s_devices, s_identity, s_inside, s_peers, s_tree, s_route, s_crypto, s_groups, s_journey, s_firewall, s_join, s_build):
-        y = f(p, t, y + 34)
-    y = footer(p, t, y + 20)
-    height = int(y)
-    head = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {height}" width="{W}" height="{height}" '
-            f'font-family=\'{FONT}\' role="img" aria-labelledby="t d">'
+    t = T[lang]
+    p = Page(lang)
+    y = header(p, t)
+    for f in (fig_topology, fig_address, fig_stack, fig_handshake, fig_tree, fig_lookup, fig_journey,
+              fig_visibility, fig_groups, fig_firewall, fig_invite, fig_build):
+        y = f(p, t, y) + 36
+    y = footer(p, t, y)
+    h = int(y)
+    head = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {h}" width="{W}" height="{h}" '
+            f"font-family='{SANS}' role=\"img\" aria-labelledby=\"t d\">"
             f'<title id="t">{escape(t["title"])}</title><desc id="d">{escape(" ".join(t["sub"]))}</desc>'
-            + defs() + f'<rect width="{W}" height="{height}" fill="url(#bg)"/>')
+            f'<rect width="{W}" height="{h}" fill="{PAPER}"/>')
     return head + "\n" + "\n".join(p.o) + "\n</svg>\n"
 
 
