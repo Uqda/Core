@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1190" width="1200" height="1190" font-family='"Segoe UI",system-ui,-apple-system,"Noto Sans Arabic","Noto Sans",Tahoma,sans-serif' role="img" aria-labelledby="t d">
+<title id="t">كيف تعمل عُقدة</title><desc id="d">كل جهاز يثبّت عُقدة يصبح عُقدة في الشبكة. الشبكة ليست إلا عُقدها.</desc>
+<style>
+.bg{fill:#f7f5f0}.card{fill:#ffffff;stroke:#d9d4c7}.panel{fill:#efece4;stroke:#ddd8cb}
+.ink{fill:#1f2328}.muted{fill:#5b616b}.acc{fill:#0f766e}.acc2{fill:#b45309}
+.layer{fill:#ffffff;stroke:#c9c3b4}.layerhi{fill:#e6f2f0;stroke:#0f766e}
+.edge{stroke:#8b8f97;stroke-width:2}.mesh{stroke:#a9adb4;stroke-width:1.5;stroke-dasharray:5 5}
+.pathl{stroke:#0f766e;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;fill:none;opacity:.85}
+.arrow{stroke:#5b616b;stroke-width:2;fill:none}.arrowh{fill:#5b616b}
+.node{fill:#ffffff;stroke:#1f2328;stroke-width:2}.ring{fill:none;stroke:#b45309;stroke-width:3}
+.lan{fill:#fff8ec;stroke:#b45309;stroke-dasharray:6 4}.num{fill:#0f766e}.numt{fill:#ffffff}
+.mono{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
+@media (prefers-color-scheme: dark){
+.bg{fill:#14171c}.card{fill:#1d2128;stroke:#343a44}.panel{fill:#191d23;stroke:#2c323b}
+.ink{fill:#e8eaed}.muted{fill:#a3a9b3}.acc{fill:#2dd4bf}.acc2{fill:#f59e0b}
+.layer{fill:#1d2128;stroke:#3a414c}.layerhi{fill:#123330;stroke:#2dd4bf}
+.edge{stroke:#7d848f}.mesh{stroke:#5c636e}.pathl{stroke:#2dd4bf}
+.arrow{stroke:#a3a9b3}.arrowh{fill:#a3a9b3}.node{fill:#1d2128;stroke:#e8eaed}.ring{stroke:#f59e0b}
+.lan{fill:#2a2116;stroke:#f59e0b}.num{fill:#2dd4bf}.numt{fill:#14171c}}
+</style>
+<rect width="1200" height="1190" class="bg"/>
+<text x="1160" y="58" font-size="34" font-weight="700" text-anchor="start" class="ink" direction="rtl">كيف تعمل عُقدة</text>
+<text x="1160" y="88" font-size="16" font-weight="400" text-anchor="start" class="muted" direction="rtl">كل جهاز يثبّت عُقدة يصبح عُقدة في الشبكة. الشبكة ليست إلا عُقدها.</text>
+<rect x="610" y="110" width="560" height="470" rx="16" class="panel"/>
+<text x="1145" y="145" font-size="20" font-weight="700" text-anchor="start" class="acc" direction="rtl">١ · داخل العُقدة الواحدة</text>
+<rect x="785" y="170" width="330" height="54" rx="8" class="layer"/>
+<text x="1101" y="192" font-size="15" font-weight="700" text-anchor="start" class="ink" direction="rtl">تطبيقاتك</text>
+<text x="1101" y="212" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">المتصفح وSSH والألعاب وخدمتك: IPv6 عادي</text>
+<rect x="785" y="236" width="330" height="54" rx="8" class="layer"/>
+<text x="1101" y="258" font-size="15" font-weight="700" text-anchor="start" class="ink" direction="rtl">واجهة uqda0</text>
+<text x="1101" y="278" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">العنوان 200:1a2b:…::7 والشبكة الفرعية 300:…/64</text>
+<rect x="785" y="302" width="330" height="54" rx="8" class="layerhi"/>
+<text x="1101" y="324" font-size="15" font-weight="700" text-anchor="start" class="ink" direction="rtl">الجدار الناري للوارد</text>
+<text x="1101" y="344" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">الردود تمرّ؛ الجديد فقط إن سمحت به قاعدة</text>
+<rect x="785" y="368" width="330" height="54" rx="8" class="layerhi"/>
+<text x="1101" y="390" font-size="15" font-weight="700" text-anchor="start" class="ink" direction="rtl">جلسات مشفّرة</text>
+<text x="1101" y="410" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">من الطرف إلى الطرف، سرّية أمامية، سرّ مجموعة اختياري</text>
+<rect x="785" y="434" width="330" height="54" rx="8" class="layer"/>
+<text x="1101" y="456" font-size="15" font-weight="700" text-anchor="start" class="ink" direction="rtl">التوجيه (Ironwood)</text>
+<text x="1101" y="476" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">شجرة ممتدة، قفزات جشِعة، بحث بمرشّحات بلوم</text>
+<rect x="785" y="500" width="330" height="54" rx="8" class="layer"/>
+<text x="1101" y="522" font-size="15" font-weight="700" text-anchor="start" class="ink" direction="rtl">روابط الجيران</text>
+<text x="1101" y="542" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">TCP وTLS وQUIC وWebSocket؛ كل رابط يُثبت المفتاح</text>
+<line x1="1138" y1="174" x2="1138" y2="550" class="arrow"/>
+<polygon points="1138.0,550.0 1133.7,541.0 1142.3,541.0" class="arrowh"/>
+<line x1="1128" y1="550" x2="1128" y2="174" class="arrow"/>
+<polygon points="1128.0,174.0 1132.3,183.0 1123.7,183.0" class="arrowh"/>
+<text x="1152" y="568" font-size="11" font-weight="400" text-anchor="start" class="muted" direction="rtl">إرسال ↓   استقبال ↑</text>
+<rect x="628" y="170" width="140" height="170" rx="10" class="card"/>
+<text x="756" y="194" font-size="15" font-weight="700" text-anchor="start" class="acc2" direction="rtl">الهوية</text>
+<text x="756" y="216" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">زوج مفاتيح Ed25519</text>
+<text x="756" y="231" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">يُنشأ على الجهاز</text>
+<text x="756" y="246" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">ولا يغادره أبدًا.</text>
+<text x="756" y="261" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl"></text>
+<text x="756" y="276" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">العنوان = بصمة</text>
+<text x="756" y="291" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">المفتاح العام، فلا</text>
+<text x="756" y="306" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">يستطيع أحد غيرك</text>
+<text x="756" y="321" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">استخدامه.</text>
+<line x1="768" y1="263" x2="783" y2="263" class="arrow"/>
+<polygon points="783.0,263.0 774.0,267.3 774.0,258.7" class="arrowh"/>
+<rect x="628" y="356" width="140" height="110" rx="10" class="card"/>
+<text x="756" y="380" font-size="15" font-weight="700" text-anchor="start" class="ink" direction="rtl">واجهة الإدارة</text>
+<text x="756" y="402" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">مقبس محلي فقط</text>
+<text x="756" y="418" font-size="12" font-weight="400" text-anchor="end" class="muted mono">uqda status</text>
+<text x="756" y="434" font-size="12" font-weight="400" text-anchor="end" class="muted mono">uqda peers</text>
+<text x="756" y="450" font-size="12" font-weight="400" text-anchor="end" class="muted mono">uqdactl …</text>
+<rect x="628" y="482" width="140" height="62" rx="10" class="card"/>
+<text x="756" y="506" font-size="15" font-weight="700" text-anchor="start" class="acc" direction="rtl">لا تتبّع</text>
+<text x="756" y="527" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">لا شيء يتصل بالمطوّرين</text>
+<rect x="30" y="110" width="560" height="470" rx="16" class="panel"/>
+<text x="565" y="145" font-size="20" font-weight="700" text-anchor="start" class="acc" direction="rtl">٢ · شبكة مكوّنة من العُقد</text>
+<rect x="406" y="404" width="164" height="80" rx="12" class="lan"/>
+<line x1="365" y1="345" x2="240" y2="345" class="mesh"/>
+<line x1="510" y1="345" x2="365" y2="345" class="mesh"/>
+<line x1="95" y1="345" x2="145" y2="440" class="mesh"/>
+<line x1="532" y1="436" x2="444" y2="436" class="mesh"/>
+<line x1="310" y1="195" x2="440" y2="262" class="edge"/>
+<line x1="310" y1="195" x2="180" y2="262" class="edge"/>
+<line x1="440" y1="262" x2="510" y2="345" class="edge"/>
+<line x1="440" y1="262" x2="365" y2="345" class="edge"/>
+<line x1="180" y1="262" x2="240" y2="345" class="edge"/>
+<line x1="180" y1="262" x2="95" y2="345" class="edge"/>
+<line x1="510" y1="345" x2="532" y2="436" class="edge"/>
+<line x1="510" y1="345" x2="444" y2="436" class="edge"/>
+<line x1="240" y1="345" x2="145" y2="440" class="edge"/>
+<polyline points="444,436 510,345 365,345 240,345 145,440" class="pathl"/>
+<circle cx="310" cy="195" r="17" class="node"/>
+<text x="310" y="169" font-size="12" font-weight="600" text-anchor="middle" class="acc" direction="rtl">جذر الشجرة</text>
+<circle cx="440" cy="262" r="13" class="node"/>
+<text x="440" y="296" font-size="12" font-weight="600" text-anchor="middle" class="ink" direction="rtl">عُقدة عامة</text>
+<circle cx="180" cy="262" r="13" class="node"/>
+<text x="180" y="296" font-size="12" font-weight="600" text-anchor="middle" class="ink" direction="rtl">عُقدة عامة</text>
+<circle cx="510" cy="345" r="13" class="node"/>
+<text x="510" y="379" font-size="12" font-weight="600" text-anchor="middle" class="ink" direction="rtl">خادم المنزل</text>
+<circle cx="365" cy="345" r="13" class="node"/>
+<text x="365" y="379" font-size="12" font-weight="600" text-anchor="middle" class="ink" direction="rtl">وسيط</text>
+<circle cx="240" cy="345" r="13" class="node"/>
+<circle cx="240" cy="345" r="18" class="ring"/>
+<text x="240" y="379" font-size="12" font-weight="600" text-anchor="middle" class="ink" direction="rtl">حاسوب المكتب</text>
+<circle cx="95" cy="345" r="13" class="node"/>
+<text x="95" y="379" font-size="12" font-weight="600" text-anchor="middle" class="ink" direction="rtl">وسيط</text>
+<circle cx="532" cy="436" r="13" class="node"/>
+<circle cx="532" cy="436" r="18" class="ring"/>
+<text x="532" y="466" font-size="12" font-weight="600" text-anchor="middle" class="ink" direction="rtl">هاتف</text>
+<circle cx="444" cy="436" r="13" class="node"/>
+<circle cx="444" cy="436" r="18" class="ring"/>
+<text x="444" y="466" font-size="12" font-weight="600" text-anchor="middle" class="ink" direction="rtl">حاسوب محمول</text>
+<circle cx="145" cy="440" r="13" class="node"/>
+<circle cx="145" cy="440" r="18" class="ring"/>
+<text x="145" y="474" font-size="12" font-weight="600" text-anchor="middle" class="ink" direction="rtl">صديق</text>
+<text x="565" y="502" font-size="11" font-weight="600" text-anchor="start" class="acc2" direction="rtl">الشبكة المحلية: اكتشاف تلقائي، تعمل دون إنترنت</text>
+<text x="565" y="527" font-size="13" font-weight="700" text-anchor="start" class="acc" direction="rtl">رسالتك: الوسطاء يمرّرونها ولا يستطيعون قراءتها</text>
+<circle cx="554" cy="548" r="6" class="node"/>
+<text x="542" y="552" font-size="11" font-weight="400" text-anchor="start" class="muted" direction="rtl">عُقدة</text>
+<circle cx="488" cy="548" r="6" class="node"/>
+<circle cx="488" cy="548" r="10" class="ring"/>
+<text x="472" y="552" font-size="11" font-weight="400" text-anchor="start" class="muted" direction="rtl">عضو في مجموعة خاصة</text>
+<line x1="322" y1="548" x2="298" y2="548" class="edge"/>
+<text x="292" y="552" font-size="11" font-weight="400" text-anchor="start" class="muted" direction="rtl">رابط الشجرة</text>
+<line x1="225" y1="548" x2="201" y2="548" class="mesh"/>
+<text x="195" y="552" font-size="11" font-weight="400" text-anchor="start" class="muted" direction="rtl">رابط إضافي</text>
+<polyline points="108,548 84,548" class="pathl"/>
+<text x="78" y="552" font-size="11" font-weight="400" text-anchor="start" class="muted" direction="rtl">رسالتك</text>
+<rect x="30" y="600" width="1140" height="240" rx="16" class="panel"/>
+<text x="1145" y="635" font-size="20" font-weight="700" text-anchor="start" class="acc" direction="rtl">٣ · رحلة الرسالة</text>
+<rect x="980" y="655" width="168" height="165" rx="10" class="card"/>
+<circle cx="1124" cy="681" r="14" class="num"/>
+<text x="1124" y="686" font-size="14" font-weight="700" text-anchor="middle" class="numt" direction="rtl">١</text>
+<text x="1102" y="686" font-size="14" font-weight="700" text-anchor="start" class="ink" direction="rtl">التطبيق يرسل</text>
+<text x="1134" y="721" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">برنامج يرسل إلى</text>
+<text x="1134" y="740" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">عنوان الصديق 200:…</text>
+<text x="1134" y="759" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">كأي عنوان IPv6</text>
+<text x="1134" y="778" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">عادي.</text>
+<line x1="978" y1="737" x2="966" y2="737" class="arrow"/>
+<polygon points="966.0,737.0 975.0,732.7 975.0,741.3" class="arrowh"/>
+<rect x="796" y="655" width="168" height="165" rx="10" class="card"/>
+<circle cx="940" cy="681" r="14" class="num"/>
+<text x="940" y="686" font-size="14" font-weight="700" text-anchor="middle" class="numt" direction="rtl">٢</text>
+<text x="918" y="686" font-size="14" font-weight="700" text-anchor="start" class="ink" direction="rtl">إيجاد المفتاح</text>
+<text x="950" y="721" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">العنوان يدلّ على</text>
+<text x="950" y="740" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">مفتاح. البحث يتبع</text>
+<text x="950" y="759" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">مرشّحات بلوم نحو</text>
+<text x="950" y="778" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">الفرع الصحيح.</text>
+<line x1="794" y1="737" x2="782" y2="737" class="arrow"/>
+<polygon points="782.0,737.0 791.0,732.7 791.0,741.3" class="arrowh"/>
+<rect x="612" y="655" width="168" height="165" rx="10" class="card"/>
+<circle cx="756" cy="681" r="14" class="num"/>
+<text x="756" y="686" font-size="14" font-weight="700" text-anchor="middle" class="numt" direction="rtl">٣</text>
+<text x="734" y="686" font-size="14" font-weight="700" text-anchor="start" class="ink" direction="rtl">التشفير</text>
+<text x="766" y="721" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">مفاتيح جلسة X25519</text>
+<text x="766" y="740" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">تتجدّد باستمرار،</text>
+<text x="766" y="759" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">ويُمزج سرّ المجموعة</text>
+<text x="766" y="778" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">في الشبكات الخاصة.</text>
+<line x1="610" y1="737" x2="598" y2="737" class="arrow"/>
+<polygon points="598.0,737.0 607.0,732.7 607.0,741.3" class="arrowh"/>
+<rect x="428" y="655" width="168" height="165" rx="10" class="card"/>
+<circle cx="572" cy="681" r="14" class="num"/>
+<text x="572" y="686" font-size="14" font-weight="700" text-anchor="middle" class="numt" direction="rtl">٤</text>
+<text x="550" y="686" font-size="14" font-weight="700" text-anchor="start" class="ink" direction="rtl">قفزة بعد قفزة</text>
+<text x="582" y="721" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">كل عُقدة تمرّرها</text>
+<text x="582" y="740" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">للجار الأقرب إلى</text>
+<text x="582" y="759" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">الهدف. الوسطاء يرون</text>
+<text x="582" y="778" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">الحجم والتوقيت فقط،</text>
+<text x="582" y="797" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">لا المحتوى أبدًا.</text>
+<line x1="426" y1="737" x2="414" y2="737" class="arrow"/>
+<polygon points="414.0,737.0 423.0,732.7 423.0,741.3" class="arrowh"/>
+<rect x="244" y="655" width="168" height="165" rx="10" class="card"/>
+<circle cx="388" cy="681" r="14" class="num"/>
+<text x="388" y="686" font-size="14" font-weight="700" text-anchor="middle" class="numt" direction="rtl">٥</text>
+<text x="366" y="686" font-size="14" font-weight="700" text-anchor="start" class="ink" direction="rtl">فكّ التشفير والتحقق</text>
+<text x="398" y="721" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">الهدف وحده يفتحها.</text>
+<text x="398" y="740" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">الرسائل المُعادة</text>
+<text x="398" y="759" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">وغير الأعضاء</text>
+<text x="398" y="778" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">تُرفض.</text>
+<line x1="242" y1="737" x2="230" y2="737" class="arrow"/>
+<polygon points="230.0,737.0 239.0,732.7 239.0,741.3" class="arrowh"/>
+<rect x="60" y="655" width="168" height="165" rx="10" class="card"/>
+<circle cx="204" cy="681" r="14" class="num"/>
+<text x="204" y="686" font-size="14" font-weight="700" text-anchor="middle" class="numt" direction="rtl">٦</text>
+<text x="182" y="686" font-size="14" font-weight="700" text-anchor="start" class="ink" direction="rtl">الجدار ثم التطبيق</text>
+<text x="214" y="721" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">القواعد تقرّر. يرى</text>
+<text x="214" y="740" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">التطبيق اتصال IPv6</text>
+<text x="214" y="759" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">عاديًا من عنوان</text>
+<text x="214" y="778" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">يمكنه الوثوق به.</text>
+<rect x="30" y="860" width="1140" height="245" rx="16" class="panel"/>
+<text x="1145" y="895" font-size="20" font-weight="700" text-anchor="start" class="acc" direction="rtl">٤ · الانضمام ونموّ الشبكة</text>
+<rect x="808" y="912" width="340" height="150" rx="10" class="card"/>
+<text x="1132" y="942" font-size="14" font-weight="700" text-anchor="end" class="acc2 mono">sudo uqda setup country=…</text>
+<text x="1132" y="972" font-size="13" font-weight="400" text-anchor="start" class="ink" direction="rtl">• يحتفظ بالهوية أو ينشئها</text>
+<text x="1132" y="993" font-size="13" font-weight="400" text-anchor="start" class="ink" direction="rtl">• مجموعة خاصة بسرّ من 192 بت</text>
+<text x="1132" y="1014" font-size="13" font-weight="400" text-anchor="start" class="ink" direction="rtl">• تفعيل الجدار الناري</text>
+<text x="1132" y="1035" font-size="13" font-weight="400" text-anchor="start" class="ink" direction="rtl">• أسرع الجيران السليمين، يحافظ عليهم AutoPeers</text>
+<line x1="804" y1="987" x2="777" y2="987" class="arrow"/>
+<polygon points="777.0,987.0 786.0,982.7 786.0,991.3" class="arrowh"/>
+<rect x="433" y="912" width="340" height="150" rx="10" class="card"/>
+<text x="757" y="942" font-size="14" font-weight="700" text-anchor="end" class="acc2 mono">sudo uqda invite</text>
+<text x="757" y="972" font-size="13" font-weight="400" text-anchor="start" class="ink" direction="rtl">• رمز لمرة واحدة، وأيضًا رمز QR</text>
+<text x="757" y="993" font-size="13" font-weight="400" text-anchor="start" class="ink" direction="rtl">• ينتهي بعد 15 دقيقة</text>
+<text x="757" y="1014" font-size="13" font-weight="400" text-anchor="start" class="ink" direction="rtl">• لا يحتوي على كلمة مرور</text>
+<text x="757" y="1035" font-size="13" font-weight="400" text-anchor="start" class="ink" direction="rtl">• يعمل على الشبكة المحلية</text>
+<line x1="429" y1="987" x2="402" y2="987" class="arrow"/>
+<polygon points="402.0,987.0 411.0,982.7 411.0,991.3" class="arrowh"/>
+<rect x="58" y="912" width="340" height="150" rx="10" class="card"/>
+<text x="382" y="942" font-size="14" font-weight="700" text-anchor="end" class="acc2 mono">sudo uqda join &lt;invite&gt;</text>
+<text x="382" y="972" font-size="13" font-weight="400" text-anchor="start" class="ink" direction="rtl">• يتحقق من الداعي عبر TLS 1.3</text>
+<text x="382" y="993" font-size="13" font-weight="400" text-anchor="start" class="ink" direction="rtl">• مقابل مفتاحه</text>
+<text x="382" y="1014" font-size="13" font-weight="400" text-anchor="start" class="ink" direction="rtl">• يُثبت امتلاكه سرّ الدعوة</text>
+<text x="382" y="1035" font-size="13" font-weight="400" text-anchor="start" class="ink" direction="rtl">• يستلم سرّ المجموعة والجيران</text>
+<text x="1145" y="1088" font-size="14" font-weight="700" text-anchor="start" class="acc" direction="rtl">كل عُقدة جديدة تضيف طريقًا آخر للجميع.</text>
+<text x="1160" y="1140" font-size="13" font-weight="600" text-anchor="start" class="muted" direction="rtl">ليست أداة إخفاء هوية: جيرانك يرون عنوان IP  ·  مشروع تجريبي دون تدقيق مستقل بعد  ·  لا تتبّع</text>
+<text x="1160" y="1165" font-size="12" font-weight="400" text-anchor="start" class="muted" direction="rtl">Uqda Core 26.1 · متوافقة مع شبكة Yggdrasil · LGPLv3</text>
+</svg>

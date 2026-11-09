@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased (beta)
+## Uqda 26.1.1
+
+Release date: 2026-11-09. Machine version: `26.1.1`; tag: `v26.1.1`.
+Full notes: [Uqda 26.1.1](docs/releases/v26.1.1.md). Uqda is an experimental project.
+
 
 - Windows: the installer puts the Uqda folder on the system `PATH`, so
   `uqda status`, `uqda join` and the other commands work in a new terminal.
@@ -28,6 +32,10 @@
   anonymous and not affiliated with the Yggdrasil project, in English and
   Arabic. [Legal notes](docs/legal/README.md) list what is done and what
   remains for the maintainers.
+- Dependencies: quic-go 0.65.0, golang.org/x/net 0.62.0, cheggaaa/pb 3.3.0,
+  go-colorable 0.1.16, go-runewidth 0.0.31.
+- Documentation: a diagram of how the whole system works, in English and
+  Arabic ([docs/assets](docs/assets/)).
 
 ## Uqda 26.1
 

@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1190" width="1200" height="1190" font-family='"Segoe UI",system-ui,-apple-system,"Noto Sans Arabic","Noto Sans",Tahoma,sans-serif' role="img" aria-labelledby="t d">
+<title id="t">How Uqda works</title><desc id="d">Every device that installs Uqda becomes a node. The network is nothing but its nodes.</desc>
+<style>
+.bg{fill:#f7f5f0}.card{fill:#ffffff;stroke:#d9d4c7}.panel{fill:#efece4;stroke:#ddd8cb}
+.ink{fill:#1f2328}.muted{fill:#5b616b}.acc{fill:#0f766e}.acc2{fill:#b45309}
+.layer{fill:#ffffff;stroke:#c9c3b4}.layerhi{fill:#e6f2f0;stroke:#0f766e}
+.edge{stroke:#8b8f97;stroke-width:2}.mesh{stroke:#a9adb4;stroke-width:1.5;stroke-dasharray:5 5}
+.pathl{stroke:#0f766e;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;fill:none;opacity:.85}
+.arrow{stroke:#5b616b;stroke-width:2;fill:none}.arrowh{fill:#5b616b}
+.node{fill:#ffffff;stroke:#1f2328;stroke-width:2}.ring{fill:none;stroke:#b45309;stroke-width:3}
+.lan{fill:#fff8ec;stroke:#b45309;stroke-dasharray:6 4}.num{fill:#0f766e}.numt{fill:#ffffff}
+.mono{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
+@media (prefers-color-scheme: dark){
+.bg{fill:#14171c}.card{fill:#1d2128;stroke:#343a44}.panel{fill:#191d23;stroke:#2c323b}
+.ink{fill:#e8eaed}.muted{fill:#a3a9b3}.acc{fill:#2dd4bf}.acc2{fill:#f59e0b}
+.layer{fill:#1d2128;stroke:#3a414c}.layerhi{fill:#123330;stroke:#2dd4bf}
+.edge{stroke:#7d848f}.mesh{stroke:#5c636e}.pathl{stroke:#2dd4bf}
+.arrow{stroke:#a3a9b3}.arrowh{fill:#a3a9b3}.node{fill:#1d2128;stroke:#e8eaed}.ring{stroke:#f59e0b}
+.lan{fill:#2a2116;stroke:#f59e0b}.num{fill:#2dd4bf}.numt{fill:#14171c}}
+</style>
+<rect width="1200" height="1190" class="bg"/>
+<text x="40" y="58" font-size="34" font-weight="700" text-anchor="start" class="ink">How Uqda works</text>
+<text x="40" y="88" font-size="16" font-weight="400" text-anchor="start" class="muted">Every device that installs Uqda becomes a node. The network is nothing but its nodes.</text>
+<rect x="30" y="110" width="560" height="470" rx="16" class="panel"/>
+<text x="55" y="145" font-size="20" font-weight="700" text-anchor="start" class="acc">1 · Inside one node</text>
+<rect x="85" y="170" width="330" height="54" rx="8" class="layer"/>
+<text x="99" y="192" font-size="15" font-weight="700" text-anchor="start" class="ink">Your apps</text>
+<text x="99" y="212" font-size="12" font-weight="400" text-anchor="start" class="muted">Browser, SSH, games, your service: plain IPv6</text>
+<rect x="85" y="236" width="330" height="54" rx="8" class="layer"/>
+<text x="99" y="258" font-size="15" font-weight="700" text-anchor="start" class="ink">uqda0 interface</text>
+<text x="99" y="278" font-size="12" font-weight="400" text-anchor="start" class="muted">Address 200:1a2b:…::7 and subnet 300:1a2b:…/64</text>
+<rect x="85" y="302" width="330" height="54" rx="8" class="layerhi"/>
+<text x="99" y="324" font-size="15" font-weight="700" text-anchor="start" class="ink">Inbound firewall</text>
+<text x="99" y="344" font-size="12" font-weight="400" text-anchor="start" class="muted">Replies pass; new traffic only if a rule allows it</text>
+<rect x="85" y="368" width="330" height="54" rx="8" class="layerhi"/>
+<text x="99" y="390" font-size="15" font-weight="700" text-anchor="start" class="ink">Encrypted sessions</text>
+<text x="99" y="410" font-size="12" font-weight="400" text-anchor="start" class="muted">End to end, forward secrecy, optional group secret</text>
+<rect x="85" y="434" width="330" height="54" rx="8" class="layer"/>
+<text x="99" y="456" font-size="15" font-weight="700" text-anchor="start" class="ink">Routing (Ironwood)</text>
+<text x="99" y="476" font-size="12" font-weight="400" text-anchor="start" class="muted">Spanning tree, greedy hops, bloom-filter lookups</text>
+<rect x="85" y="500" width="330" height="54" rx="8" class="layer"/>
+<text x="99" y="522" font-size="15" font-weight="700" text-anchor="start" class="ink">Peer links</text>
+<text x="99" y="542" font-size="12" font-weight="400" text-anchor="start" class="muted">TCP, TLS, QUIC, WebSocket; each link proves the key</text>
+<line x1="62" y1="174" x2="62" y2="550" class="arrow"/>
+<polygon points="62.0,550.0 57.7,541.0 66.3,541.0" class="arrowh"/>
+<line x1="72" y1="550" x2="72" y2="174" class="arrow"/>
+<polygon points="72.0,174.0 76.3,183.0 67.7,183.0" class="arrowh"/>
+<text x="48" y="568" font-size="11" font-weight="400" text-anchor="start" class="muted">send ↓   receive ↑</text>
+<rect x="432" y="170" width="140" height="170" rx="10" class="card"/>
+<text x="444" y="194" font-size="15" font-weight="700" text-anchor="start" class="acc2">Identity</text>
+<text x="444" y="216" font-size="12" font-weight="400" text-anchor="start" class="muted">Ed25519 key pair,</text>
+<text x="444" y="231" font-size="12" font-weight="400" text-anchor="start" class="muted">made on the device,</text>
+<text x="444" y="246" font-size="12" font-weight="400" text-anchor="start" class="muted">never leaves it.</text>
+<text x="444" y="261" font-size="12" font-weight="400" text-anchor="start" class="muted"></text>
+<text x="444" y="276" font-size="12" font-weight="400" text-anchor="start" class="muted">Address = hash of</text>
+<text x="444" y="291" font-size="12" font-weight="400" text-anchor="start" class="muted">the public key, so</text>
+<text x="444" y="306" font-size="12" font-weight="400" text-anchor="start" class="muted">nobody else can</text>
+<text x="444" y="321" font-size="12" font-weight="400" text-anchor="start" class="muted">use it.</text>
+<line x1="432" y1="263" x2="417" y2="263" class="arrow"/>
+<polygon points="417.0,263.0 426.0,258.7 426.0,267.3" class="arrowh"/>
+<rect x="432" y="356" width="140" height="110" rx="10" class="card"/>
+<text x="444" y="380" font-size="15" font-weight="700" text-anchor="start" class="ink">Admin API</text>
+<text x="444" y="402" font-size="12" font-weight="400" text-anchor="start" class="muted">Local socket only</text>
+<text x="444" y="418" font-size="12" font-weight="400" text-anchor="start" class="muted mono">uqda status</text>
+<text x="444" y="434" font-size="12" font-weight="400" text-anchor="start" class="muted mono">uqda peers</text>
+<text x="444" y="450" font-size="12" font-weight="400" text-anchor="start" class="muted mono">uqdactl …</text>
+<rect x="432" y="482" width="140" height="62" rx="10" class="card"/>
+<text x="444" y="506" font-size="15" font-weight="700" text-anchor="start" class="acc">No telemetry</text>
+<text x="444" y="527" font-size="12" font-weight="400" text-anchor="start" class="muted">Nothing phones home</text>
+<rect x="610" y="110" width="560" height="470" rx="16" class="panel"/>
+<text x="635" y="145" font-size="20" font-weight="700" text-anchor="start" class="acc">2 · A network made of nodes</text>
+<rect x="630" y="404" width="164" height="80" rx="12" class="lan"/>
+<line x1="835" y1="345" x2="960" y2="345" class="mesh"/>
+<line x1="690" y1="345" x2="835" y2="345" class="mesh"/>
+<line x1="1105" y1="345" x2="1055" y2="440" class="mesh"/>
+<line x1="668" y1="436" x2="756" y2="436" class="mesh"/>
+<line x1="890" y1="195" x2="760" y2="262" class="edge"/>
+<line x1="890" y1="195" x2="1020" y2="262" class="edge"/>
+<line x1="760" y1="262" x2="690" y2="345" class="edge"/>
+<line x1="760" y1="262" x2="835" y2="345" class="edge"/>
+<line x1="1020" y1="262" x2="960" y2="345" class="edge"/>
+<line x1="1020" y1="262" x2="1105" y2="345" class="edge"/>
+<line x1="690" y1="345" x2="668" y2="436" class="edge"/>
+<line x1="690" y1="345" x2="756" y2="436" class="edge"/>
+<line x1="960" y1="345" x2="1055" y2="440" class="edge"/>
+<polyline points="756,436 690,345 835,345 960,345 1055,440" class="pathl"/>
+<circle cx="890" cy="195" r="17" class="node"/>
+<text x="890" y="169" font-size="12" font-weight="600" text-anchor="middle" class="acc">tree root</text>
+<circle cx="760" cy="262" r="13" class="node"/>
+<text x="760" y="296" font-size="12" font-weight="600" text-anchor="middle" class="ink">public node</text>
+<circle cx="1020" cy="262" r="13" class="node"/>
+<text x="1020" y="296" font-size="12" font-weight="600" text-anchor="middle" class="ink">public node</text>
+<circle cx="690" cy="345" r="13" class="node"/>
+<text x="690" y="379" font-size="12" font-weight="600" text-anchor="middle" class="ink">home server</text>
+<circle cx="835" cy="345" r="13" class="node"/>
+<text x="835" y="379" font-size="12" font-weight="600" text-anchor="middle" class="ink">relay</text>
+<circle cx="960" cy="345" r="13" class="node"/>
+<circle cx="960" cy="345" r="18" class="ring"/>
+<text x="960" y="379" font-size="12" font-weight="600" text-anchor="middle" class="ink">office PC</text>
+<circle cx="1105" cy="345" r="13" class="node"/>
+<text x="1105" y="379" font-size="12" font-weight="600" text-anchor="middle" class="ink">relay</text>
+<circle cx="668" cy="436" r="13" class="node"/>
+<circle cx="668" cy="436" r="18" class="ring"/>
+<text x="668" y="466" font-size="12" font-weight="600" text-anchor="middle" class="ink">phone</text>
+<circle cx="756" cy="436" r="13" class="node"/>
+<circle cx="756" cy="436" r="18" class="ring"/>
+<text x="756" y="466" font-size="12" font-weight="600" text-anchor="middle" class="ink">laptop</text>
+<circle cx="1055" cy="440" r="13" class="node"/>
+<circle cx="1055" cy="440" r="18" class="ring"/>
+<text x="1055" y="474" font-size="12" font-weight="600" text-anchor="middle" class="ink">friend</text>
+<text x="635" y="502" font-size="11" font-weight="600" text-anchor="start" class="acc2">Local network: found by multicast, works without internet</text>
+<text x="635" y="527" font-size="13" font-weight="700" text-anchor="start" class="acc">Your packet: relays forward it but cannot read it</text>
+<circle cx="646" cy="548" r="6" class="node"/>
+<text x="658" y="552" font-size="11" font-weight="400" text-anchor="start" class="muted">node</text>
+<circle cx="712" cy="548" r="6" class="node"/>
+<circle cx="712" cy="548" r="10" class="ring"/>
+<text x="728" y="552" font-size="11" font-weight="400" text-anchor="start" class="muted">private group member</text>
+<line x1="878" y1="548" x2="902" y2="548" class="edge"/>
+<text x="908" y="552" font-size="11" font-weight="400" text-anchor="start" class="muted">tree link</text>
+<line x1="975" y1="548" x2="999" y2="548" class="mesh"/>
+<text x="1005" y="552" font-size="11" font-weight="400" text-anchor="start" class="muted">extra peer link</text>
+<polyline points="1092,548 1116,548" class="pathl"/>
+<text x="1122" y="552" font-size="11" font-weight="400" text-anchor="start" class="muted">your packet</text>
+<rect x="30" y="600" width="1140" height="240" rx="16" class="panel"/>
+<text x="55" y="635" font-size="20" font-weight="700" text-anchor="start" class="acc">3 · A packet's journey</text>
+<rect x="52" y="655" width="168" height="165" rx="10" class="card"/>
+<circle cx="76" cy="681" r="14" class="num"/>
+<text x="76" y="686" font-size="14" font-weight="700" text-anchor="middle" class="numt">1</text>
+<text x="98" y="686" font-size="14" font-weight="700" text-anchor="start" class="ink">App sends</text>
+<text x="66" y="721" font-size="12" font-weight="400" text-anchor="start" class="muted">A program sends to</text>
+<text x="66" y="740" font-size="12" font-weight="400" text-anchor="start" class="muted">the friend's 200:…</text>
+<text x="66" y="759" font-size="12" font-weight="400" text-anchor="start" class="muted">address like any</text>
+<text x="66" y="778" font-size="12" font-weight="400" text-anchor="start" class="muted">IPv6 address.</text>
+<line x1="222" y1="737" x2="234" y2="737" class="arrow"/>
+<polygon points="234.0,737.0 225.0,741.3 225.0,732.7" class="arrowh"/>
+<rect x="236" y="655" width="168" height="165" rx="10" class="card"/>
+<circle cx="260" cy="681" r="14" class="num"/>
+<text x="260" y="686" font-size="14" font-weight="700" text-anchor="middle" class="numt">2</text>
+<text x="282" y="686" font-size="14" font-weight="700" text-anchor="start" class="ink">Find the key</text>
+<text x="250" y="721" font-size="12" font-weight="400" text-anchor="start" class="muted">The address maps to</text>
+<text x="250" y="740" font-size="12" font-weight="400" text-anchor="start" class="muted">a key. A lookup</text>
+<text x="250" y="759" font-size="12" font-weight="400" text-anchor="start" class="muted">follows bloom filters</text>
+<text x="250" y="778" font-size="12" font-weight="400" text-anchor="start" class="muted">to the right branch.</text>
+<line x1="406" y1="737" x2="418" y2="737" class="arrow"/>
+<polygon points="418.0,737.0 409.0,741.3 409.0,732.7" class="arrowh"/>
+<rect x="420" y="655" width="168" height="165" rx="10" class="card"/>
+<circle cx="444" cy="681" r="14" class="num"/>
+<text x="444" y="686" font-size="14" font-weight="700" text-anchor="middle" class="numt">3</text>
+<text x="466" y="686" font-size="14" font-weight="700" text-anchor="start" class="ink">Encrypt</text>
+<text x="434" y="721" font-size="12" font-weight="400" text-anchor="start" class="muted">X25519 session keys,</text>
+<text x="434" y="740" font-size="12" font-weight="400" text-anchor="start" class="muted">ratcheted. A group</text>
+<text x="434" y="759" font-size="12" font-weight="400" text-anchor="start" class="muted">secret is mixed in</text>
+<text x="434" y="778" font-size="12" font-weight="400" text-anchor="start" class="muted">for private groups.</text>
+<line x1="590" y1="737" x2="602" y2="737" class="arrow"/>
+<polygon points="602.0,737.0 593.0,741.3 593.0,732.7" class="arrowh"/>
+<rect x="604" y="655" width="168" height="165" rx="10" class="card"/>
+<circle cx="628" cy="681" r="14" class="num"/>
+<text x="628" y="686" font-size="14" font-weight="700" text-anchor="middle" class="numt">4</text>
+<text x="650" y="686" font-size="14" font-weight="700" text-anchor="start" class="ink">Hop by hop</text>
+<text x="618" y="721" font-size="12" font-weight="400" text-anchor="start" class="muted">Each node passes it</text>
+<text x="618" y="740" font-size="12" font-weight="400" text-anchor="start" class="muted">to the peer closest</text>
+<text x="618" y="759" font-size="12" font-weight="400" text-anchor="start" class="muted">to the target. Relays</text>
+<text x="618" y="778" font-size="12" font-weight="400" text-anchor="start" class="muted">see size and time,</text>
+<text x="618" y="797" font-size="12" font-weight="400" text-anchor="start" class="muted">never content.</text>
+<line x1="774" y1="737" x2="786" y2="737" class="arrow"/>
+<polygon points="786.0,737.0 777.0,741.3 777.0,732.7" class="arrowh"/>
+<rect x="788" y="655" width="168" height="165" rx="10" class="card"/>
+<circle cx="812" cy="681" r="14" class="num"/>
+<text x="812" y="686" font-size="14" font-weight="700" text-anchor="middle" class="numt">5</text>
+<text x="834" y="686" font-size="14" font-weight="700" text-anchor="start" class="ink">Decrypt and check</text>
+<text x="802" y="721" font-size="12" font-weight="400" text-anchor="start" class="muted">Only the target can</text>
+<text x="802" y="740" font-size="12" font-weight="400" text-anchor="start" class="muted">open it. Replays</text>
+<text x="802" y="759" font-size="12" font-weight="400" text-anchor="start" class="muted">and non-members</text>
+<text x="802" y="778" font-size="12" font-weight="400" text-anchor="start" class="muted">are dropped.</text>
+<line x1="958" y1="737" x2="970" y2="737" class="arrow"/>
+<polygon points="970.0,737.0 961.0,741.3 961.0,732.7" class="arrowh"/>
+<rect x="972" y="655" width="168" height="165" rx="10" class="card"/>
+<circle cx="996" cy="681" r="14" class="num"/>
+<text x="996" y="686" font-size="14" font-weight="700" text-anchor="middle" class="numt">6</text>
+<text x="1018" y="686" font-size="14" font-weight="700" text-anchor="start" class="ink">Firewall, then app</text>
+<text x="986" y="721" font-size="12" font-weight="400" text-anchor="start" class="muted">Rules decide. The app</text>
+<text x="986" y="740" font-size="12" font-weight="400" text-anchor="start" class="muted">sees a normal IPv6</text>
+<text x="986" y="759" font-size="12" font-weight="400" text-anchor="start" class="muted">connection from an</text>
+<text x="986" y="778" font-size="12" font-weight="400" text-anchor="start" class="muted">address it can trust.</text>
+<rect x="30" y="860" width="1140" height="245" rx="16" class="panel"/>
+<text x="55" y="895" font-size="20" font-weight="700" text-anchor="start" class="acc">4 · Joining and growing</text>
+<rect x="52" y="912" width="340" height="150" rx="10" class="card"/>
+<text x="68" y="942" font-size="14" font-weight="700" text-anchor="start" class="acc2 mono">sudo uqda setup country=…</text>
+<text x="68" y="972" font-size="13" font-weight="400" text-anchor="start" class="ink">• Keeps or creates the identity</text>
+<text x="68" y="993" font-size="13" font-weight="400" text-anchor="start" class="ink">• Private group with a 192-bit secret</text>
+<text x="68" y="1014" font-size="13" font-weight="400" text-anchor="start" class="ink">• Inbound firewall on</text>
+<text x="68" y="1035" font-size="13" font-weight="400" text-anchor="start" class="ink">• Fastest healthy peers, kept by AutoPeers</text>
+<line x1="396" y1="987" x2="423" y2="987" class="arrow"/>
+<polygon points="423.0,987.0 414.0,991.3 414.0,982.7" class="arrowh"/>
+<rect x="427" y="912" width="340" height="150" rx="10" class="card"/>
+<text x="443" y="942" font-size="14" font-weight="700" text-anchor="start" class="acc2 mono">sudo uqda invite</text>
+<text x="443" y="972" font-size="13" font-weight="400" text-anchor="start" class="ink">• One-time code, also as a QR code</text>
+<text x="443" y="993" font-size="13" font-weight="400" text-anchor="start" class="ink">• Expires after 15 minutes</text>
+<text x="443" y="1014" font-size="13" font-weight="400" text-anchor="start" class="ink">• Contains no password</text>
+<text x="443" y="1035" font-size="13" font-weight="400" text-anchor="start" class="ink">• Works on the local network</text>
+<line x1="771" y1="987" x2="798" y2="987" class="arrow"/>
+<polygon points="798.0,987.0 789.0,991.3 789.0,982.7" class="arrowh"/>
+<rect x="802" y="912" width="340" height="150" rx="10" class="card"/>
+<text x="818" y="942" font-size="14" font-weight="700" text-anchor="start" class="acc2 mono">sudo uqda join &lt;invite&gt;</text>
+<text x="818" y="972" font-size="13" font-weight="400" text-anchor="start" class="ink">• Checks the inviter over TLS 1.3</text>
+<text x="818" y="993" font-size="13" font-weight="400" text-anchor="start" class="ink">• against its key</text>
+<text x="818" y="1014" font-size="13" font-weight="400" text-anchor="start" class="ink">• Proves it holds the invite secret</text>
+<text x="818" y="1035" font-size="13" font-weight="400" text-anchor="start" class="ink">• Receives the group secret and peers</text>
+<text x="55" y="1088" font-size="14" font-weight="700" text-anchor="start" class="acc">Every new node adds one more road for everyone.</text>
+<text x="40" y="1140" font-size="13" font-weight="600" text-anchor="start" class="muted">Not anonymous: your peers see your IP address  ·  Experimental, no independent audit yet  ·  No telemetry</text>
+<text x="40" y="1165" font-size="12" font-weight="400" text-anchor="start" class="muted">Uqda Core 26.1 · compatible with the Yggdrasil network · LGPLv3</text>
+</svg>
