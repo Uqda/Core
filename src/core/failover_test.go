@@ -101,9 +101,6 @@ func newQuietNode(t *testing.T) *Core {
 	return n
 }
 
-	return l.Addr().String()
-}
-
 // TestFailoverAroundLostRelay sends a steady stream from A to C while A has
 // two independent paths (via B and via D), cuts the link carrying the
 // traffic, and measures how long delivery stops and how much is lost.
