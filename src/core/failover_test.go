@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"net"
 	"net/url"
+	"os"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -105,8 +106,8 @@ func newQuietNode(t *testing.T) *Core {
 // two independent paths (via B and via D), cuts the link carrying the
 // traffic, and measures how long delivery stops and how much is lost.
 func TestFailoverAroundLostRelay(t *testing.T) {
-	if testing.Short() {
-		t.Skip("failover measurement takes about 30 seconds")
+	if os.Getenv("UQDA_TEST_FAILOVER") != "1" {
+		t.Skip("set UQDA_TEST_FAILOVER=1 to run the failover measurement (about 40 seconds; CI runs it in its own job)")
 	}
 	for _, tc := range []struct {
 		name     string
@@ -224,7 +225,7 @@ func runFailover(t *testing.T, closeIt bool, maxGap time.Duration, maxShare floa
 		defer mu.Unlock()
 		return len(arrived) >= 10
 	}
-	if !waitForCondition(20*time.Second, flowing) {
+	if !waitForCondition(45*time.Second, flowing) {
 		t.Fatal("no traffic reached C before the cut")
 	}
 

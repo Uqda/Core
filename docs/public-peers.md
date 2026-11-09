@@ -103,7 +103,8 @@ peers on its own. With `Count: 2` or more, a node always has a second path
 while the lost peer is replaced.
 
 Measured with four nodes, two paths and 100 packets a second, cutting the
-path in use (`TestFailoverAroundLostRelay`, run by CI on every change):
+path in use (`TestFailoverAroundLostRelay`, run by CI on every change in its own
+job; locally with `UQDA_TEST_FAILOVER=1 go test ./src/core -run Failover -v`):
 
 | How the link fails | Traffic stops for | Packets lost |
 |---|---|---|

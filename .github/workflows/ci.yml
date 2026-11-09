@@ -149,6 +149,8 @@ jobs:
         with:
           go-version-file: "go.mod"
       - name: Cut the active path and measure recovery
+        env:
+          UQDA_TEST_FAILOVER: "1"
         run: go test -v -count=1 ./src/core -run '^TestFailoverAroundLostRelay$' | tee failover.txt
       - name: Summary
         if: always()
