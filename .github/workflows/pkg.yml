@@ -326,6 +326,10 @@ jobs:
           $installDir = (Split-Path $uqda).TrimEnd('\')
           $machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine') -split ';' | ForEach-Object { $_.TrimEnd('\') }
           if ($machinePath -notcontains $installDir) { throw "Install folder $installDir is not on the system PATH" }
+          $rule = Get-NetFirewallRule -DisplayName 'Uqda (local network)' -ErrorAction SilentlyContinue
+          if (-not $rule) { throw 'Installer did not add the Uqda local-network firewall rule' }
+          if (($rule | Get-NetFirewallAddressFilter).RemoteAddress -notcontains 'LocalSubnet') { throw 'Firewall rule is not limited to the local subnet' }
+          if ($rule.Profile -ne 'Private') { throw "Firewall rule profile is $($rule.Profile), expected Private only" }
           $reportedVersion = & $uqda --version
           if ($LASTEXITCODE -ne 0) { throw "Version command failed: $reportedVersion" }
           $expectedVersion = go run ./cmd/uqda -version
@@ -337,6 +341,7 @@ jobs:
           if ((Get-FileHash -Algorithm SHA256 $config).Hash -ne $identity) { throw 'MSI repair changed the node identity' }
           Invoke-Msi '/x' "$env:RUNNER_TEMP\uqda-remove.log"
           if (Test-Path $uqda) { throw 'MSI removal left the executable installed' }
+          if (Get-NetFirewallRule -DisplayName 'Uqda (local network)' -ErrorAction SilentlyContinue) { throw 'MSI removal left the firewall rule' }
           if (-not (Test-Path $config)) { throw 'MSI removal deleted the persistent identity' }
           $machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine') -split ';' | ForEach-Object { $_.TrimEnd('\') }
           if ($machinePath -contains $installDir) { throw 'MSI removal left the install folder on the system PATH' }

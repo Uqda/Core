@@ -77,7 +77,8 @@ PKGDISPLAYNAME=$(sh contrib/semver/version.sh --display)
 # it as the same product line via a shared UpgradeCode would be wrong.
 cat > wix.xml << EOF
 <?xml version="1.0" encoding="windows-1252"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:fire="http://schemas.microsoft.com/wix/FirewallExtension">
   <Product
     Name="${PKGDISPLAYNAME}"
     Id="*"
@@ -125,6 +126,19 @@ cat > wix.xml << EOF
               Name="wintun.dll"
               DiskId="1"
               Source="${PKGWINTUNDLL}" />
+
+            <!-- The service never prompts, so Windows Defender Firewall would
+                 silently block local discovery, LAN peerings and invite
+                 redemption. Allow uqda.exe from the local subnet on private
+                 networks only; public networks and the internet stay closed.
+                 Removed on uninstall. -->
+            <fire:FirewallException
+              Id="UqdaLocalNetwork"
+              Name="Uqda (local network)"
+              Program="[#Uqda]"
+              Scope="localSubnet"
+              Profile="private"
+              IgnoreFailure="yes" />
 
             <ServiceInstall
               Id="ServiceInstaller"
@@ -218,5 +232,5 @@ EOF
 # Generate the MSI
 CANDLEFLAGS="-nologo"
 LIGHTFLAGS="-nologo -spdb -sice:ICE71 -sice:ICE61"
-candle $CANDLEFLAGS -out ${PKGNAME}-${PKGVERSION}-${PKGARCH}.wixobj -arch ${PKGARCH} wix.xml && \
-light $LIGHTFLAGS -ext WixUtilExtension.dll -out ${PKGNAME}-${PKGVERSION}-${PKGARCH}.msi ${PKGNAME}-${PKGVERSION}-${PKGARCH}.wixobj
+candle $CANDLEFLAGS -ext WixFirewallExtension -out ${PKGNAME}-${PKGVERSION}-${PKGARCH}.wixobj -arch ${PKGARCH} wix.xml && \
+light $LIGHTFLAGS -ext WixUtilExtension.dll -ext WixFirewallExtension.dll -out ${PKGNAME}-${PKGVERSION}-${PKGARCH}.msi ${PKGNAME}-${PKGVERSION}-${PKGARCH}.wixobj

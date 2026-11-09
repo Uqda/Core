@@ -94,6 +94,19 @@ Test the connection from either device:
 uqda test 200:1234:5678::1
 ```
 
+**Windows, if `join` cannot reach the inviting PC:** Windows treats new
+networks as *Public*, and the installer's "Uqda (local network)" rule only
+applies to *Private* networks. On your own home network only, in an
+administrator PowerShell:
+
+```powershell
+Get-NetConnectionProfile                 # shows each network and its category
+Set-NetConnectionProfile -InterfaceAlias WLAN -NetworkCategory Private
+```
+
+Use the `InterfaceAlias` shown for your Wi-Fi or Ethernet. Do not mark café,
+hotel or work networks as Private.
+
 ## 5. Reach a service
 
 Your devices can now talk over encrypted IPv6, but the firewall still blocks
@@ -120,6 +133,14 @@ ssh user@SERVER-ADDRESS
 
 The service itself must listen on IPv6 (most do by default). See
 [firewall](firewall.md) for more examples.
+
+On Windows, Defender Firewall also filters the Uqda adapter, which Windows
+classifies as a *Public* network. Keep it that way, and allow only the service
+you are offering, limited to Uqda addresses:
+
+```powershell
+New-NetFirewallRule -DisplayName "My service over Uqda" -Direction Inbound -Protocol TCP -LocalPort 8080 -RemoteAddress 200::/7 -Action Allow
+```
 
 ## Everyday commands
 

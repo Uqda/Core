@@ -8,9 +8,10 @@ import (
 )
 
 // QR writes text as a terminal QR code using half-block characters, with
+// low error correction to keep it small enough to scan from a terminal, and
 // the quiet zone that scanners need. It writes nothing if encoding fails.
 func QR(w io.Writer, text string) {
-	code, err := qr.Encode(text, qr.M)
+	code, err := qr.Encode(text, qr.L)
 	if err != nil {
 		return
 	}

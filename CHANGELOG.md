@@ -5,6 +5,14 @@
 - Windows: the installer puts the Uqda folder on the system `PATH`, so
   `uqda status`, `uqda join` and the other commands work in a new terminal.
   Uninstalling removes it again.
+- Invites list at most four addresses, real LAN addresses first, and skip
+  virtual adapters (WSL, Hyper-V, Docker, VPN tunnels), so joining is faster
+  and the QR code is smaller and easier to scan.
+- Windows: the installer adds a firewall rule for `uqda.exe` limited to the
+  local subnet on private networks, so local discovery, LAN peerings and
+  invites are not silently blocked. Removed on uninstall.
+- `uqda info` shows the release name ("Uqda Core 26.1") like the other
+  commands.
 
 ## Uqda 26.1
 

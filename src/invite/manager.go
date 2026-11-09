@@ -12,7 +12,9 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -345,36 +347,96 @@ func sourceKey(addr net.Addr) string {
 	return addr.String()
 }
 
-// localAddresses lists this host's usable addresses with port, preferring
-// private LAN addresses, which is where most invites are redeemed.
-func localAddresses(port int) []string {
-	ifaces, err := net.InterfaceAddrs()
-	if err != nil {
-		return nil
-	}
-	var private, public []string
-	for _, a := range ifaces {
-		ipn, ok := a.(*net.IPNet)
-		if !ok {
-			continue
+// maxInviteAddresses keeps invites, and their QR codes, short. A joining
+// device tries the addresses in order, so the most likely one comes first.
+const maxInviteAddresses = 4
+
+// virtualInterfaceHints mark adapters of virtual machines, containers and
+// other tunnels. Their addresses are rarely reachable from another device on
+// the network, and a joining device would waste time trying them.
+var virtualInterfaceHints = []string{
+	"vethernet", "wsl", "hyper-v", "virtualbox", "vboxnet", "vmware", "vmnet",
+	"docker", "br-", "veth", "virbr", "lxc", "lxd", "podman", "cni",
+	"zerotier", "tailscale", "wireguard", "wg", "tun", "tap", "utun", "uqda",
+	"bluetooth", "loopback", "npcap",
+}
+
+func virtualInterface(name string) bool {
+	n := strings.ToLower(name)
+	for _, h := range virtualInterfaceHints {
+		if strings.HasPrefix(n, h) || strings.Contains(n, " "+h) || strings.Contains(n, "("+h) || strings.Contains(n, h+" ") {
+			return true
 		}
-		ip := ipn.IP
+	}
+	return false
+}
+
+type candidateAddr struct {
+	iface string
+	ip    net.IP
+}
+
+// addressRank orders invite addresses: private IPv4 (the usual home or office
+// LAN) first, then IPv6 unique-local, then public IPv4, then global IPv6.
+func addressRank(ip net.IP) int {
+	switch {
+	case ip.To4() != nil && ip.IsPrivate():
+		return 0
+	case ip.To4() == nil && ip.IsPrivate():
+		return 1
+	case ip.To4() != nil:
+		return 2
+	default:
+		return 3
+	}
+}
+
+// pickInviteAddresses filters and orders candidate addresses for an invite.
+func pickInviteAddresses(candidates []candidateAddr, port int) []string {
+	var keep []candidateAddr
+	for _, c := range candidates {
+		ip := c.ip
 		switch {
-		case ip.IsLoopback(), ip.IsLinkLocalUnicast(), ip.IsMulticast(), ip.IsUnspecified():
+		case ip == nil, ip.IsLoopback(), ip.IsLinkLocalUnicast(), ip.IsMulticast(), ip.IsUnspecified():
 			continue
 		case ip.To4() == nil && ip[0]&0xfe == 0x02:
 			continue // Uqda overlay addresses are not reachable before joining
+		case virtualInterface(c.iface):
+			continue
 		}
-		hp := net.JoinHostPort(ip.String(), strconv.Itoa(port))
-		if ip.IsPrivate() {
-			private = append(private, hp)
-		} else {
-			public = append(public, hp)
+		keep = append(keep, c)
+	}
+	sort.SliceStable(keep, func(a, b int) bool { return addressRank(keep[a].ip) < addressRank(keep[b].ip) })
+	var out []string
+	for _, c := range keep {
+		if len(out) == maxInviteAddresses {
+			break
+		}
+		out = append(out, net.JoinHostPort(c.ip.String(), strconv.Itoa(port)))
+	}
+	return out
+}
+
+// localAddresses lists this host's usable addresses for redeeming invites.
+func localAddresses(port int) []string {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return nil
+	}
+	var candidates []candidateAddr
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, a := range addrs {
+			if ipn, ok := a.(*net.IPNet); ok {
+				candidates = append(candidates, candidateAddr{iface: iface.Name, ip: ipn.IP})
+			}
 		}
 	}
-	all := append(private, public...)
-	if len(all) > maxAddresses {
-		all = all[:maxAddresses]
-	}
-	return all
+	return pickInviteAddresses(candidates, port)
 }

@@ -35,5 +35,12 @@ func productNameFor(machineVersion string) string {
 	return name
 }
 
+// DisplayNameFor formats any machine version the way releases are named,
+// for example 26.1.0 as "Uqda Core 26.1" and 26.1-beta.1 as
+// "Uqda Core 26.1 Beta 1".
+func DisplayNameFor(machineVersion string) string {
+	return strings.Replace(productNameFor(strings.TrimSpace(machineVersion)), "Uqda ", "Uqda Core ", 1)
+}
+
 // DisplayName returns the human-facing Core release name.
 func DisplayName() string { return strings.Replace(ProductName(), "Uqda ", "Uqda Core ", 1) }
