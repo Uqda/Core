@@ -349,7 +349,14 @@ func run() int {
 				label = "Added:"
 			}
 			state := map[bool]string{true: "up", false: "down"}[p.Up]
-			_ = table.Append([]string{label, fmt.Sprintf("%s (%s, %.0f ms)", p.URI, state, p.ConnectMS)})
+			timing := fmt.Sprintf("%.0f ms connect", p.ConnectMS)
+			if p.LatencyMS > 0 {
+				timing = fmt.Sprintf("%.0f ms round trip", p.LatencyMS)
+			}
+			_ = table.Append([]string{label, fmt.Sprintf("%s (%s, %s)", p.URI, state, timing)})
+		}
+		if len(resp.Standby) > 0 {
+			_ = table.Append([]string{"Standby:", fmt.Sprintf("%d measured spare peer(s), used at once if a peer is lost", len(resp.Standby))})
 		}
 		if resp.LastCheck != "" {
 			_ = table.Append([]string{"Last check:", resp.LastCheck})
