@@ -15,7 +15,8 @@ go install "$GO_LICENSES"
 bin="$(go env GOPATH)/bin/go-licenses"
 
 fail=0
-for os in linux windows darwin freebsd openbsd android; do
+# Android ships as a gomobile library (cgo), covered by the same modules.
+for os in linux windows darwin freebsd openbsd; do
   echo "== GOOS=$os"
   GOOS=$os "$bin" check ./cmd/... --ignore github.com/Uqda/Core \
     --allowed_licenses="$ALLOWED" || fail=1

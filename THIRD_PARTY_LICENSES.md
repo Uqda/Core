@@ -15,6 +15,7 @@ allowed set (MIT, BSD-2-Clause, BSD-3-Clause, ISC, Apache-2.0, MPL-2.0, Zlib).
 | Module | Version | License | Notes |
 |---|---|---|---|
 | `github.com/Arceliar/ironwood` | pinned snapshot | MPL-2.0 | Vendored in [third_party/ironwood](third_party/ironwood) with a local fix; source of modified files available there ([UQDA-PATCHES](third_party/ironwood/UQDA-PATCHES.md)) |
+| `github.com/Arceliar/ironwood/encrypted/internal/e2c` | part of Ironwood | BSD-3-Clause | Ed25519-to-Curve25519 conversion inside Ironwood, under its own license |
 | `github.com/Arceliar/phony` | v0.0.0-20220903101357 | MPL-2.0 | Unmodified |
 | `github.com/VividCortex/ewma` | v1.2.0 | MIT | |
 | `github.com/bits-and-blooms/bitset` | v1.24.5 | BSD-3-Clause | |
@@ -39,7 +40,7 @@ allowed set (MIT, BSD-2-Clause, BSD-3-Clause, ISC, Apache-2.0, MPL-2.0, Zlib).
 | `github.com/quic-go/quic-go` | v0.63.0 | MIT | |
 | `github.com/vishvananda/netlink` | v1.3.1 | Apache-2.0 | Linux only |
 | `github.com/vishvananda/netns` | v0.0.5 | Apache-2.0 | Linux only |
-| `github.com/wlynxg/anet` | v0.0.5 | BSD-3-Clause | Android |
+| `github.com/wlynxg/anet` | v0.0.5 | BSD-3-Clause | Interface addresses for multicast discovery |
 | `golang.org/x/crypto` | v0.58.0 | BSD-3-Clause | |
 | `golang.org/x/net` | v0.61.0 | BSD-3-Clause | |
 | `golang.org/x/sys` | v0.49.0 | BSD-3-Clause | |
