@@ -138,23 +138,29 @@ func runFailover(t *testing.T, closeIt bool, maxGap time.Duration, maxShare floa
 			t.Fatal(err)
 		}
 	}
+	// Every node has both of its links up. (A node's tree view only holds
+	// the entries it needs, so the tree size is not a readiness signal.)
 	if !waitForCondition(20*time.Second, func() bool {
 		for _, n := range []*Core{a, b, c, d} {
-			if len(n.GetTree()) < 4 {
+			up := 0
+			for _, p := range n.GetPeers() {
+				if p.Up {
+					up++
+				}
+			}
+			if up < 2 {
 				return false
 			}
 		}
 		return true
 	}) {
 		for name, n := range map[string]*Core{"A": a, "B": b, "C": c, "D": d} {
-			t.Logf("node %s: %d tree entries", name, len(n.GetTree()))
 			for _, p := range n.GetPeers() {
-				t.Logf("  peer %s up=%v inbound=%v err=%v", p.URI, p.Up, p.Inbound, p.LastError)
+				t.Logf("node %s peer %s up=%v inbound=%v err=%v", name, p.URI, p.Up, p.Inbound, p.LastError)
 			}
 		}
-		t.Fatal("the four nodes did not form one tree")
+		t.Fatal("the four nodes did not connect")
 	}
-	time.Sleep(3 * time.Second)
 
 	// Receiver: record when each sequence number arrives at C.
 	var mu sync.Mutex
@@ -193,6 +199,17 @@ func runFailover(t *testing.T, closeIt bool, maxGap time.Duration, maxShare floa
 			seq++
 			time.Sleep(every)
 		}
+	}
+
+	// Send until the session is established and packets flow end to end.
+	flowing := func() bool {
+		send(200 * time.Millisecond)
+		mu.Lock()
+		defer mu.Unlock()
+		return len(arrived) >= 10
+	}
+	if !waitForCondition(20*time.Second, flowing) {
+		t.Fatal("no traffic reached C before the cut")
 	}
 
 	// Warm up, and find which relay carries the traffic.
