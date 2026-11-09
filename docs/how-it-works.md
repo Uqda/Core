@@ -5,6 +5,11 @@ nothing but nodes.** There is no company server in the middle, no account
 system and no central directory. Every device that runs Uqda is a node, and
 every node is part of the network that carries everyone's traffic.
 
+![How the Uqda network works, from top to bottom](assets/how-uqda-works.en.svg)
+
+The same diagram in Arabic: [how-uqda-works.ar.svg](assets/how-uqda-works.ar.svg).
+The sections below explain each part.
+
 ## 1. A network that is its own infrastructure
 
 When you install Uqda, your device does three things at once:

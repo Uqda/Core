@@ -20,6 +20,8 @@ time someone joins.
 > telemetry and its developers run no servers that see your traffic; see
 > [privacy](PRIVACY.md).
 
+![How the Uqda network works, from top to bottom](docs/assets/how-uqda-works.en.svg)
+
 ## A network that builds itself
 
 ```

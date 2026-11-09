@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased (beta)
+## Uqda 26.1.1
+
+Release date: 2026-11-09. Machine version: `26.1.1`; tag: `v26.1.1`.
+Full notes: [Uqda 26.1.1](docs/releases/v26.1.1.md). Uqda is an experimental project.
 
 - Faster recovery when a peer is lost. AutoPeers checks links every 2
   seconds instead of every minute and replaces a lost peer at once from a
@@ -46,6 +49,12 @@
   anonymous and not affiliated with the Yggdrasil project, in English and
   Arabic. [Legal notes](docs/legal/README.md) list what is done and what
   remains for the maintainers.
+- Dependencies: quic-go 0.65.0, golang.org/x/net 0.62.0, cheggaaa/pb 3.3.0,
+  go-colorable 0.1.16, go-runewidth 0.0.31.
+- Documentation: a technical overview of the whole network on one page, in
+  English and Arabic: topology, addressing, protocol stack, link handshake,
+  routing, lookups, a packet's path, who sees what, groups, firewall and
+  invites ([docs/assets](docs/assets/)).
 
 ## Uqda 26.1
 

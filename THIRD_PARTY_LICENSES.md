@@ -21,7 +21,7 @@ allowed set (MIT, BSD-2-Clause, BSD-3-Clause, ISC, Apache-2.0, MPL-2.0, Zlib).
 | `github.com/bits-and-blooms/bitset` | v1.24.5 | BSD-3-Clause | |
 | `github.com/bits-and-blooms/bloom/v3` | v3.7.1 | BSD-2-Clause | |
 | `github.com/cespare/xxhash/v2` | v2.3.0 | MIT | |
-| `github.com/cheggaaa/pb/v3` | v3.2.1 | BSD-3-Clause | |
+| `github.com/cheggaaa/pb/v3` | v3.3.0 | BSD-3-Clause | |
 | `github.com/clipperhouse/displaywidth` | v0.10.0 | MIT | |
 | `github.com/clipperhouse/uax29/v2` | v2.7.0 | MIT | |
 | `github.com/coder/websocket` | v1.8.15 | ISC | |
@@ -30,19 +30,19 @@ allowed set (MIT, BSD-2-Clause, BSD-3-Clause, ISC, Apache-2.0, MPL-2.0, Zlib).
 | `github.com/hashicorp/go-syslog` | v1.0.1 | MIT | |
 | `github.com/hjson/hjson-go/v4` | v4.7.1 | MIT | |
 | `github.com/kardianos/minwinsvc` | v1.0.2 | Zlib | Windows only |
-| `github.com/mattn/go-colorable` | v0.1.15 | MIT | |
+| `github.com/mattn/go-colorable` | v0.1.16 | MIT | |
 | `github.com/mattn/go-isatty` | v0.0.24 | MIT | |
-| `github.com/mattn/go-runewidth` | v0.0.27 | MIT | |
+| `github.com/mattn/go-runewidth` | v0.0.31 | MIT | |
 | `github.com/olekukonko/cat` | v0.0.0-20250911104152 | MIT | |
 | `github.com/olekukonko/errors` | v1.2.0 | MIT | |
 | `github.com/olekukonko/ll` | v0.1.6 | MIT | |
 | `github.com/olekukonko/tablewriter` | v1.1.5 | MIT | |
-| `github.com/quic-go/quic-go` | v0.63.0 | MIT | |
+| `github.com/quic-go/quic-go` | v0.65.0 | MIT | |
 | `github.com/vishvananda/netlink` | v1.3.1 | Apache-2.0 | Linux only |
 | `github.com/vishvananda/netns` | v0.0.5 | Apache-2.0 | Linux only |
 | `github.com/wlynxg/anet` | v0.0.5 | BSD-3-Clause | Interface addresses for multicast discovery |
 | `golang.org/x/crypto` | v0.58.0 | BSD-3-Clause | |
-| `golang.org/x/net` | v0.61.0 | BSD-3-Clause | |
+| `golang.org/x/net` | v0.62.0 | BSD-3-Clause | |
 | `golang.org/x/sys` | v0.49.0 | BSD-3-Clause | |
 | `golang.org/x/text` | v0.43.0 | BSD-3-Clause | |
 | `golang.zx2c4.com/wintun` | v0.0.0-20230126152724 | MIT | Go bindings only; the driver DLL is listed below |
