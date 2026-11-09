@@ -15,10 +15,14 @@ DEBVERSION=$(sh contrib/semver/version.sh --debian)
 STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT HUP INT TERM
 chmod 755 "$STAGE"
-mkdir -p "$STAGE/DEBIAN" "$STAGE/usr/bin" "$STAGE/usr/lib/uqda" "$STAGE/lib/systemd/system"
+mkdir -p "$STAGE/DEBIAN" "$STAGE/usr/bin" "$STAGE/usr/lib/uqda" "$STAGE/lib/systemd/system" "$STAGE/usr/share/doc/uqda"
 cp uqda uqdactl "$STAGE/usr/bin/"
 cp contrib/packaging/install-config.sh "$STAGE/usr/lib/uqda/install-config"
 cp contrib/systemd/uqda.service.debian "$STAGE/lib/systemd/system/uqda.service"
+# License, attribution and third-party notices travel with the binaries.
+cp LICENSE "$STAGE/usr/share/doc/uqda/copyright"
+cp NOTICE.md THIRD_PARTY_LICENSES.md PRIVACY.md "$STAGE/usr/share/doc/uqda/"
+chmod 644 "$STAGE"/usr/share/doc/uqda/*
 chmod 755 "$STAGE/usr/bin/uqda" "$STAGE/usr/bin/uqdactl" "$STAGE/usr/lib/uqda/install-config"
 cat > "$STAGE/DEBIAN/control" <<EOF
 Package: uqda
@@ -27,7 +31,8 @@ Section: net
 Priority: optional
 Architecture: $PKGARCH
 Depends: systemd, passwd
-Maintainer: Uqda Core maintainers
+Maintainer: Uqda Core maintainers <Uqda@proton.me>
+Homepage: https://github.com/Uqda/Core
 Description: Uqda Core, compatible with the Yggdrasil network
  Encrypted IPv6 networking with independently maintained Uqda tooling.
 EOF

@@ -14,6 +14,11 @@ time someone joins.
 > **Experimental project.** Uqda is tested extensively but has not had an
 > independent security audit. Do not rely on it where a failure would put
 > people or critical systems at risk.
+>
+> **Not anonymous.** Uqda encrypts traffic between nodes, but your peers see
+> your IP address and other nodes can see your Uqda address. Uqda contains no
+> telemetry and its developers run no servers that see your traffic; see
+> [privacy](PRIVACY.md).
 
 ## A network that builds itself
 
@@ -139,7 +144,14 @@ vulnerabilities privately as described in [SECURITY](SECURITY.md).
 
 Uqda Core is licensed under LGPLv3 with the linking exception in [LICENSE](LICENSE).
 It is derived from Yggdrasil, and routing and encrypted sessions come from
-Ironwood; see [NOTICE](NOTICE.md). Uqda does not imply upstream endorsement.
+Ironwood; see [NOTICE](NOTICE.md) and
+[third-party licenses](THIRD_PARTY_LICENSES.md). Uqda is an independent project,
+not affiliated with or endorsed by the Yggdrasil project; "Yggdrasil" is used
+only to describe compatibility.
+
+You are responsible for how you use Uqda and for what you publish or reach
+through it, under the laws that apply to you. Report abuse or security problems
+as described in [SECURITY](SECURITY.md).
 
 ---
 

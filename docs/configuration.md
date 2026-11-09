@@ -30,6 +30,13 @@ startup, not per incoming packet. Low-memory devices must budget that startup
 memory. The deterministic protocol salt lets group members derive the same key;
 it cannot prevent precomputation against weak passwords reused between groups.
 
+`NodeInfo` is readable by **every node on the network**. It is empty by default;
+never put your name, location, contact details or other personal data in it.
+`NodeInfoPrivacy: true`, the default for configurations created by Uqda 26.1.1
+and later, also stops sharing your platform, architecture and Uqda version.
+Older configurations keep their setting; set it to `true` yourself if you prefer.
+See [privacy](../PRIVACY.md).
+
 The upstream [Yggdrasil configuration reference](https://yggdrasil-network.github.io/configurationref.html)
 explains shared network options. Uqda binary names, paths and validation behavior
 are documented here; upstream installation instructions are not Uqda instructions.
